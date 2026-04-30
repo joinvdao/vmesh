@@ -1,0 +1,33 @@
+name: Daily Maintenance
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "18 6 * * *"
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+      - run: npm run agent-ready:check
+      - run: npm run janitor
+        continue-on-error: true
+      - run: npm run janitor:report
+      - run: npm run refactor:queue
+      - uses: actions/upload-artifact@v4
+        with:
+          name: maintenance-reports
+          path: |
+            .agent-ready-report.json
+            knip-report.json
+            docs/REFACTOR_QUEUE.md
+          if-no-files-found: ignore
