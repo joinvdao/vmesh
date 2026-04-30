@@ -1,0 +1,4 @@
+npx lint-staged
+npm run agent-ready:check
+npm run public-workflow:check
+npm run privacy:check

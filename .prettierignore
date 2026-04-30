@@ -1,0 +1,10 @@
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+agent-bootstrap-prompt/
+knip-report.json
+.agent-ready-report.json
+package-lock.json
