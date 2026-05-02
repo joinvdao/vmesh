@@ -74,6 +74,7 @@ FABDEM is marked as license-gated/non-commercial unless separately licensed. CUD
 - `docs/SECURITY_PRIVACY.md`: data, provider, user-content, and analytics safety rules.
 - `docs/OPERATIONS.md`: local runbook, deployment expectations, ingestion notes, and incident notes.
 - `docs/ANALYTICS.md`: event taxonomy and metric definitions.
+- `docs/RESEARCH.md`: external climate, biodiversity, terrain, and data-platform research notes.
 - `docs/PROJECT_MANAGEMENT.md`: public repo and private planning boundary.
 - `docs/LIVESTREAM.md`: public weekly build log for Thursday 5pm UTC livestream notes.
 - `docs/V1_IMPLEMENTATION_PROMPT.md`: comprehensive V1 build prompt.

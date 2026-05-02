@@ -15,6 +15,7 @@ const requiredDocs = [
   "docs/SECURITY_PRIVACY.md",
   "docs/OPERATIONS.md",
   "docs/ANALYTICS.md",
+  "docs/RESEARCH.md",
   "docs/PROJECT_MANAGEMENT.md",
   "docs/LIVESTREAM.md",
   "CONTRIBUTING.md"
