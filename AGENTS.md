@@ -29,6 +29,7 @@ Use `npm run dev` only after app entrypoints are implemented. The expected local
 - Sensitive data, user-added data, logging, analytics, or provider changes: read `docs/SECURITY_PRIVACY.md`.
 - Deployment, ingestion, or local runbook changes: read `docs/OPERATIONS.md`.
 - Event and metric changes: read `docs/ANALYTICS.md`.
+- External source/model research changes: read `docs/RESEARCH.md`.
 - Project management workflow changes: read `docs/PROJECT_MANAGEMENT.md`.
 - Livestream notes or public build-log changes: read `docs/LIVESTREAM.md`.
 
