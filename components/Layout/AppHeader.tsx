@@ -1,24 +1,103 @@
 "use client";
 
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { Bell, ChevronDown, CircleHelp, Filter, Globe2, Search, Settings } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useVmeshStore } from "@/store/useVmeshStore";
+
+interface NominatimResult {
+  display_name: string;
+  lat: string;
+  lon: string;
+  type?: string;
+  class?: string;
+}
 
 export function AppHeader() {
+  const [query, setQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchState, setSearchState] = useState<"idle" | "error" | "found">("idle");
+  const flyToLocation = useVmeshStore((state) => state.flyToLocation);
+  const setMapStatus = useVmeshStore((state) => state.setMapStatus);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
+
+    setIsSearching(true);
+    setSearchState("idle");
+
+    try {
+      const params = new URLSearchParams({
+        q: trimmedQuery,
+        format: "jsonv2",
+        limit: "1"
+      });
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
+      if (!response.ok) throw new Error("Location search failed");
+
+      const [result] = (await response.json()) as NominatimResult[];
+      if (!result) throw new Error("Location not found");
+
+      const latitude = Number(result.lat);
+      const longitude = Number(result.lon);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        throw new Error("Location returned invalid coordinates");
+      }
+
+      flyToLocation({
+        latitude,
+        longitude,
+        zoom: result.class === "place" && result.type === "city" ? 9 : 5.8,
+        label: result.display_name
+      });
+      setMapStatus({
+        map: "active",
+        message: `Flying to ${result.display_name.split(",")[0]}`
+      });
+      setSearchState("found");
+    } catch (error) {
+      setSearchState("error");
+      setMapStatus({
+        map: "fallback",
+        message: error instanceof Error ? error.message : "Location search failed"
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   return (
     <header className="absolute left-64 right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-[#dfe8e6] bg-white/95 px-4 shadow-[0_2px_18px_rgba(31,53,58,0.04)] backdrop-blur">
-      <div className="flex w-[420px] items-center gap-2 rounded-[8px] border border-[#dfe8e6] bg-white px-3 shadow-sm">
+      <form
+        onSubmit={handleSubmit}
+        className={`flex w-[420px] items-center gap-2 rounded-[8px] border bg-white px-3 shadow-sm ${
+          searchState === "error"
+            ? "border-[#d99575]"
+            : searchState === "found"
+              ? "border-[#7acbc0]"
+              : "border-[#dfe8e6]"
+        }`}
+      >
         <Search className="h-4 w-4 text-[#6d7b87]" />
         <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
           className="h-9 border-0 px-0 shadow-none focus:border-0 focus:ring-0"
-          placeholder="Search place or coordinates"
+          placeholder={isSearching ? "Searching..." : "Search place or coordinates"}
         />
-        <span className="rounded-[4px] bg-[#f2f6f5] px-1.5 py-0.5 font-mono text-[10px] text-[#7b8893]">
-          /
-        </span>
-      </div>
+        <button
+          type="submit"
+          className="rounded-[4px] bg-[#f2f6f5] px-1.5 py-0.5 font-mono text-[10px] text-[#7b8893] transition hover:bg-[#e6f2ef] hover:text-[#0f766e]"
+        >
+          {isSearching ? "..." : "/"}
+        </button>
+      </form>
 
       <div className="flex items-center gap-3">
         <Button variant="outline" size="sm" className="h-10 px-4">

@@ -59,6 +59,14 @@ export interface ViewState {
   bearing: number;
 }
 
+export interface MapFlyToRequest {
+  id: number;
+  longitude: number;
+  latitude: number;
+  zoom: number;
+  label: string;
+}
+
 export interface HoveredHexInfo {
   h3Id: string;
   tier: MeshTier;
