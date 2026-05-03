@@ -136,3 +136,60 @@ Potential vmesh relevance:
 Research question:
 
 - Which terrain provider should be considered authoritative for public demos versus production deployments once attribution, update cadence, coverage, and reliability are reviewed?
+
+## Resilient Communications
+
+### Reticulum / RNS
+
+Reticulum should be the primary resilient communications stack for vmesh. It is a general-purpose, cryptographic, disruption-tolerant network stack with application APIs, multiple interface types, and user-facing ecosystems such as LXMF, Sideband, Nomad Network, MeshChat, and propagation nodes.
+
+References:
+
+- `https://reticulum.network/manual/reference.html`
+- `https://reticulum.network/manual/software.html`
+- `https://pypi.org/project/lxmf/`
+- `https://reticulum.network/start.html`
+
+Potential vmesh relevance:
+
+- Provides a resilient application-network substrate rather than only a radio chat path.
+- Supports low-bandwidth and intermittent networks when configured with suitable interfaces.
+- LXMF handles messaging concerns such as routing, queues, receipts, retries, delayed delivery, and end-to-end encryption.
+- Reticulum can operate over many media, including TCP/UDP/LAN/internet links and radio/LoRa-style interfaces where suitable hardware and configuration exist.
+- A local bridge lets the web app remain a normal Next.js UI while a companion process owns identities, keys, interfaces, and network routing.
+
+Recommended posture:
+
+- Treat Reticulum/RNS as the main vmesh disaster-mode stack.
+- Build a local `reticulum-bridge` service before live integration.
+- Keep Reticulum private keys, RNS config, contact books, and interface secrets out of the public repo.
+- Attach every received message to H3/user-data models with provenance, confidence, trust label, timestamp, and delivery metadata.
+
+### Meshtastic Bridge
+
+Meshtastic remains valuable for interoperability with widely deployed LoRa mesh users and gateway nodes, but vmesh should treat it as a bridge provider rather than the canonical network stack.
+
+References:
+
+- `https://meshtastic.org/docs/software/integrations/mqtt/`
+- `https://meshtastic.org/docs/development/device/client-api/`
+- `https://meshtastic.org/docs/software/web-client/`
+- `https://meshtastic.org/docs/hardware/devices/`
+
+Potential vmesh relevance:
+
+- Lets vmesh exchange short field reports with Meshtastic users and local LoRa meshes.
+- Supports local node access over USB/serial, BLE, TCP, or MQTT depending on device and environment.
+- Public MQTT can help demos and connected operations, but should not be treated as disaster-primary infrastructure.
+- Private gateways can bridge Reticulum-oriented vmesh deployments to local Meshtastic users, with careful filtering and rate limits.
+
+Bridge constraints:
+
+- Meshtastic payloads must be short and conservative.
+- Rate limits and deduplication are required to avoid flooding low-bandwidth mesh networks.
+- Location precision must be explicit and privacy-preserving.
+- A physical Meshtastic node or trusted gateway is required for true LoRa network access.
+
+Research question:
+
+- What is the minimum safe common message schema that can move between Reticulum/LXMF and Meshtastic without overloading radio networks or confusing provenance?

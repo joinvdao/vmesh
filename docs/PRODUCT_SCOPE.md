@@ -95,6 +95,26 @@ Canonical user-added record types:
 
 User-added data defaults to private-local. Future sharing requires explicit visibility, ownership, moderation, retention, deletion, and export rules.
 
+## Resilient Communications Scope
+
+vmesh should become useful when conventional connectivity is degraded. The long-term communications posture is offline-first: the atlas, selected local tiles, H3 summaries, user-added records, checklists, and outbound messages should remain usable without the public internet.
+
+Reticulum is the primary resilient communications stack for vmesh. The product should treat Reticulum/RNS as the main disruption-tolerant application network and use LXMF for encrypted, queued, delay-tolerant messaging where appropriate. vmesh should not implement Reticulum directly in the browser; it should connect to a local bridge service that owns the Reticulum identity, RNS configuration, LXMF router, peer discovery, delivery receipts, and interface status.
+
+Meshtastic remains strategically important, but as a bridge into existing LoRa mesh networks rather than the core vmesh network substrate. A Meshtastic bridge should let vmesh exchange constrained emergency packets with Meshtastic users and gateway nodes while preserving Reticulum as the main stack for richer resilient routing, store-and-forward behavior, and application-level identity.
+
+Disaster-mode message types should be deliberately small:
+
+- Check-ins and welfare status.
+- H3 cell status updates.
+- Hazard observations.
+- Needs and offers.
+- Supply/resource reports.
+- Relay notes and acknowledgements.
+- Position beacons with explicit precision controls.
+
+The UI should expose comms state clearly: offline, local bridge connected, Reticulum active, Meshtastic bridge active, queued, sent, delivered, acknowledged, expired, or failed. Every received field report should be treated as user/provenance data, not authoritative truth.
+
 ## Resilience Score
 
 V1 uses a mock derived antifragility score built from macro pillar values. Future scoring should remain explainable and decomposable.
@@ -134,6 +154,7 @@ Scores are decision-support signals, not official risk certification. Every scor
 | Data posture     | Prepopulated + user-added | Supports both app-driven atlas data and local knowledge capture.              |
 | Deployment       | Vercel plus GitHub        | Fast previews and simple production flow.                                     |
 | Terrain          | Open raster-dem tiles     | Avoids early paid provider lock-in.                                           |
+| Resilient comms  | Reticulum primary         | Gives vmesh a disruption-tolerant app network; Meshtastic bridges LoRa users. |
 
 ## MVP Phases
 
@@ -144,7 +165,8 @@ Scores are decision-support signals, not official risk certification. Every scor
 5. Selected hex panel showing antifragility, macro pillars, micro assets, user-added data, parcel context, and provenance.
 6. User-added data draft flow with local/mock persistence only.
 7. Open parcel data research and model design for lawful parcel ingestion.
-8. Interaction QA, accessibility pass, and visual verification.
+8. Reticulum-first resilient comms design, with a Meshtastic bridge plan.
+9. Interaction QA, accessibility pass, and visual verification.
 
 ## Out Of Scope For First Version
 
@@ -155,6 +177,8 @@ Scores are decision-support signals, not official risk certification. Every scor
 - AI-assisted deed upload or metes-and-bounds parsing in production.
 - Presenting generated parcel boundaries as authoritative legal boundaries.
 - Public publishing of user-added records.
+- Live Reticulum or Meshtastic transmission from the browser.
+- Emergency-service dispatch, official incident command, or guaranteed delivery claims.
 - Production risk certification.
 - Billing or pricing flows.
 - Formal regulatory reporting.
