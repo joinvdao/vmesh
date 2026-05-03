@@ -55,12 +55,21 @@ export interface VmeshStore {
   clearDraftUserRecord: () => void;
   setMapStatus: (status: Partial<MapStatus>) => void;
   setTerrainStatus: (status: TerrainProviderStatus, message?: string) => void;
+  setActiveTerrainProvider: (providerId: string, message?: string) => void;
 }
 
-const terrainProviders = getTerrainProviderRegistry(
-  typeof process !== "undefined" ? process.env.NEXT_PUBLIC_TERRAIN_TILEJSON_URL : undefined
-);
-const selectedProvider = selectTerrainProvider(terrainProviders);
+const terrainProviderPreference =
+  typeof process !== "undefined" ? process.env.NEXT_PUBLIC_TERRAIN_PROVIDER : undefined;
+const terrainProviders = getTerrainProviderRegistry({
+  envTileJsonUrl:
+    typeof process !== "undefined" ? process.env.NEXT_PUBLIC_TERRAIN_TILEJSON_URL : undefined,
+  preferredProviderId: terrainProviderPreference,
+  mapterhornPmtilesUrl:
+    typeof process !== "undefined" ? process.env.NEXT_PUBLIC_MAPTERHORN_PMTILES_URL : undefined,
+  mapzenTerrariumUrl:
+    typeof process !== "undefined" ? process.env.NEXT_PUBLIC_MAPZEN_TERRARIUM_URL : undefined
+});
+const selectedProvider = selectTerrainProvider(terrainProviders, terrainProviderPreference);
 const initialSelected =
   getAllHexRecords(initialHexDataByTier).find(
     (record) => record.h3Id === DEFAULT_SELECTED_HEX_ID
@@ -217,6 +226,15 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
       mapStatus: {
         ...state.mapStatus,
         terrain,
+        message: message ?? state.mapStatus.message
+      }
+    })),
+  setActiveTerrainProvider: (providerId, message) =>
+    set((state) => ({
+      selectedTerrainProviderId: providerId,
+      mapStatus: {
+        ...state.mapStatus,
+        providerId,
         message: message ?? state.mapStatus.message
       }
     }))

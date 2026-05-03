@@ -100,3 +100,39 @@ External climate, biodiversity, terrain, parcel, raster, and catalogue datasets 
 - confidence and uncertainty
 
 H3 is the vmesh operating mesh, not a requirement for upstream datasets.
+
+## Open Terrain Tiles
+
+### Mapterhorn PMTiles
+
+Mapterhorn is now the primary V1 open terrain path. vmesh treats it as a `pmtiles-raster-dem` provider with Terrarium RGB elevation encoding and loads the archive directly in the browser through HTTP range requests.
+
+Reference: `https://download.mapterhorn.com/planet.pmtiles`
+
+Potential vmesh relevance:
+
+- Provides a modern no-token terrain archive that can be used by MapLibre `raster-dem`.
+- Keeps terrain provider choice in configuration/state rather than renderer-specific branches.
+- Establishes the future path for PMTiles terrain packages, STAC/catalog discovery, and source-attribution metadata.
+
+Implementation notes:
+
+- Register the `pmtiles://` protocol once before adding PMTiles terrain sources to MapLibre.
+- Keep provider metadata visible through footer/source status and public docs.
+- Preserve attribution and upstream dataset notices before any production release.
+
+### Mapzen / Joerd Terrarium
+
+Mapzen/Joerd Terrarium tiles are the no-token V1 fallback terrain path.
+
+Reference: `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png`
+
+Potential vmesh relevance:
+
+- Provides an XYZ `raster-dem` fallback with Terrarium encoding.
+- Useful for browser verification if PMTiles range requests fail or a PMTiles archive is unavailable.
+- Gives vmesh a simple open fallback pattern for other Terrarium-compatible providers.
+
+Research question:
+
+- Which terrain provider should be considered authoritative for public demos versus production deployments once attribution, update cadence, coverage, and reliability are reviewed?
