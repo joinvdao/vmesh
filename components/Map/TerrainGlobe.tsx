@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
-import { H3HexagonLayer } from "@deck.gl/geo-layers";
-import { MapboxOverlay } from "@deck.gl/mapbox";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Layer, PickingInfo } from "@deck.gl/core";
 import { cellToLatLng } from "h3-js";
-import maplibregl from "maplibre-gl";
+import type maplibregl from "maplibre-gl";
 
+import { buildH3Layer, layerOpacityForTier } from "@/components/Map/h3LayerFactory";
 import { MapControls } from "@/components/Map/MapControls";
 import { MeshLegend } from "@/components/Map/MeshLegend";
 import { MeshTooltip } from "@/components/Map/MeshTooltip";
 import { acquirePmtilesProtocol, isTerrainError } from "@/lib/mapLibreTerrainRuntime";
-import { getAntifragilityColor } from "@/lib/meshScoring";
 import {
   createLightBasemapStyle,
   getTerrainProviderCandidates,
@@ -19,76 +17,26 @@ import {
   TERRAIN_SOURCE_ID,
   toRasterDemSource
 } from "@/lib/terrainSources";
-import type { MeshTier, VmeshHexRecord } from "@/lib/vmeshTypes";
+import type { VmeshHexRecord } from "@/lib/vmeshTypes";
 import { useVmeshStore } from "@/store/useVmeshStore";
 
 type GlobeCapableMap = maplibregl.Map & {
   setProjection?: (projection: { type: "globe" }) => void;
 };
-
-function layerOpacityForTier(tier: MeshTier): number {
-  if (tier === "U3") return 120;
-  if (tier === "U8") return 185;
-  return 165;
-}
-
-function buildH3Layer({
-  id,
-  data,
-  selectedHexId,
-  opacity,
-  onHover,
-  onClick
-}: {
-  id: string;
-  data: VmeshHexRecord[];
-  selectedHexId: string;
-  opacity: number;
-  onHover: (info: PickingInfo<VmeshHexRecord>) => void;
-  onClick: (info: PickingInfo<VmeshHexRecord>) => void;
-}): Layer {
-  return new H3HexagonLayer<VmeshHexRecord>({
-    id,
-    data,
-    highPrecision: true,
-    pickable: true,
-    extruded: true,
-    coverage: 0.88,
-    elevationScale: 1,
-    getHexagon: (record) => record.h3Id,
-    getFillColor: (record) => {
-      const [r, g, b] = getAntifragilityColor(record.antifragilityScore);
-      return [r, g, b, record.h3Id === selectedHexId ? 230 : opacity];
-    },
-    getLineColor: (record) =>
-      record.h3Id === selectedHexId ? [255, 255, 255, 255] : [45, 151, 144, 170],
-    getLineWidth: (record) => (record.h3Id === selectedHexId ? 4 : 1),
-    getElevation: (record) => record.antifragilityScore * 10,
-    lineWidthMinPixels: 1,
-    lineWidthMaxPixels: 5,
-    material: {
-      ambient: 0.45,
-      diffuse: 0.6,
-      shininess: 24,
-      specularColor: [220, 255, 248]
-    },
-    onHover,
-    onClick,
-    updateTriggers: {
-      getFillColor: [selectedHexId, opacity],
-      getLineColor: [selectedHexId],
-      getLineWidth: [selectedHexId]
-    }
-  });
-}
+type H3HexagonLayerConstructor = typeof import("@deck.gl/geo-layers").H3HexagonLayer;
+type MapboxOverlayConstructor = typeof import("@deck.gl/mapbox").MapboxOverlay;
+type MapboxOverlayInstance = InstanceType<MapboxOverlayConstructor>;
 
 export function TerrainGlobe() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const overlayRef = useRef<MapboxOverlay | null>(null);
+  const overlayRef = useRef<MapboxOverlayInstance | null>(null);
   const layersRef = useRef<Layer[]>([]);
   const initialViewStateRef = useRef(useVmeshStore.getState().viewState);
   const previousSelectedHexRef = useRef(useVmeshStore.getState().selectedHexId);
+  const [h3LayerConstructor, setH3LayerConstructor] = useState<H3HexagonLayerConstructor | null>(
+    null
+  );
 
   const selectedTier = useVmeshStore((state) => state.selectedTier);
   const selectedHexId = useVmeshStore((state) => state.selectedHexId);
@@ -106,6 +54,8 @@ export function TerrainGlobe() {
   const setActiveTerrainProvider = useVmeshStore((state) => state.setActiveTerrainProvider);
 
   const layers = useMemo(() => {
+    if (!h3LayerConstructor) return [];
+
     const handleHover = (info: PickingInfo<VmeshHexRecord>) => {
       if (!info.object) {
         setHoveredHexInfo(null);
@@ -133,6 +83,7 @@ export function TerrainGlobe() {
           data: hexDataByTier.U3,
           selectedHexId,
           opacity: 96,
+          H3HexagonLayer: h3LayerConstructor,
           onHover: handleHover,
           onClick: handleClick
         })
@@ -147,6 +98,7 @@ export function TerrainGlobe() {
           data: activeData,
           selectedHexId,
           opacity: layerOpacityForTier(selectedTier),
+          H3HexagonLayer: h3LayerConstructor,
           onHover: handleHover,
           onClick: handleClick
         })
@@ -158,6 +110,7 @@ export function TerrainGlobe() {
     activeLayers.context,
     activeLayers.macro,
     hexDataByTier,
+    h3LayerConstructor,
     selectedHexId,
     selectedTier,
     selectHex,
@@ -175,6 +128,8 @@ export function TerrainGlobe() {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    let cancelled = false;
+    let releasePmtilesProtocol = () => {};
     const provider = selectTerrainProvider(terrainProviders, selectedTerrainProviderId);
     setMapStatus({
       map: "loading",
@@ -187,143 +142,190 @@ export function TerrainGlobe() {
       terrainProviders,
       selectedTerrainProviderId
     );
-    let releasePmtilesProtocol = () => {};
-    try {
-      releasePmtilesProtocol = terrainCandidates.some(
-        (candidate) => candidate.kind === "pmtiles-raster-dem"
-      )
-        ? acquirePmtilesProtocol()
-        : () => {};
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "PMTiles protocol registration failed";
-      setMapStatus({
-        map: "error",
-        terrain: "unavailable",
-        providerId: provider.id,
-        message
-      });
-      return;
-    }
 
-    let activeTerrainIndex = -1;
-    let triedAsyncFallback = false;
-    const initialViewState = initialViewStateRef.current;
-    let map: maplibregl.Map;
+    const initializeRenderer = async () => {
+      try {
+        const [{ default: mapLibre }, { MapboxOverlay }, { H3HexagonLayer }] = await Promise.all([
+          import("maplibre-gl"),
+          import("@deck.gl/mapbox"),
+          import("@deck.gl/geo-layers")
+        ]);
 
-    try {
-      map = new maplibregl.Map({
-        container: containerRef.current,
-        style: createLightBasemapStyle(),
-        center: [initialViewState.longitude, initialViewState.latitude],
-        zoom: initialViewState.zoom,
-        pitch: initialViewState.pitch,
-        bearing: initialViewState.bearing,
-        attributionControl: false,
-        antialias: true,
-        renderWorldCopies: false
-      });
-    } catch (error) {
-      releasePmtilesProtocol();
-      const message = error instanceof Error ? error.message : "MapLibre failed to initialize";
-      setMapStatus({
-        map: "error",
-        terrain: "unavailable",
-        providerId: provider.id,
-        message
-      });
-      return;
-    }
+        if (cancelled || !containerRef.current) return;
 
-    mapRef.current = map;
+        setH3LayerConstructor(() => H3HexagonLayer);
 
-    const globeMap = map as GlobeCapableMap;
-    globeMap.setProjection?.({ type: "globe" });
+        releasePmtilesProtocol = terrainCandidates.some(
+          (candidate) => candidate.kind === "pmtiles-raster-dem"
+        )
+          ? acquirePmtilesProtocol(mapLibre)
+          : () => {};
 
-    const clearTerrainSource = () => {
-      if (map.getSource(TERRAIN_SOURCE_ID)) {
-        map.setTerrain(null);
-        map.removeSource(TERRAIN_SOURCE_ID);
+        let activeTerrainIndex = -1;
+        let triedAsyncFallback = false;
+        const initialViewState = initialViewStateRef.current;
+        const map = new mapLibre.Map({
+          container: containerRef.current,
+          style: createLightBasemapStyle(),
+          center: [initialViewState.longitude, initialViewState.latitude],
+          zoom: initialViewState.zoom,
+          pitch: initialViewState.pitch,
+          bearing: initialViewState.bearing,
+          attributionControl: false,
+          antialias: true,
+          renderWorldCopies: false
+        });
+
+        mapRef.current = map;
+
+        const globeMap = map as GlobeCapableMap;
+        globeMap.setProjection?.({ type: "globe" });
+
+        const clearTerrainSource = () => {
+          if (map.getSource(TERRAIN_SOURCE_ID)) {
+            map.setTerrain(null);
+            map.removeSource(TERRAIN_SOURCE_ID);
+          }
+        };
+
+        const applyTerrainCandidate = (startIndex: number, fallbackReason?: string): boolean => {
+          for (let index = startIndex; index < terrainCandidates.length; index += 1) {
+            const candidate = terrainCandidates[index];
+            const source = toRasterDemSource(candidate);
+            if (!source) continue;
+
+            try {
+              clearTerrainSource();
+              map.addSource(TERRAIN_SOURCE_ID, source);
+              map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: 1.5 });
+              activeTerrainIndex = index;
+
+              const status =
+                candidate.status === "fallback" || index > 0 || fallbackReason
+                  ? "fallback"
+                  : "active";
+              const message = fallbackReason
+                ? `${candidate.label} terrain fallback after ${fallbackReason}`
+                : `${candidate.label} terrain active`;
+
+              setActiveTerrainProvider(candidate.id, message);
+              setTerrainStatus(status, message);
+              return true;
+            } catch (error) {
+              const message = error instanceof Error ? error.message : "Terrain source failed";
+              setTerrainStatus("fallback", `${candidate.label} failed: ${message}`);
+            }
+          }
+
+          setTerrainStatus("unavailable", "No map-ready terrain provider is currently available");
+          return false;
+        };
+
+        let didAttachOverlay = false;
+        let didAttachTerrain = false;
+        let terrainRetries = 0;
+        let terrainRetryTimer: number | undefined;
+
+        const attachOverlay = () => {
+          if (didAttachOverlay) return;
+          didAttachOverlay = true;
+          setMapStatus({
+            map: "active",
+            providerId: provider.id,
+            message: "Globe ready"
+          });
+
+          const overlay = new MapboxOverlay({
+            interleaved: false,
+            layers: layersRef.current
+          });
+          overlayRef.current = overlay;
+          map.addControl(overlay as unknown as maplibregl.IControl);
+        };
+
+        const tryAttachTerrain = () => {
+          if (didAttachTerrain) return;
+
+          if (!map.isStyleLoaded()) {
+            if (terrainRetries < 20) {
+              terrainRetries += 1;
+              terrainRetryTimer = window.setTimeout(tryAttachTerrain, 500);
+              return;
+            }
+
+            setTerrainStatus("fallback", "Map style is still loading; terrain is deferred");
+            return;
+          }
+
+          didAttachTerrain = true;
+          applyTerrainCandidate(0);
+        };
+
+        const onStyleReady = () => {
+          attachOverlay();
+          tryAttachTerrain();
+        };
+
+        if (map.isStyleLoaded()) {
+          onStyleReady();
+        } else {
+          map.once("styledata", onStyleReady);
+          map.once("style.load", onStyleReady);
+          window.setTimeout(() => {
+            attachOverlay();
+            tryAttachTerrain();
+          }, 2500);
+        }
+
+        map.on("moveend", () => {
+          const center = map.getCenter();
+          setViewState({
+            longitude: center.lng,
+            latitude: center.lat,
+            zoom: map.getZoom(),
+            pitch: map.getPitch(),
+            bearing: map.getBearing()
+          });
+        });
+
+        map.on("error", (event) => {
+          const message = event.error?.message ?? "Map renderer reported an error";
+          const activeProvider = terrainCandidates[activeTerrainIndex];
+
+          if (!triedAsyncFallback && isTerrainError(activeProvider, message)) {
+            triedAsyncFallback = true;
+            if (applyTerrainCandidate(activeTerrainIndex + 1, message)) {
+              return;
+            }
+          }
+
+          setMapStatus({ map: "error", message });
+        });
+
+        map.once("remove", () => {
+          if (terrainRetryTimer !== undefined) {
+            window.clearTimeout(terrainRetryTimer);
+          }
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "WebGL renderer failed to initialize";
+        setMapStatus({
+          map: "error",
+          terrain: "unavailable",
+          providerId: provider.id,
+          message
+        });
       }
     };
 
-    const applyTerrainCandidate = (startIndex: number, fallbackReason?: string): boolean => {
-      for (let index = startIndex; index < terrainCandidates.length; index += 1) {
-        const candidate = terrainCandidates[index];
-        const source = toRasterDemSource(candidate);
-        if (!source) continue;
-
-        try {
-          clearTerrainSource();
-          map.addSource(TERRAIN_SOURCE_ID, source);
-          map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: 1.5 });
-          activeTerrainIndex = index;
-
-          const status =
-            candidate.status === "fallback" || index > 0 || fallbackReason ? "fallback" : "active";
-          const message = fallbackReason
-            ? `${candidate.label} terrain fallback after ${fallbackReason}`
-            : `${candidate.label} terrain active`;
-
-          setActiveTerrainProvider(candidate.id, message);
-          setTerrainStatus(status, message);
-          return true;
-        } catch (error) {
-          const message = error instanceof Error ? error.message : "Terrain source failed";
-          setTerrainStatus("fallback", `${candidate.label} failed: ${message}`);
-        }
-      }
-
-      setTerrainStatus("unavailable", "No map-ready terrain provider is currently available");
-      return false;
-    };
-
-    map.on("load", () => {
-      setMapStatus({
-        map: "active",
-        providerId: provider.id,
-        message: "Globe ready"
-      });
-
-      applyTerrainCandidate(0);
-
-      const overlay = new MapboxOverlay({
-        interleaved: false,
-        layers: layersRef.current
-      });
-      overlayRef.current = overlay;
-      map.addControl(overlay as unknown as maplibregl.IControl);
-    });
-
-    map.on("moveend", () => {
-      const center = map.getCenter();
-      setViewState({
-        longitude: center.lng,
-        latitude: center.lat,
-        zoom: map.getZoom(),
-        pitch: map.getPitch(),
-        bearing: map.getBearing()
-      });
-    });
-
-    map.on("error", (event) => {
-      const message = event.error?.message ?? "Map renderer reported an error";
-      const activeProvider = terrainCandidates[activeTerrainIndex];
-
-      if (!triedAsyncFallback && isTerrainError(activeProvider, message)) {
-        triedAsyncFallback = true;
-        if (applyTerrainCandidate(activeTerrainIndex + 1, message)) {
-          return;
-        }
-      }
-
-      setMapStatus({ map: "error", message });
-    });
+    void initializeRenderer();
 
     return () => {
+      cancelled = true;
       overlayRef.current?.finalize();
       overlayRef.current = null;
-      map.remove();
+      mapRef.current?.remove();
       releasePmtilesProtocol();
       mapRef.current = null;
     };

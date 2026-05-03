@@ -1,26 +1,13 @@
 "use client";
 
-import dynamic from "next/dynamic";
-
 import { AppFooter } from "@/components/Layout/AppFooter";
 import { AppHeader } from "@/components/Layout/AppHeader";
 import { AppSidebar } from "@/components/Layout/AppSidebar";
+import { TerrainGlobe } from "@/components/Map/TerrainGlobe";
 import { BottomAnalytics } from "@/components/Panels/BottomAnalytics";
 import { LayerScaleControl } from "@/components/Panels/LayerScaleControl";
 import { SelectedHexCard } from "@/components/Panels/SelectedHexCard";
 import { UserDataPanel } from "@/components/Panels/UserDataPanel";
-
-const TerrainGlobe = dynamic(
-  () => import("@/components/Map/TerrainGlobe").then((mod) => mod.TerrainGlobe),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-full w-full items-center justify-center bg-[#f7faf9] text-sm text-[#6f7d88]">
-        Initializing geospatial canvas...
-      </div>
-    )
-  }
-);
 
 export function AppShell() {
   return (

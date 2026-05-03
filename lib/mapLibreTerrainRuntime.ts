@@ -1,4 +1,4 @@
-import maplibregl from "maplibre-gl";
+import type maplibregl from "maplibre-gl";
 import { Protocol } from "pmtiles";
 
 import type { TerrainProviderConfig } from "@/lib/vmeshTypes";
@@ -6,11 +6,11 @@ import type { TerrainProviderConfig } from "@/lib/vmeshTypes";
 let pmtilesProtocol: Protocol | null = null;
 let pmtilesProtocolReferences = 0;
 
-export function acquirePmtilesProtocol(): () => void {
+export function acquirePmtilesProtocol(mapLibre: typeof maplibregl): () => void {
   if (!pmtilesProtocol) {
     pmtilesProtocol = new Protocol({ metadata: true });
     try {
-      maplibregl.addProtocol("pmtiles", pmtilesProtocol.tile);
+      mapLibre.addProtocol("pmtiles", pmtilesProtocol.tile);
     } catch (error) {
       const message = error instanceof Error ? error.message.toLowerCase() : "";
       if (!message.includes("already")) {
@@ -25,7 +25,7 @@ export function acquirePmtilesProtocol(): () => void {
     pmtilesProtocolReferences = Math.max(0, pmtilesProtocolReferences - 1);
     if (pmtilesProtocolReferences === 0) {
       try {
-        maplibregl.removeProtocol("pmtiles");
+        mapLibre.removeProtocol("pmtiles");
       } catch {
         // MapLibre may already have cleared protocols during hot reload.
       }
