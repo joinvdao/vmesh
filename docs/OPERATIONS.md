@@ -59,6 +59,39 @@ V1 terrain selection is registry-driven:
 
 Do not add paid terrain APIs, secret-bearing URLs, or live ingestion jobs without adding provider metadata, tests, license notes, cost controls, and fallback behavior.
 
+## Resilient Comms Operations
+
+Reticulum is the main disaster-mode communications stack for vmesh. The web app should connect to a local bridge service rather than opening radio/network interfaces directly from the browser.
+
+Planned local topology:
+
+```text
+vmesh browser
+  -> localhost comms bridge
+    -> Reticulum / RNS daemon or library instance
+    -> LXMF router
+    -> optional Meshtastic bridge
+```
+
+Operational defaults:
+
+- Start with a mock comms provider in V1 UI work.
+- Add a local Reticulum bridge before any live disaster-comms features.
+- Keep Reticulum identity files, RNS config, private keys, and peer/contact books out of Git.
+- Treat Meshtastic as a bridge into an existing LoRa mesh, not as the primary vmesh network.
+- Keep all over-the-air payloads short, typed, rate-limited, and auditable.
+- Never claim guaranteed delivery; expose queued, sent, delivered, acknowledged, expired, and failed states.
+- Store incoming mesh reports with source, timestamp, confidence, and trust label.
+
+Meshtastic bridge operations:
+
+- A local Meshtastic node or gateway is required to reach the Meshtastic LoRa network.
+- Public MQTT is acceptable for demos and connected scenarios, but it is not the disaster-primary path.
+- Private MQTT or local gateway deployments must document channel, PSK, traffic filters, rate limits, and operator responsibility.
+- Meshtastic location payloads must use explicit precision controls and avoid unnecessary exact-location broadcast.
+
+Do not transmit real emergency, medical, location, identity, or contact information through a live mesh integration until privacy, consent, retention, rate limiting, and operator procedures are documented and reviewed.
+
 ## Data Operations
 
 The V1 app distinguishes:
@@ -84,6 +117,8 @@ Every future ingestion path must document source, license/terms, update cadence,
 
 - Basemap outage: show renderer error state and keep DOM panels usable.
 - Terrain outage: degrade to globe/basemap without elevation and show provider status.
+- Reticulum bridge outage: keep local app usable, queue outbound messages, and show bridge unavailable.
+- Meshtastic bridge outage: keep Reticulum active where available and mark Meshtastic interoperability unavailable.
 - Macro data outage: mark affected layers unavailable and preserve cached/mock fallback where allowed.
 - Micro data outage: mark affected local asset layers unavailable and do not fabricate records.
 - Analytics outage: queue or drop non-critical telemetry without blocking UI.

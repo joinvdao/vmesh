@@ -46,6 +46,13 @@ Data model
 Analytics
   Recharts panels
   derived mesh metrics
+
+Resilient comms
+  local bridge service
+  Reticulum/RNS primary stack
+  LXMF message router
+  Meshtastic bridge provider
+  offline outbox and delivery state
 ```
 
 ## Data Flow
@@ -54,6 +61,8 @@ MapLibre owns the basemap, terrain, and camera. deck.gl attaches through `Mapbox
 
 App-pulled datasets should enter through typed provider adapters. User-added data enters through explicit local state actions with provenance, confidence, timestamp, and private-local visibility.
 
+Resilient communications should enter through a local bridge, not directly through browser-only code. The browser app sends small structured disaster messages to the local bridge over a localhost HTTP/WebSocket API. The bridge owns Reticulum identity, RNS daemon/process configuration, LXMF routing, peer discovery, delivery receipts, and optional Meshtastic bridge access. Received mesh reports are normalized into typed vmesh records with source, timestamp, confidence, and delivery metadata before they touch the UI.
+
 ## Public Contracts
 
 - `MeshTier`: `U3`, `U5`, and `U8`, mapped to H3 resolutions 3, 5, and 8.
@@ -61,6 +70,9 @@ App-pulled datasets should enter through typed provider adapters. User-added dat
 - `TerrainProviderStatus`: `idle`, `loading`, `active`, `fallback`, `unavailable`, or `error`.
 - `VmeshHexRecord`: H3 ID, tier, resolution, place, antifragility score, macro pillars, micro summary, user summary, provenance, confidence, and trend series.
 - `UserRecord`: category, title, attached H3 ID, private-local visibility, provenance, confidence, and timestamps.
+- `ResilientCommsProvider`: transport abstraction for Reticulum, Meshtastic bridge, and mock disaster-comms providers.
+- `VmeshDisasterMessage`: compact typed payload for check-ins, H3 cell status, hazards, needs/offers, resource reports, relay notes, and position beacons.
+- `DeliveryState`: `draft`, `queued`, `sent-to-bridge`, `sent-to-network`, `delivered`, `acknowledged`, `expired`, or `failed`.
 
 ## Mesh Tiers
 
@@ -117,6 +129,43 @@ The renderer registers `pmtiles://` with MapLibre once, normalizes provider conf
 
 V1 uses committed mock/prepopulated data and local/mock user-added records only. Real persistence is out of scope until account identity, ownership, moderation, retention, deletion, export, and sharing rules are defined.
 
+## Resilient Communications Architecture
+
+Reticulum is the primary communications stack for vmesh disaster mode. vmesh should run a small local bridge service beside the web app on a laptop, Raspberry Pi, home server, field kit, or community base station.
+
+```text
+vmesh web app
+  -> localhost comms bridge
+    -> Reticulum / RNS
+      -> LXMF router and delivery receipts
+      -> TCP/UDP/LAN/internet interfaces
+      -> LoRa/RNode/serial/radio interfaces where configured
+    -> Meshtastic bridge provider
+      -> local Meshtastic node over serial/BLE/TCP/MQTT
+      -> existing Meshtastic LoRa mesh users and gateways
+```
+
+The Reticulum bridge is responsible for:
+
+- Loading or creating the local Reticulum identity.
+- Managing RNS configuration and local interfaces.
+- Sending and receiving LXMF messages.
+- Maintaining outbound queues and delivery receipts.
+- Tracking peer/contact trust labels.
+- Reporting interface health, reachable peers, and propagation-node status.
+- Exposing a narrow localhost API to vmesh.
+
+The Meshtastic bridge is secondary. It should translate selected compact vmesh disaster messages into Meshtastic-safe packets and import Meshtastic messages as low-bandwidth field reports. It should not become the canonical state store, identity layer, or primary transport abstraction. Meshtastic payloads must remain short and conservative because LoRa mesh capacity is limited.
+
+The first implementation should provide:
+
+- `mock-disaster-comms` provider for UI and tests.
+- `reticulum-bridge` provider shape and local API contract.
+- `meshtastic-bridge` provider shape and limitations.
+- Offline outbox in local state/storage.
+- Comms status surface in footer or map status layer.
+- H3-attached incoming reports with provenance and confidence.
+
 ## Architecture Decisions
 
 - Use MapLibre rather than Mapbox GL to keep the base engine open-source.
@@ -124,3 +173,5 @@ V1 uses committed mock/prepopulated data and local/mock user-added records only.
 - Use H3 as the stable mesh index for aggregation and interaction.
 - Keep user-added data separate from app-pulled data in the type system.
 - Keep charts in React DOM rather than WebGL to preserve accessibility and layout control.
+- Use Reticulum as the primary resilient network substrate for disaster mode.
+- Treat Meshtastic as an interoperability bridge into LoRa mesh networks, not as the main vmesh networking stack.
