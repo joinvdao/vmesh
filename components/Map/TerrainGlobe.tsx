@@ -5,6 +5,7 @@ import type { Layer, PickingInfo } from "@deck.gl/core";
 import { cellToLatLng } from "h3-js";
 import type maplibregl from "maplibre-gl";
 
+import { EarthGlobeFallback } from "@/components/Map/EarthGlobeFallback";
 import { buildH3Layer, layerOpacityForTier } from "@/components/Map/h3LayerFactory";
 import { MapControls } from "@/components/Map/MapControls";
 import { MeshLegend } from "@/components/Map/MeshLegend";
@@ -41,6 +42,7 @@ export function TerrainGlobe() {
   const selectedTier = useVmeshStore((state) => state.selectedTier);
   const selectedHexId = useVmeshStore((state) => state.selectedHexId);
   const selectedHexDetails = useVmeshStore((state) => state.selectedHexDetails);
+  const flyToRequest = useVmeshStore((state) => state.flyToRequest);
   const activeLayers = useVmeshStore((state) => state.activeLayers);
   const hexDataByTier = useVmeshStore((state) => state.hexDataByTier);
   const terrainProviders = useVmeshStore((state) => state.terrainProviders);
@@ -362,21 +364,35 @@ export function TerrainGlobe() {
     });
   }, [selectedHexDetails]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !flyToRequest) return;
+
+    map.flyTo({
+      center: [flyToRequest.longitude, flyToRequest.latitude],
+      zoom: flyToRequest.zoom,
+      pitch: 42,
+      bearing: -18,
+      duration: 2400,
+      essential: true
+    });
+  }, [flyToRequest]);
+
   return (
     <div className="absolute inset-0 overflow-hidden bg-[#f3f8f7]">
       <div className="absolute inset-0 bg-[linear-gradient(#e9f1ef_1px,transparent_1px),linear-gradient(90deg,#e9f1ef_1px,transparent_1px)] bg-[size:52px_52px] opacity-70" />
       <div className="pointer-events-none absolute left-1/2 top-[42%] h-[min(78vw,980px)] w-[min(78vw,980px)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#dbecea] shadow-[inset_-80px_-70px_120px_rgba(22,73,79,0.18),0_34px_80px_rgba(46,91,96,0.16)]" />
       <div className="absolute left-1/2 top-[42%] h-[min(78vw,980px)] w-[min(78vw,980px)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border border-[#d6e8e4] bg-[#ecf5f3] shadow-[0_30px_90px_rgba(40,78,83,0.16)]">
-        <div ref={containerRef} className="h-full w-full" />
-        <div className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_25%,rgba(255,255,255,0.4),transparent_35%),radial-gradient(circle_at_72%_70%,rgba(21,91,99,0.2),transparent_35%)]" />
+        <EarthGlobeFallback />
+        <div
+          ref={containerRef}
+          className="relative z-10 h-full w-full opacity-80 mix-blend-multiply"
+        />
+        <div className="pointer-events-none absolute inset-0 z-20 rounded-full bg-[radial-gradient(circle_at_35%_25%,rgba(255,255,255,0.36),transparent_35%),radial-gradient(circle_at_72%_70%,rgba(21,91,99,0.24),transparent_35%)]" />
       </div>
       <MapControls />
       <MeshLegend />
       <MeshTooltip />
-      <div className="absolute left-[42%] top-[23%] z-20 hidden rounded-[8px] border border-[#dfe8e6] bg-white/95 p-3 text-xs text-[#52616f] shadow-lg backdrop-blur lg:block">
-        <div className="font-mono text-[11px] text-[#24323f]">{selectedHexId}</div>
-        <div className="mt-1">Selected vmesh cell</div>
-      </div>
     </div>
   );
 }

@@ -33,4 +33,19 @@ describe("vmesh store", () => {
     expect(useVmeshStore.getState().userRecords.length).toBe(before + 1);
     expect(useVmeshStore.getState().userRecords[0].visibility).toBe("private-local");
   });
+
+  it("creates a fly-to request and updates the camera target", () => {
+    useVmeshStore.getState().flyToLocation({
+      longitude: -0.1276,
+      latitude: 51.5072,
+      zoom: 9,
+      label: "London"
+    });
+
+    const state = useVmeshStore.getState();
+    expect(state.flyToRequest?.label).toBe("London");
+    expect(state.viewState.longitude).toBeCloseTo(-0.1276);
+    expect(state.viewState.latitude).toBeCloseTo(51.5072);
+    expect(state.viewState.zoom).toBe(9);
+  });
 });

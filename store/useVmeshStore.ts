@@ -15,6 +15,7 @@ import type {
   ActiveLayers,
   DraftUserRecord,
   HoveredHexInfo,
+  MapFlyToRequest,
   MapStatus,
   MeshTier,
   MeshTierDefinition,
@@ -43,7 +44,9 @@ export interface VmeshStore {
   terrainProviders: TerrainProviderConfig[];
   selectedTerrainProviderId: string;
   dataFreshness: string;
+  flyToRequest: MapFlyToRequest | null;
   setViewState: (viewState: Partial<ViewState>) => void;
+  flyToLocation: (location: Omit<MapFlyToRequest, "id">) => void;
   selectHex: (h3Id: string, tier?: MeshTier) => void;
   setHoveredHexInfo: (hoveredHexInfo: HoveredHexInfo | null) => void;
   setSelectedTier: (tier: MeshTier) => void;
@@ -124,9 +127,25 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
   terrainProviders,
   selectedTerrainProviderId: selectedProvider.id,
   dataFreshness: "15m ago",
+  flyToRequest: null,
   setViewState: (viewState) =>
     set((state) => ({
       viewState: { ...state.viewState, ...viewState }
+    })),
+  flyToLocation: (location) =>
+    set((state) => ({
+      flyToRequest: {
+        ...location,
+        id: (state.flyToRequest?.id ?? 0) + 1
+      },
+      viewState: {
+        ...state.viewState,
+        longitude: location.longitude,
+        latitude: location.latitude,
+        zoom: location.zoom,
+        pitch: 42,
+        bearing: -18
+      }
     })),
   selectHex: (h3Id, tier) =>
     set((state) => {
