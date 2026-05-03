@@ -50,8 +50,12 @@ Expected first viewport:
 V1 terrain selection is registry-driven:
 
 1. Use `NEXT_PUBLIC_TERRAIN_TILEJSON_URL` when configured.
-2. Fall back to the no-token demo raster-dem provider.
-3. Keep the globe shell nonblank and report provider status if terrain is unavailable.
+2. Use Mapterhorn PMTiles terrain from `NEXT_PUBLIC_MAPTERHORN_PMTILES_URL`, defaulting to `https://download.mapterhorn.com/planet.pmtiles`.
+3. Fall back to Mapzen/Joerd Terrarium XYZ tiles from `NEXT_PUBLIC_MAPZEN_TERRARIUM_URL`, defaulting to `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png`.
+4. Fall back to the no-token MapLibre demo raster-dem provider.
+5. Keep the globe shell nonblank and report provider status if terrain is unavailable.
+
+`NEXT_PUBLIC_TERRAIN_PROVIDER` may prefer `mapterhorn-pmtiles`, `mapzen-joerd-terrarium`, or `maplibre-demo-dem`, but the env TileJSON provider still has highest priority. PMTiles terrain is loaded through the browser `pmtiles://` protocol and must remain token-free unless a future deployment explicitly adds cost and access controls.
 
 Do not add paid terrain APIs, secret-bearing URLs, or live ingestion jobs without adding provider metadata, tests, license notes, cost controls, and fallback behavior.
 

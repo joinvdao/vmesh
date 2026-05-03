@@ -47,6 +47,7 @@ export interface TerrainProviderConfig {
   resolution: string;
   status: TerrainProviderAvailability;
   sourceUrl: string;
+  priority: number;
   notes: string;
 }
 

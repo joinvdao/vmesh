@@ -10,9 +10,11 @@ import maplibregl from "maplibre-gl";
 import { MapControls } from "@/components/Map/MapControls";
 import { MeshLegend } from "@/components/Map/MeshLegend";
 import { MeshTooltip } from "@/components/Map/MeshTooltip";
+import { acquirePmtilesProtocol, isTerrainError } from "@/lib/mapLibreTerrainRuntime";
 import { getAntifragilityColor } from "@/lib/meshScoring";
 import {
   createLightBasemapStyle,
+  getTerrainProviderCandidates,
   selectTerrainProvider,
   TERRAIN_SOURCE_ID,
   toRasterDemSource
@@ -94,12 +96,14 @@ export function TerrainGlobe() {
   const activeLayers = useVmeshStore((state) => state.activeLayers);
   const hexDataByTier = useVmeshStore((state) => state.hexDataByTier);
   const terrainProviders = useVmeshStore((state) => state.terrainProviders);
+  const selectedTerrainProviderId = useVmeshStore((state) => state.selectedTerrainProviderId);
   const selectHex = useVmeshStore((state) => state.selectHex);
   const setHoveredHexInfo = useVmeshStore((state) => state.setHoveredHexInfo);
   const setVisibleHexCount = useVmeshStore((state) => state.setVisibleHexCount);
   const setViewState = useVmeshStore((state) => state.setViewState);
   const setMapStatus = useVmeshStore((state) => state.setMapStatus);
   const setTerrainStatus = useVmeshStore((state) => state.setTerrainStatus);
+  const setActiveTerrainProvider = useVmeshStore((state) => state.setActiveTerrainProvider);
 
   const layers = useMemo(() => {
     const handleHover = (info: PickingInfo<VmeshHexRecord>) => {
@@ -171,21 +175,7 @@ export function TerrainGlobe() {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const provider = selectTerrainProvider(terrainProviders);
-    const initialViewState = initialViewStateRef.current;
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: createLightBasemapStyle(),
-      center: [initialViewState.longitude, initialViewState.latitude],
-      zoom: initialViewState.zoom,
-      pitch: initialViewState.pitch,
-      bearing: initialViewState.bearing,
-      attributionControl: false,
-      antialias: true,
-      renderWorldCopies: false
-    });
-
-    mapRef.current = map;
+    const provider = selectTerrainProvider(terrainProviders, selectedTerrainProviderId);
     setMapStatus({
       map: "loading",
       terrain: "loading",
@@ -193,8 +183,100 @@ export function TerrainGlobe() {
       message: "Initializing globe canvas"
     });
 
+    const terrainCandidates = getTerrainProviderCandidates(
+      terrainProviders,
+      selectedTerrainProviderId
+    );
+    let releasePmtilesProtocol = () => {};
+    try {
+      releasePmtilesProtocol = terrainCandidates.some(
+        (candidate) => candidate.kind === "pmtiles-raster-dem"
+      )
+        ? acquirePmtilesProtocol()
+        : () => {};
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "PMTiles protocol registration failed";
+      setMapStatus({
+        map: "error",
+        terrain: "unavailable",
+        providerId: provider.id,
+        message
+      });
+      return;
+    }
+
+    let activeTerrainIndex = -1;
+    let triedAsyncFallback = false;
+    const initialViewState = initialViewStateRef.current;
+    let map: maplibregl.Map;
+
+    try {
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style: createLightBasemapStyle(),
+        center: [initialViewState.longitude, initialViewState.latitude],
+        zoom: initialViewState.zoom,
+        pitch: initialViewState.pitch,
+        bearing: initialViewState.bearing,
+        attributionControl: false,
+        antialias: true,
+        renderWorldCopies: false
+      });
+    } catch (error) {
+      releasePmtilesProtocol();
+      const message = error instanceof Error ? error.message : "MapLibre failed to initialize";
+      setMapStatus({
+        map: "error",
+        terrain: "unavailable",
+        providerId: provider.id,
+        message
+      });
+      return;
+    }
+
+    mapRef.current = map;
+
     const globeMap = map as GlobeCapableMap;
     globeMap.setProjection?.({ type: "globe" });
+
+    const clearTerrainSource = () => {
+      if (map.getSource(TERRAIN_SOURCE_ID)) {
+        map.setTerrain(null);
+        map.removeSource(TERRAIN_SOURCE_ID);
+      }
+    };
+
+    const applyTerrainCandidate = (startIndex: number, fallbackReason?: string): boolean => {
+      for (let index = startIndex; index < terrainCandidates.length; index += 1) {
+        const candidate = terrainCandidates[index];
+        const source = toRasterDemSource(candidate);
+        if (!source) continue;
+
+        try {
+          clearTerrainSource();
+          map.addSource(TERRAIN_SOURCE_ID, source);
+          map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: 1.5 });
+          activeTerrainIndex = index;
+
+          const status =
+            candidate.status === "fallback" || index > 0 || fallbackReason ? "fallback" : "active";
+          const message = fallbackReason
+            ? `${candidate.label} terrain fallback after ${fallbackReason}`
+            : `${candidate.label} terrain active`;
+
+          setActiveTerrainProvider(candidate.id, message);
+          setTerrainStatus(status, message);
+          return true;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Terrain source failed";
+          setTerrainStatus("fallback", `${candidate.label} failed: ${message}`);
+        }
+      }
+
+      setTerrainStatus("unavailable", "No map-ready terrain provider is currently available");
+      return false;
+    };
 
     map.on("load", () => {
       setMapStatus({
@@ -203,26 +285,7 @@ export function TerrainGlobe() {
         message: "Globe ready"
       });
 
-      const source = toRasterDemSource(provider);
-      if (source) {
-        try {
-          if (!map.getSource(TERRAIN_SOURCE_ID)) {
-            map.addSource(TERRAIN_SOURCE_ID, source);
-          }
-          map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: 1.5 });
-          setTerrainStatus(
-            provider.status === "fallback" ? "fallback" : "active",
-            `${provider.label} terrain active`
-          );
-        } catch (error) {
-          setTerrainStatus(
-            "fallback",
-            error instanceof Error ? error.message : "Terrain failed; basemap remains active"
-          );
-        }
-      } else {
-        setTerrainStatus("unavailable", `${provider.label} is cataloged but not map-ready in V1`);
-      }
+      applyTerrainCandidate(0);
 
       const overlay = new MapboxOverlay({
         interleaved: false,
@@ -245,6 +308,15 @@ export function TerrainGlobe() {
 
     map.on("error", (event) => {
       const message = event.error?.message ?? "Map renderer reported an error";
+      const activeProvider = terrainCandidates[activeTerrainIndex];
+
+      if (!triedAsyncFallback && isTerrainError(activeProvider, message)) {
+        triedAsyncFallback = true;
+        if (applyTerrainCandidate(activeTerrainIndex + 1, message)) {
+          return;
+        }
+      }
+
       setMapStatus({ map: "error", message });
     });
 
@@ -252,9 +324,17 @@ export function TerrainGlobe() {
       overlayRef.current?.finalize();
       overlayRef.current = null;
       map.remove();
+      releasePmtilesProtocol();
       mapRef.current = null;
     };
-  }, [setMapStatus, setTerrainStatus, setViewState, terrainProviders]);
+  }, [
+    selectedTerrainProviderId,
+    setActiveTerrainProvider,
+    setMapStatus,
+    setTerrainStatus,
+    setViewState,
+    terrainProviders
+  ]);
 
   useEffect(() => {
     layersRef.current = layers;

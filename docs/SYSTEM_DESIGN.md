@@ -78,32 +78,37 @@ App-pulled datasets should enter through typed provider adapters. User-added dat
 
 V1 provider kinds:
 
-| Kind                  | V1 behavior                                                    |
-| --------------------- | -------------------------------------------------------------- |
-| `raster-dem-tilejson` | Map-ready; supports env-configured TileJSON and demo fallback. |
-| `raster-dem-xyz`      | Map-ready when selected; supports Terrarium-style XYZ tiles.   |
-| `pmtiles-raster-dem`  | Future Mapterhorn/PMTiles path; needs PMTiles protocol setup.  |
-| `api-dem`             | Future OpenTopography-style clipped DEM API path.              |
-| `dataset-dem`         | Future CUDEM/FABDEM preprocessing path.                        |
-| `stac-catalog`        | Future terrain catalog discovery path.                         |
+| Kind                  | V1 behavior                                                        |
+| --------------------- | ------------------------------------------------------------------ |
+| `raster-dem-tilejson` | Map-ready; supports env-configured TileJSON and demo fallback.     |
+| `raster-dem-xyz`      | Map-ready when selected; supports Terrarium-style XYZ tiles.       |
+| `pmtiles-raster-dem`  | Map-ready Mapterhorn/PMTiles terrain through the PMTiles protocol. |
+| `api-dem`             | Future OpenTopography-style clipped DEM API path.                  |
+| `dataset-dem`         | Future CUDEM/FABDEM preprocessing path.                            |
+| `stac-catalog`        | Future terrain catalog discovery path.                             |
 
 Default provider order:
 
 1. `NEXT_PUBLIC_TERRAIN_TILEJSON_URL` env provider when configured.
-2. No-token MapLibre demo terrain fallback.
-3. Nonblank globe surface and footer/provider status if terrain is unavailable or fails.
+2. Mapterhorn PMTiles terrain at `https://download.mapterhorn.com/planet.pmtiles`.
+3. Mapzen/Joerd Terrarium XYZ terrain at `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png`.
+4. MapLibre demo terrain as a final browser-verification fallback.
+5. Nonblank globe surface and footer/provider status if terrain is unavailable or fails.
+
+The renderer registers `pmtiles://` with MapLibre once, normalizes provider configs into `raster-dem` sources, and attempts map-ready terrain providers in order. A tile/setup failure degrades to the next candidate without blocking the basemap, H3 mesh, or DOM panels.
 
 ## Licensing Gates
 
 - FABDEM is marked `requires-license` because its public release is non-commercial unless separately licensed.
 - CUDEM is marked `preprocessing-required` and should become map-ready only after tiling/COG/PMTiles processing.
 - OpenTopography is marked `requires-api-key` and is not called in V1.
-- Mapterhorn is modeled as a first-class future `pmtiles-raster-dem` provider; live use requires protocol registration and attribution review.
+- Mapterhorn is the primary V1 open terrain provider; attribution and upstream dataset notices must remain visible in release notes and production docs.
 - No paid APIs, secret tokens, or real ingestion jobs run in V1.
 
 ## Fallback Behavior
 
 - If terrain tiles fail, the globe shell, basemap, H3 overlay, and DOM panels remain usable.
+- If the primary terrain provider fails during setup or tile loading, the renderer attempts the next map-ready candidate and updates Zustand/footer status.
 - If the terrain provider is not map-ready, the footer reports `unavailable` with the provider message.
 - If the map reports renderer errors, Zustand stores a visible status message.
 - If user-added data cannot be persisted, it remains local/mock by design.
