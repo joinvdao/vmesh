@@ -17,7 +17,7 @@ export function AppFooter() {
   const viewState = useVmeshStore((state) => state.viewState);
 
   return (
-    <footer className="absolute bottom-0 left-64 right-0 z-40 flex h-10 items-center justify-between border-t border-[#dfe8e6] bg-white/95 px-5 text-[11px] text-[#6f7d88] backdrop-blur">
+    <footer className="absolute bottom-0 left-20 right-0 z-40 flex h-10 items-center justify-between border-t border-[#dfe8e6] bg-white/90 px-5 text-[11px] text-[#6f7d88] backdrop-blur">
       <div className="flex items-center gap-5">
         <span className="flex items-center gap-2">
           <Hexagon className="h-4 w-4 text-[#2f9b93]" />
