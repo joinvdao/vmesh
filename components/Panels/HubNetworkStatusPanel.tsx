@@ -1,12 +1,14 @@
 "use client";
 
-import { Bot, Radio, Router } from "lucide-react";
+import { Bot, Radio, Router, X } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useVmeshStore } from "@/store/useVmeshStore";
 
 export function HubNetworkStatusPanel() {
   const hub = useVmeshStore((state) => state.hubNodeStatus);
+  const setActivePanel = useVmeshStore((state) => state.setActivePanel);
 
   const rows = [
     {
@@ -30,14 +32,25 @@ export function HubNetworkStatusPanel() {
   ];
 
   return (
-    <Card className="absolute left-3 top-[88px] z-20 w-72 bg-white/92 p-3 backdrop-blur-md">
+    <Card className="absolute right-6 top-6 z-30 w-80 bg-white/94 p-3 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <div className="mb-3 flex items-center justify-between">
         <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#52616f]">
           Disaster Mode
         </div>
-        <span className="rounded-[6px] bg-[#eef8f6] px-2 py-1 text-[10px] font-semibold uppercase text-[#0f766e]">
-          {hub.lanMode}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-[6px] bg-[#eef8f6] px-2 py-1 text-[10px] font-semibold uppercase text-[#0f766e]">
+            {hub.lanMode}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setActivePanel(null)}
+            aria-label="Close disaster mode"
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
       <div className="space-y-2">
         {rows.map((row) => (

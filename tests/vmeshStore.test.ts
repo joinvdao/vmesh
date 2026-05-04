@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_SELECTED_HEX_ID, initialHexDataByTier } from "@/data/mockVmeshData";
+import { buildCellFromCoordinate } from "@/lib/h3Mesh";
 import { useVmeshStore } from "@/store/useVmeshStore";
 
 describe("vmesh store", () => {
@@ -43,10 +44,25 @@ describe("vmesh store", () => {
     });
 
     const state = useVmeshStore.getState();
+    const londonCell = buildCellFromCoordinate(51.5072, -0.1276, "U5");
     expect(state.flyToRequest?.label).toBe("London");
+    expect(state.selectedHexId).toBe(londonCell);
+    expect(state.selectedHexDetails.placeName).toBe("London");
+    expect(state.activePanel).toBe("hex");
     expect(state.viewState.longitude).toBeCloseTo(-0.1276);
     expect(state.viewState.latitude).toBeCloseTo(51.5072);
     expect(state.viewState.zoom).toBe(9);
+  });
+
+  it("toggles dashboard panels without pinning them to the first viewport", () => {
+    useVmeshStore.getState().setActivePanel(null);
+    expect(useVmeshStore.getState().activePanel).toBeNull();
+
+    useVmeshStore.getState().togglePanel("playbook");
+    expect(useVmeshStore.getState().activePanel).toBe("playbook");
+
+    useVmeshStore.getState().togglePanel("playbook");
+    expect(useVmeshStore.getState().activePanel).toBeNull();
   });
 
   it("tracks terrain contour status and hub playbook actions in Zustand", () => {

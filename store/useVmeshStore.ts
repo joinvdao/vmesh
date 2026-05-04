@@ -5,6 +5,7 @@ import { create } from "zustand";
 import {
   DEFAULT_SELECTED_HEX_ID,
   createInitialHubPlaybookState,
+  createLocationHexRecord,
   generateU8RecordsForParent,
   getAllHexRecords,
   initialHexDataByTier,
@@ -15,7 +16,12 @@ import {
   mockPropertySignals,
   summarizeFoodNetwork
 } from "@/data/mockVmeshData";
-import { DEFAULT_FOCUS, getU5ParentForLocalDetail, MESH_TIER_DEFINITIONS } from "@/lib/h3Mesh";
+import {
+  buildCellFromCoordinate,
+  DEFAULT_FOCUS,
+  getU5ParentForLocalDetail,
+  MESH_TIER_DEFINITIONS
+} from "@/lib/h3Mesh";
 import {
   getContourProviderRegistry,
   getTerrainProviderRegistry,
@@ -24,6 +30,7 @@ import {
 import type {
   ActiveLayers,
   ContourProviderConfig,
+  DashboardPanel,
   DraftUserRecord,
   FoodNetworkAsset,
   HubMessageEnvelope,
@@ -51,6 +58,7 @@ export interface VmeshStore {
   globalResolution: number;
   visibleHexCount: number;
   activeLayers: ActiveLayers;
+  activePanel: DashboardPanel | null;
   layerScale: number;
   meshTiers: MeshTierDefinition[];
   hexDataByTier: Record<MeshTier, VmeshHexRecord[]>;
@@ -72,6 +80,8 @@ export interface VmeshStore {
   setViewState: (viewState: Partial<ViewState>) => void;
   flyToLocation: (location: Omit<MapFlyToRequest, "id">) => void;
   selectHex: (h3Id: string, tier?: MeshTier) => void;
+  setActivePanel: (panel: DashboardPanel | null) => void;
+  togglePanel: (panel: DashboardPanel) => void;
   setHoveredHexInfo: (hoveredHexInfo: HoveredHexInfo | null) => void;
   setSelectedTier: (tier: MeshTier) => void;
   setLayerEnabled: (layer: keyof ActiveLayers, enabled: boolean) => void;
@@ -137,6 +147,7 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
     terrain: true,
     context: true
   },
+  activePanel: null,
   layerScale: 44,
   meshTiers: MESH_TIER_DEFINITIONS,
   hexDataByTier: initialHexDataByTier,
@@ -169,20 +180,52 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
       viewState: { ...state.viewState, ...viewState }
     })),
   flyToLocation: (location) =>
-    set((state) => ({
-      flyToRequest: {
-        ...location,
-        id: (state.flyToRequest?.id ?? 0) + 1
-      },
-      viewState: {
-        ...state.viewState,
-        longitude: location.longitude,
-        latitude: location.latitude,
-        zoom: location.zoom,
-        pitch: 42,
-        bearing: -18
-      }
-    })),
+    set((state) => {
+      const h3Id = buildCellFromCoordinate(location.latitude, location.longitude, "U5");
+      const existingRecord = state.hexDataByTier.U5.find((record) => record.h3Id === h3Id) ?? null;
+      const selectedRecord =
+        existingRecord ??
+        createLocationHexRecord({
+          h3Id,
+          tier: "U5",
+          label: location.label,
+          latitude: location.latitude,
+          longitude: location.longitude
+        });
+      const u5Records = existingRecord
+        ? state.hexDataByTier.U5
+        : [selectedRecord, ...state.hexDataByTier.U5];
+      const u8Records = generateU8RecordsForParent(h3Id, selectedRecord.placeName);
+
+      return {
+        flyToRequest: {
+          ...location,
+          id: (state.flyToRequest?.id ?? 0) + 1
+        },
+        viewState: {
+          ...state.viewState,
+          longitude: location.longitude,
+          latitude: location.latitude,
+          zoom: location.zoom,
+          pitch: 42,
+          bearing: -18
+        },
+        selectedHexId: selectedRecord.h3Id,
+        selectedTier: "U5",
+        globalResolution: selectedRecord.resolution,
+        hexDataByTier: { ...state.hexDataByTier, U5: u5Records, U8: u8Records },
+        selectedHexDetails: selectedRecord,
+        selectedFoodNetworkSummary: summarizeFoodNetwork(selectedRecord.h3Id),
+        hubPlaybook: {
+          ...state.hubPlaybook,
+          selectedH3Id: selectedRecord.h3Id,
+          tasks: state.hubPlaybook.tasks.map((task) => ({ ...task, h3Id: selectedRecord.h3Id })),
+          updatedAt: new Date().toISOString()
+        },
+        activePanel: "hex",
+        visibleHexCount: u5Records.length
+      };
+    }),
   selectHex: (h3Id, tier) =>
     set((state) => {
       const currentRecord = findHexRecord(state.hexDataByTier, h3Id);
@@ -191,13 +234,20 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
       let selectedRecord = currentRecord;
 
       if (selectedTier === "U5") {
-        const u8Records = generateU8RecordsForParent(h3Id);
+        const u8Records = generateU8RecordsForParent(
+          h3Id,
+          currentRecord?.placeName ?? state.selectedHexDetails.placeName
+        );
         hexDataByTier = { ...hexDataByTier, U8: u8Records };
       }
 
       if (selectedTier === "U8") {
         const parentU5 = getU5ParentForLocalDetail(h3Id);
-        const u8Records = generateU8RecordsForParent(parentU5);
+        const parentRecord = state.hexDataByTier.U5.find((record) => record.h3Id === parentU5);
+        const u8Records = generateU8RecordsForParent(
+          parentU5,
+          parentRecord?.placeName ?? state.selectedHexDetails.placeName
+        );
         hexDataByTier = { ...hexDataByTier, U8: u8Records };
         selectedRecord = u8Records.find((record) => record.h3Id === h3Id) ?? selectedRecord;
       }
@@ -212,6 +262,7 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
         hexDataByTier,
         selectedHexDetails: selectedRecord,
         selectedFoodNetworkSummary: summarizeFoodNetwork(selectedRecord.h3Id),
+        activePanel: "hex",
         hubPlaybook: {
           ...state.hubPlaybook,
           selectedH3Id: selectedRecord.h3Id,
@@ -221,6 +272,11 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
         visibleHexCount: hexDataByTier[selectedTier].length
       };
     }),
+  setActivePanel: (activePanel) => set({ activePanel }),
+  togglePanel: (panel) =>
+    set((state) => ({
+      activePanel: state.activePanel === panel ? null : panel
+    })),
   setHoveredHexInfo: (hoveredHexInfo) => set({ hoveredHexInfo }),
   setSelectedTier: (tier) =>
     set((state) => ({

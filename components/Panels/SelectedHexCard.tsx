@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Sprout,
   SunMedium,
+  X,
   Zap
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -35,11 +36,12 @@ export function SelectedHexCard() {
   const userRecords = useVmeshStore((state) => state.userRecords);
   const foodSummary = useVmeshStore((state) => state.selectedFoodNetworkSummary);
   const propertySignals = useVmeshStore((state) => state.propertySignals);
+  const setActivePanel = useVmeshStore((state) => state.setActivePanel);
   const localRecords = userRecords.filter((record) => record.h3Id === selected.h3Id);
   const localProperties = propertySignals.filter((record) => record.h3Id === selected.h3Id);
 
   return (
-    <Card className="absolute bottom-[304px] right-3 top-2 z-30 flex w-80 flex-col overflow-hidden bg-white/92 backdrop-blur-md">
+    <Card className="absolute bottom-6 right-6 top-6 z-30 flex w-[380px] flex-col overflow-hidden bg-white/94 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <div className="flex items-start justify-between border-b border-[#e6eeec] p-4">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#52616f]">
@@ -68,6 +70,15 @@ export function SelectedHexCard() {
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8">
             <MoreVertical className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setActivePanel(null)}
+            aria-label="Close selected hex"
+          >
+            <X className="h-4 w-4" />
           </Button>
         </div>
       </div>

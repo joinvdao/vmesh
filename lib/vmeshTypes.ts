@@ -158,6 +158,8 @@ export interface ActiveLayers {
   context: boolean;
 }
 
+export type DashboardPanel = "hex" | "layers" | "analytics" | "add-data" | "playbook" | "network";
+
 export interface MeshTierDefinition {
   tier: MeshTier;
   resolution: number;

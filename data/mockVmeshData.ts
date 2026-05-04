@@ -212,6 +212,19 @@ function createHexRecord(
   };
 }
 
+function seedForH3Id(h3Id: string): number {
+  return [...h3Id].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 97;
+}
+
+function placeNameFromSearchLabel(label: string): string {
+  const parts = label
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return parts.slice(0, 2).join(", ") || label;
+}
+
 const u3Records = uniqueCells(u3Seeds, "U3").map((seed, index) =>
   createHexRecord(
     latLngToCell(seed.latitude, seed.longitude, MESH_TIER_RESOLUTIONS.U3),
@@ -251,11 +264,35 @@ const defaultU5Record =
 
 export const DEFAULT_SELECTED_HEX_ID = defaultU5Record.h3Id;
 
-export function generateU8RecordsForParent(parentU5: string): VmeshHexRecord[] {
+export function createLocationHexRecord({
+  h3Id,
+  tier,
+  label,
+  latitude,
+  longitude
+}: {
+  h3Id: string;
+  tier: MeshTier;
+  label: string;
+  latitude: number;
+  longitude: number;
+}): VmeshHexRecord {
+  return createHexRecord(h3Id, tier, seedForH3Id(h3Id) + 47, {
+    label: "Search target",
+    placeName: placeNameFromSearchLabel(label),
+    latitude,
+    longitude
+  });
+}
+
+export function generateU8RecordsForParent(
+  parentU5: string,
+  placeName = defaultU5Record.placeName
+): VmeshHexRecord[] {
   return generateLocalU8Cells(parentU5, 48).map((h3Id, index) =>
     createHexRecord(h3Id, "U8", index + 31, {
       label: `Local cell ${index + 1}`,
-      placeName: `${defaultU5Record.placeName} local mesh`,
+      placeName: `${placeName} local mesh`,
       latitude: 38.72,
       longitude: -9.14
     })

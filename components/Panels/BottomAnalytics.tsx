@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUp, CircleHelp, MoreVertical } from "lucide-react";
+import { ArrowUp, CircleHelp, MoreVertical, X } from "lucide-react";
 import {
   Cell,
   Line,
@@ -49,12 +49,22 @@ function AnalyticsCard({ children, className }: { children: React.ReactNode; cla
 export function BottomAnalytics() {
   const userRecords = useVmeshStore((state) => state.userRecords);
   const terrainStatus = useVmeshStore((state) => state.mapStatus.terrain);
+  const setActivePanel = useVmeshStore((state) => state.setActivePanel);
   const topRegions = [...initialHexDataByTier.U5]
     .sort((a, b) => b.antifragilityScore - a.antifragilityScore)
     .slice(0, 4);
 
   return (
-    <section className="absolute bottom-10 left-64 right-0 z-30 h-72 border-t border-[#dfe8e6] bg-white/92 p-3 backdrop-blur">
+    <section className="absolute bottom-4 left-6 right-6 z-30 h-72 rounded-[14px] border border-[#dfe8e6] bg-white/94 p-3 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute right-3 top-3 z-10 h-7 w-7"
+        onClick={() => setActivePanel(null)}
+        aria-label="Close analytics"
+      >
+        <X className="h-3.5 w-3.5" />
+      </Button>
       <div className="flex h-full gap-3 overflow-x-auto pb-1 vmesh-scrollbar">
         <AnalyticsCard>
           <CardHeader>

@@ -139,10 +139,10 @@ export function AppHeader() {
   };
 
   return (
-    <header className="absolute left-64 right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-[#dfe8e6] bg-white/95 px-4 shadow-[0_2px_18px_rgba(31,53,58,0.04)] backdrop-blur">
+    <header className="absolute left-20 right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-[#dfe8e6] bg-white/88 px-5 shadow-[0_2px_18px_rgba(31,53,58,0.04)] backdrop-blur">
       <form
         onSubmit={handleSubmit}
-        className={`flex w-[420px] items-center gap-2 rounded-[8px] border bg-white px-3 shadow-sm ${
+        className={`flex w-[min(520px,calc(100vw-460px))] min-w-[320px] items-center gap-2 rounded-[8px] border bg-white px-3 shadow-sm ${
           searchState === "error"
             ? "border-[#d99575]"
             : searchState === "found"

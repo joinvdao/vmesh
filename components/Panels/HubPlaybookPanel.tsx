@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ClipboardList } from "lucide-react";
+import { Check, ClipboardList, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,6 +10,7 @@ export function HubPlaybookPanel() {
   const playbook = useVmeshStore((state) => state.hubPlaybook);
   const toggleTask = useVmeshStore((state) => state.toggleHubPlaybookTask);
   const updateTaskNotes = useVmeshStore((state) => state.updateHubPlaybookTaskNotes);
+  const setActivePanel = useVmeshStore((state) => state.setActivePanel);
   const primaryTask = playbook.tasks[0];
 
   const exportChecklist = () => {
@@ -31,15 +32,26 @@ export function HubPlaybookPanel() {
   };
 
   return (
-    <Card className="absolute left-3 top-[316px] z-20 w-72 bg-white/92 p-3 backdrop-blur-md">
+    <Card className="absolute right-6 top-6 z-30 w-80 bg-white/94 p-3 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#52616f]">
           <ClipboardList className="h-4 w-4 text-[#0f766e]" />
           Build A Hub
         </div>
-        <span className="rounded-[6px] bg-[#eef8f6] px-2 py-1 text-xs font-semibold text-[#0f766e]">
-          {playbook.readinessScore}%
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-[6px] bg-[#eef8f6] px-2 py-1 text-xs font-semibold text-[#0f766e]">
+            {playbook.readinessScore}%
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setActivePanel(null)}
+            aria-label="Close build a hub"
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
       <div className="space-y-2">
         {playbook.tasks.slice(0, 6).map((task) => (

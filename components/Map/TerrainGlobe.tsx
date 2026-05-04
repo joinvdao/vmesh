@@ -27,7 +27,6 @@ type GlobeCapableMap = maplibregl.Map & {
 type H3HexagonLayerConstructor = typeof import("@deck.gl/geo-layers").H3HexagonLayer;
 type MapboxOverlayConstructor = typeof import("@deck.gl/mapbox").MapboxOverlay;
 type MapboxOverlayInstance = InstanceType<MapboxOverlayConstructor>;
-
 export function TerrainGlobe() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -44,6 +43,7 @@ export function TerrainGlobe() {
   const selectedHexDetails = useVmeshStore((state) => state.selectedHexDetails);
   const flyToRequest = useVmeshStore((state) => state.flyToRequest);
   const activeLayers = useVmeshStore((state) => state.activeLayers);
+  const activePanel = useVmeshStore((state) => state.activePanel);
   const hexDataByTier = useVmeshStore((state) => state.hexDataByTier);
   const terrainProviders = useVmeshStore((state) => state.terrainProviders);
   const selectedTerrainProviderId = useVmeshStore((state) => state.selectedTerrainProviderId);
@@ -381,18 +381,18 @@ export function TerrainGlobe() {
   return (
     <div className="absolute inset-0 overflow-hidden bg-[#f3f8f7]">
       <div className="absolute inset-0 bg-[linear-gradient(#e9f1ef_1px,transparent_1px),linear-gradient(90deg,#e9f1ef_1px,transparent_1px)] bg-[size:52px_52px] opacity-70" />
-      <div className="pointer-events-none absolute left-1/2 top-[42%] h-[min(78vw,980px)] w-[min(78vw,980px)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#dbecea] shadow-[inset_-80px_-70px_120px_rgba(22,73,79,0.18),0_34px_80px_rgba(46,91,96,0.16)]" />
-      <div className="absolute left-1/2 top-[42%] h-[min(78vw,980px)] w-[min(78vw,980px)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border border-[#d6e8e4] bg-[#ecf5f3] shadow-[0_30px_90px_rgba(40,78,83,0.16)]">
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[88vmin] max-h-[1120px] w-[88vmin] max-w-[1120px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#dbecea] shadow-[inset_-92px_-76px_132px_rgba(22,73,79,0.24),inset_42px_34px_84px_rgba(255,255,255,0.52),0_42px_120px_rgba(46,91,96,0.22)]" />
+      <div className="absolute left-1/2 top-1/2 h-[88vmin] max-h-[1120px] w-[88vmin] max-w-[1120px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border border-[#d6e8e4] bg-[#ecf5f3] shadow-[0_38px_120px_rgba(40,78,83,0.2)]">
         <EarthGlobeFallback />
-        <div className="pointer-events-none absolute inset-[12%] z-10 rounded-full border border-[#9bbfba]/35 opacity-70" />
+        <div className="pointer-events-none absolute inset-[9%] z-10 rounded-full border border-[#9bbfba]/35 opacity-70" />
         <div
           ref={containerRef}
           className="relative z-10 h-full w-full opacity-80 mix-blend-multiply"
         />
-        <div className="pointer-events-none absolute inset-0 z-20 rounded-full bg-[radial-gradient(circle_at_35%_25%,rgba(255,255,255,0.36),transparent_35%),radial-gradient(circle_at_72%_70%,rgba(21,91,99,0.24),transparent_35%)]" />
+        <div className="pointer-events-none absolute inset-0 z-20 rounded-full bg-[radial-gradient(circle_at_32%_22%,rgba(255,255,255,0.48),transparent_32%),radial-gradient(circle_at_74%_72%,rgba(21,91,99,0.34),transparent_36%),linear-gradient(120deg,rgba(255,255,255,0.16),rgba(12,55,68,0.22))]" />
       </div>
       <MapControls />
-      <MeshLegend />
+      {activePanel === "layers" ? <MeshLegend /> : null}
       <MeshTooltip />
     </div>
   );

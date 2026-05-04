@@ -4,7 +4,7 @@ import { CircleHelp } from "lucide-react";
 
 export function MeshLegend() {
   return (
-    <div className="absolute bottom-[304px] left-8 z-20 w-[280px] rounded-[10px] border border-[#dfe8e6] bg-white/90 p-4 shadow-[0_14px_35px_rgba(31,53,58,0.12)] backdrop-blur">
+    <div className="absolute bottom-6 left-6 z-20 w-[280px] rounded-[10px] border border-[#dfe8e6] bg-white/90 p-4 shadow-[0_14px_35px_rgba(31,53,58,0.12)] backdrop-blur">
       <div className="flex items-center gap-2 text-sm font-medium text-[#41515f]">
         Antifragility Index
         <CircleHelp className="h-3.5 w-3.5 text-[#7b8893]" />
