@@ -6,6 +6,8 @@ Date: 2026-04-30
 
 V1 implements the screenshot-directed vmesh dashboard with a fixed Next.js app shell, MapLibre globe surface, deck.gl H3 mesh overlay, Zustand state, typed mock data, local/private user records, Recharts analytics, and provider-agnostic open terrain source foundations.
 
+The H3 mesh is treated as an indexing and retrieval layer first. The visible grid is optional analytical UI, not the default visual product.
+
 ## Architecture
 
 ```text
@@ -40,6 +42,8 @@ Data model
   macro pillars
   micro summaries
   user-added records
+  H3 spatial index
+  graph-ready entities, observations, sources, and relationships
   provenance and confidence
   derived antifragility scores
 
@@ -60,6 +64,8 @@ Resilient comms
 MapLibre owns the basemap, terrain, and camera. deck.gl attaches through `MapboxOverlay` so H3 layer rendering follows the map camera. Zustand holds the selected H3 cell, hover metadata, mesh tier, active layers, map status, terrain status, prepopulated hex summaries, and local draft records. React panels subscribe to Zustand slices rather than reading directly from map instances.
 
 App-pulled datasets should enter through typed provider adapters. User-added data enters through explicit local state actions with provenance, confidence, timestamp, and private-local visibility.
+
+For backend evolution, H3 should not be the knowledge graph itself. It should be the spatial index that anchors graph records. The graph should model entities, observations, sources, and relationships, then attach those records to one or more H3 cells for aggregation, filtering, permissions, offline bundles, and local retrieval.
 
 Resilient communications should enter through a local bridge, not directly through browser-only code. The browser app sends small structured disaster messages to the local bridge over a localhost HTTP/WebSocket API. The bridge owns Reticulum identity, RNS daemon/process configuration, LXMF routing, peer discovery, delivery receipts, and optional Meshtastic bridge access. Received mesh reports are normalized into typed vmesh records with source, timestamp, confidence, and delivery metadata before they touch the UI.
 
@@ -83,6 +89,20 @@ Resilient communications should enter through a local bridge, not directly throu
 | `U8` |             8 | Local/detail mesh                 | Generated only inside the selected U5 parent bounds. |
 
 `U8` must never render globally. It is capped and scoped to selected local context for micro and user-added workflows.
+
+By default, no broad hex grid is rendered. Visible H3 cells are enabled only through explicit analytical overlays, selected-cell affordances, focused local detail, or debugging/provider inspection.
+
+## Knowledge Graph Direction
+
+The recommended backend shape is a typed property graph over a spatial index:
+
+- `SpatialCell`: H3 IDs at U3/U5/U8 with parent/child relationships and coverage metadata.
+- `Entity`: farms, markets, properties, parcels, wells, shelters, batteries, roads, organizations, hazards, and hub assets.
+- `Observation`: timestamped claims, measurements, user notes, provider facts, field reports, or model outputs.
+- `Source`: dataset, user, document, provider, model, radio report, or local import with license/provenance.
+- `Relationship`: `LOCATED_IN`, `SERVES`, `SUPPLIES`, `DEPENDS_ON`, `OBSERVED_AT`, `PART_OF`, `NEAR`, `HAS_RISK`, and `VALIDATED_BY`.
+
+Postgres with PostGIS plus explicit edge tables is the conservative open-source V1 backend path. It preserves geometry, H3 indexes, ordinary SQL operations, and future graph traversal without forcing an early Neo4j/RDF dependency. If relationship traversal becomes the dominant workload, vmesh can add Apache AGE, Neo4j, or an RDF/JSON-LD export layer later.
 
 ## Terrain Provider Foundation
 

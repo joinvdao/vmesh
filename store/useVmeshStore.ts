@@ -7,7 +7,6 @@ import {
   createInitialHubPlaybookState,
   createLocationHexRecord,
   generateU8RecordsForParent,
-  getAllHexRecords,
   initialHexDataByTier,
   initialUserRecords,
   mockFoodNetworkAssets,
@@ -49,6 +48,7 @@ import type {
   VmeshHexRecord,
   ViewState
 } from "@/lib/vmeshTypes";
+import { findHexRecord, getVisibleHexCount, tierForRecord } from "@/store/vmeshStoreHelpers";
 
 export interface VmeshStore {
   viewState: ViewState;
@@ -112,20 +112,7 @@ const terrainProviders = getTerrainProviderRegistry({
 const selectedProvider = selectTerrainProvider(terrainProviders, terrainProviderPreference);
 const contourProviders = getContourProviderRegistry();
 const initialSelected =
-  getAllHexRecords(initialHexDataByTier).find(
-    (record) => record.h3Id === DEFAULT_SELECTED_HEX_ID
-  ) ?? initialHexDataByTier.U5[0];
-
-function findHexRecord(
-  dataByTier: Record<MeshTier, VmeshHexRecord[]>,
-  h3Id: string
-): VmeshHexRecord | null {
-  return getAllHexRecords(dataByTier).find((record) => record.h3Id === h3Id) ?? null;
-}
-
-function tierForRecord(record: VmeshHexRecord | null, fallback: MeshTier): MeshTier {
-  return record?.tier ?? fallback;
-}
+  findHexRecord(initialHexDataByTier, DEFAULT_SELECTED_HEX_ID) ?? initialHexDataByTier.U5[0];
 
 export const useVmeshStore = create<VmeshStore>((set, get) => ({
   viewState: {
@@ -139,13 +126,13 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
   selectedTier: "U5",
   hoveredHexInfo: null,
   globalResolution: 5,
-  visibleHexCount: initialHexDataByTier.U5.length,
+  visibleHexCount: 0,
   activeLayers: {
-    macro: true,
+    macro: false,
     micro: true,
     userAdded: true,
     terrain: true,
-    context: true
+    context: false
   },
   activePanel: null,
   layerScale: 44,
@@ -223,7 +210,11 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
           updatedAt: new Date().toISOString()
         },
         activePanel: "hex",
-        visibleHexCount: u5Records.length
+        visibleHexCount: getVisibleHexCount(
+          { ...state.hexDataByTier, U5: u5Records, U8: u8Records },
+          "U5",
+          state.activeLayers
+        )
       };
     }),
   selectHex: (h3Id, tier) =>
@@ -269,7 +260,7 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
           tasks: state.hubPlaybook.tasks.map((task) => ({ ...task, h3Id: selectedRecord.h3Id })),
           updatedAt: new Date().toISOString()
         },
-        visibleHexCount: hexDataByTier[selectedTier].length
+        visibleHexCount: getVisibleHexCount(hexDataByTier, selectedTier, state.activeLayers)
       };
     }),
   setActivePanel: (activePanel) => set({ activePanel }),
@@ -284,11 +275,15 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
       globalResolution:
         state.meshTiers.find((definition) => definition.tier === tier)?.resolution ??
         state.globalResolution,
-      visibleHexCount: state.hexDataByTier[tier].length
+      visibleHexCount: getVisibleHexCount(state.hexDataByTier, tier, state.activeLayers)
     })),
   setLayerEnabled: (layer, enabled) =>
     set((state) => ({
-      activeLayers: { ...state.activeLayers, [layer]: enabled }
+      activeLayers: { ...state.activeLayers, [layer]: enabled },
+      visibleHexCount: getVisibleHexCount(state.hexDataByTier, state.selectedTier, {
+        ...state.activeLayers,
+        [layer]: enabled
+      })
     })),
   setLayerScale: (layerScale) => set({ layerScale }),
   setVisibleHexCount: (visibleHexCount) => set({ visibleHexCount }),

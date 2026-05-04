@@ -25,6 +25,8 @@ A hex can hold:
 
 The H3 mesh is the atlas structure, not the legal boundary system. Parcels, deeds, survey descriptions, buildings, assets, and local records are objects that attach to one or more hexes.
 
+The H3 mesh is also not required to be visible by default. In the product experience it functions as a spatial database index and knowledge-bucketing system. The interface should reveal cells only when that helps the user inspect a selected place, compare an analytical layer, attach local knowledge, or understand provenance.
+
 ## Macro Data Layer
 
 Macro signals describe the regional environment around a hex. V1 models these as mock data; later phases ingest real provider data through typed provider registries with provenance, timestamp, license, and confidence on every record.
@@ -135,6 +137,7 @@ Scores are decision-support signals, not official risk certification. Every scor
 ## Product Principles
 
 - The mesh is the product spine. Panels, charts, and workflows should explain or enrich the selected hex.
+- The visible globe is center stage. The hex grid is optional analytical UI, not decorative wallpaper.
 - The first screen should feel like a light geospatial cockpit, not a marketing landing page.
 - Macro, micro, parcel, and user-added signals must be visibly distinct.
 - User-added data must be first-class, but clearly labeled by provenance and visibility.

@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { useVmeshStore } from "@/store/useVmeshStore";
 
 const tiers = ["U3", "U5", "U8"] as const;
+const layerToggles = [
+  { key: "macro", label: "Mesh overlay" },
+  { key: "context", label: "Context cells" },
+  { key: "micro", label: "Micro data" },
+  { key: "terrain", label: "Terrain" }
+] as const;
 
 export function LayerScaleControl() {
   const layerScale = useVmeshStore((state) => state.layerScale);
@@ -33,16 +39,21 @@ export function LayerScaleControl() {
         </Button>
       </div>
 
-      <div className="mb-4 grid grid-cols-3 gap-2">
-        {(["macro", "micro", "terrain"] as const).map((layer) => (
+      <div className="mb-3 rounded-[10px] border border-[#e3ece9] bg-[#f7fbfa] p-3 text-[11px] leading-5 text-[#52616f]">
+        H3 is the private data index. The visible mesh stays off until you need an analytical
+        overlay.
+      </div>
+
+      <div className="mb-4 grid grid-cols-2 gap-2">
+        {layerToggles.map((layer) => (
           <button
-            key={layer}
+            key={layer.key}
             className={`rounded-[8px] px-2 py-2 text-[10px] font-semibold uppercase ${
-              activeLayers[layer] ? "bg-[#0f766e] text-white" : "bg-[#eef5f3] text-[#52616f]"
+              activeLayers[layer.key] ? "bg-[#0f766e] text-white" : "bg-[#eef5f3] text-[#52616f]"
             }`}
-            onClick={() => setLayerEnabled(layer, !activeLayers[layer])}
+            onClick={() => setLayerEnabled(layer.key, !activeLayers[layer.key])}
           >
-            {layer}
+            {layer.label}
           </button>
         ))}
       </div>
