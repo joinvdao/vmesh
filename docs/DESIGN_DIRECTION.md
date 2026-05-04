@@ -88,6 +88,7 @@ The advisor panel should not imply live AI or provider calls unless that feature
 The central map should prioritize:
 
 - A globe-first object that feels round, gently rotating, and hovering.
+- A darker civic-atlas-style stage around the globe, with sparse starfield depth, atmospheric rim lighting, and the globe treated as the primary object.
 - Terrain-aware basemap.
 - Optional H3 mesh overlay draped and camera-synchronized with MapLibre through deck.gl.
 - Teal-to-mint resilience scale.
@@ -110,3 +111,7 @@ The central map should prioritize:
 - Use lucide-react icons where available.
 - Keep panel radii at 8px or below unless a shadcn primitive requires otherwise.
 - Avoid dark, blurred, or stock-like map presentation; the user must be able to inspect the actual mesh and map state.
+
+## Reference Notes
+
+The Civic Atlas reference uses a full-viewport Mapbox GL canvas with absolute DOM overlays. vmesh should borrow the globe staging, dark map atmosphere, and sparse overlay discipline, while keeping the implementation on MapLibre/open terrain foundations.

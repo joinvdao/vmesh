@@ -7,12 +7,12 @@ export function EarthGlobeFallback() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
       <div
-        className="vmesh-earth-rotate absolute -left-[34%] top-0 h-full w-[168%] scale-110 bg-cover bg-center opacity-80 saturate-[1.16] contrast-[1.08]"
+        className="vmesh-earth-rotate absolute inset-y-0 -left-[24%] w-[148%] bg-cover bg-center opacity-95 brightness-[0.96] saturate-[1.22] contrast-[1.1]"
         style={{ backgroundImage: `url(${earthTextureUrl})` }}
       />
-      <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_31%_24%,rgba(255,255,255,0.68),transparent_28%),radial-gradient(circle_at_68%_64%,rgba(0,78,94,0.22),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.2),rgba(11,67,86,0.18))]" />
-      <div className="absolute inset-0 rounded-full shadow-[inset_34px_26px_64px_rgba(255,255,255,0.5),inset_-72px_-48px_94px_rgba(8,45,59,0.42)]" />
-      <div className="absolute inset-[5%] rounded-full border border-white/40" />
+      <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_31%_23%,rgba(236,248,255,0.5),transparent_26%),radial-gradient(circle_at_70%_64%,rgba(0,19,32,0.36),transparent_42%),linear-gradient(128deg,rgba(255,255,255,0.06),rgba(0,7,16,0.34))]" />
+      <div className="absolute inset-0 rounded-full shadow-[inset_38px_28px_76px_rgba(231,248,255,0.24),inset_-82px_-54px_108px_rgba(0,7,15,0.52)]" />
+      <div className="absolute inset-[4.5%] rounded-full border border-[#d8eeff]/35" />
     </div>
   );
 }

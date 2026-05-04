@@ -60,11 +60,28 @@ body {
 
 .vmesh-earth-rotate {
   animation: vmesh-earth-rotate 72s linear infinite;
-  background-size: 118% 100%;
+  background-size: cover;
 }
 
 .vmesh-atmosphere-drift {
   animation: vmesh-atmosphere-drift 28s linear infinite;
+}
+
+.vmesh-starfield {
+  animation: vmesh-star-drift 96s linear infinite;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.72) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(191, 226, 255, 0.42) 0 1px, transparent 1.4px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.5) 0 0.7px, transparent 1.2px);
+  background-position:
+    0 0,
+    38px 64px,
+    112px 28px;
+  background-size:
+    220px 220px,
+    340px 340px,
+    170px 170px;
+  opacity: 0.82;
 }
 
 @keyframes vmesh-globe-hover {
@@ -80,11 +97,15 @@ body {
 
 @keyframes vmesh-earth-rotate {
   0% {
-    background-position: 0% 50%;
+    transform: translate3d(-5%, 0, 0) scale(1.18);
+  }
+
+  50% {
+    transform: translate3d(5%, 0, 0) scale(1.18);
   }
 
   100% {
-    background-position: 118% 50%;
+    transform: translate3d(-5%, 0, 0) scale(1.18);
   }
 }
 
@@ -102,10 +123,21 @@ body {
   }
 }
 
+@keyframes vmesh-star-drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(-220px, 110px, 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .vmesh-globe-shell,
   .vmesh-earth-rotate,
-  .vmesh-atmosphere-drift {
+  .vmesh-atmosphere-drift,
+  .vmesh-starfield {
     animation: none;
   }
 }
