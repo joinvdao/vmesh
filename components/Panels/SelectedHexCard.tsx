@@ -33,7 +33,10 @@ const pillarLabels: { key: keyof MacroPillars; label: string; icon: LucideIcon }
 export function SelectedHexCard() {
   const selected = useVmeshStore((state) => state.selectedHexDetails);
   const userRecords = useVmeshStore((state) => state.userRecords);
+  const foodSummary = useVmeshStore((state) => state.selectedFoodNetworkSummary);
+  const propertySignals = useVmeshStore((state) => state.propertySignals);
   const localRecords = userRecords.filter((record) => record.h3Id === selected.h3Id);
+  const localProperties = propertySignals.filter((record) => record.h3Id === selected.h3Id);
 
   return (
     <Card className="absolute bottom-[304px] right-3 top-2 z-30 flex w-80 flex-col overflow-hidden bg-white/92 backdrop-blur-md">
@@ -137,6 +140,27 @@ export function SelectedHexCard() {
                 <div>{pillar.label.slice(0, 3)}</div>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="rounded-[8px] border border-[#e6eeec] bg-[#fbfdfc] p-3 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-[#41515f]">Food network</span>
+            <span className="text-[#0f766e]">{foodSummary.assets.length} assets</span>
+          </div>
+          <div className="mt-2 text-[#7b8893]">
+            Farms {foodSummary.farms} | markets {foodSummary.farmersMarkets} | gardens{" "}
+            {foodSummary.communityGardens}
+          </div>
+        </div>
+
+        <div className="rounded-[8px] border border-[#e6eeec] bg-[#fbfdfc] p-3 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-[#41515f]">Property signals</span>
+            <span className="text-[#0f766e]">{localProperties.length}</span>
+          </div>
+          <div className="mt-2 text-[#7b8893]">
+            Mock bands only. No scraping, exact private addresses, or live listing calls.
           </div>
         </div>
 

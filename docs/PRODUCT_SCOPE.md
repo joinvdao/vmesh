@@ -168,6 +168,14 @@ Scores are decision-support signals, not official risk certification. Every scor
 8. Reticulum-first resilient comms design, with a Meshtastic bridge plan.
 9. Interaction QA, accessibility pass, and visual verification.
 
+## Current Milestone Additions
+
+The dashboard now includes milestone foundations for macro climate/hazard/solar summaries, local food network microdata, privacy-safe property signals, and an interactive local hub playbook. These remain mock/provider-boundary data in V1 and are clearly separated from live ingestion.
+
+Terrain uses Mapterhorn PMTiles as the primary open terrain path and Mapzen/Joerd Terrarium as the no-token fallback. Browser terrain is MapLibre `raster-dem`; contours are represented as a derived/preprocessed layer contract, not fake live browser extraction.
+
+The H3 product tiers remain strict: U3 is macro/global, U5 is regional/local planning, and U8 is focused detail only inside a selected U5 parent. vmesh must not generate global U8 coverage.
+
 ## Out Of Scope For First Version
 
 - Real backend persistence.

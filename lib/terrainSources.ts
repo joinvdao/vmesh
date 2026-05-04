@@ -4,7 +4,7 @@ import type {
   StyleSpecification
 } from "maplibre-gl";
 
-import type { TerrainProviderConfig } from "@/lib/vmeshTypes";
+import type { ContourProviderConfig, TerrainProviderConfig } from "@/lib/vmeshTypes";
 
 export const TERRAIN_SOURCE_ID = "terrain-source";
 export const ENV_TERRAIN_PROVIDER_ID = "env-raster-dem";
@@ -14,6 +14,7 @@ export const MAPLIBRE_DEMO_PROVIDER_ID = "maplibre-demo-dem";
 export const MAPTERHORN_DEFAULT_PMTILES_URL = "https://download.mapterhorn.com/planet.pmtiles";
 export const MAPZEN_DEFAULT_TERRARIUM_URL =
   "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png";
+export const CONTOUR_PLACEHOLDER_PROVIDER_ID = "dem-derived-contours-placeholder";
 
 export interface TerrainProviderRegistryOptions {
   envTileJsonUrl?: string;
@@ -290,6 +291,31 @@ export function toRasterDemSource(
   }
 
   return null;
+}
+
+export function getContourProviderRegistry(): ContourProviderConfig[] {
+  return [
+    {
+      id: CONTOUR_PLACEHOLDER_PROVIDER_ID,
+      label: "DEM-derived contour placeholder",
+      kind: "derived-dem-placeholder",
+      status: "fallback",
+      intervalMeters: 50,
+      attribution: "Derived from active DEM provider when preprocessing is available",
+      notes:
+        "Visible contour affordance only. Browser MapLibre uses raster-dem terrain; production contours should be precomputed into vector tiles or contour PMTiles."
+    },
+    {
+      id: "precomputed-contours-pmtiles",
+      label: "Precomputed contour PMTiles",
+      kind: "precomputed-vector-pmtiles",
+      status: "unavailable",
+      sourceUrl: "pmtiles://local-or-hosted-contours.pmtiles",
+      intervalMeters: 20,
+      attribution: "Future preprocessed DEM contour tiles",
+      notes: "Typed future provider for maintained vector contours generated outside the browser."
+    }
+  ];
 }
 
 export function createLightBasemapStyle(): StyleSpecification {

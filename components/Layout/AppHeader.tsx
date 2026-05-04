@@ -17,6 +17,59 @@ interface NominatimResult {
   class?: string;
 }
 
+const offlineLocations = [
+  { name: "lisbon", label: "Lisbon, Portugal", latitude: 38.7223, longitude: -9.1393, zoom: 9 },
+  {
+    name: "london",
+    label: "London, United Kingdom",
+    latitude: 51.5072,
+    longitude: -0.1276,
+    zoom: 9
+  },
+  { name: "porto", label: "Porto, Portugal", latitude: 41.1579, longitude: -8.6291, zoom: 9 },
+  { name: "madrid", label: "Madrid, Spain", latitude: 40.4168, longitude: -3.7038, zoom: 9 },
+  { name: "barcelona", label: "Barcelona, Spain", latitude: 41.3874, longitude: 2.1686, zoom: 9 }
+];
+
+function parseCoordinateQuery(query: string) {
+  const match = query.match(/^\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)\s*$/);
+  if (!match) return null;
+
+  const latitude = Number(match[1]);
+  const longitude = Number(match[2]);
+  if (
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude) ||
+    Math.abs(latitude) > 90 ||
+    Math.abs(longitude) > 180
+  ) {
+    return null;
+  }
+
+  return {
+    latitude,
+    longitude,
+    zoom: 8,
+    label: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+  };
+}
+
+function getOfflineLocation(query: string) {
+  const normalized = query.trim().toLowerCase();
+  const coordinate = parseCoordinateQuery(normalized);
+  if (coordinate) return coordinate;
+
+  const place = offlineLocations.find((location) => normalized.includes(location.name));
+  return place
+    ? {
+        latitude: place.latitude,
+        longitude: place.longitude,
+        zoom: place.zoom,
+        label: place.label
+      }
+    : null;
+}
+
 export function AppHeader() {
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -26,13 +79,26 @@ export function AppHeader() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const trimmedQuery = query.trim();
+    const formData = new FormData(event.currentTarget);
+    const formQuery = String(formData.get("location-search") ?? "");
+    const trimmedQuery = (query || formQuery).trim();
     if (!trimmedQuery) return;
 
     setIsSearching(true);
     setSearchState("idle");
 
     try {
+      const offlineLocation = getOfflineLocation(trimmedQuery);
+      if (offlineLocation) {
+        flyToLocation(offlineLocation);
+        setMapStatus({
+          map: "active",
+          message: `Flying to ${offlineLocation.label}`
+        });
+        setSearchState("found");
+        return;
+      }
+
       const params = new URLSearchParams({
         q: trimmedQuery,
         format: "jsonv2",
@@ -86,6 +152,7 @@ export function AppHeader() {
       >
         <Search className="h-4 w-4 text-[#6d7b87]" />
         <Input
+          name="location-search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           className="h-9 border-0 px-0 shadow-none focus:border-0 focus:ring-0"

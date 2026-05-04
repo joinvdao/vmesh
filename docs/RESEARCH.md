@@ -193,3 +193,9 @@ Bridge constraints:
 Research question:
 
 - What is the minimum safe common message schema that can move between Reticulum/LXMF and Meshtastic without overloading radio networks or confusing provenance?
+
+## Current Implementation Boundaries
+
+The app includes typed provider interfaces and deterministic mock data for weather, flood risk, fire risk, solar potential, food networks, property signals, Reticulum gateway status, Meshtastic bridge status, and local LLM status. These are implementation scaffolds, not claims that live providers are connected.
+
+No paid APIs, API keys, scraped listings, exact private addresses, or live radio transmissions are used in V1. Property availability remains mock model data only until lawful source terms, privacy controls, and provenance handling are reviewed.

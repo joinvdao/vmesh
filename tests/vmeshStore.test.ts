@@ -48,4 +48,26 @@ describe("vmesh store", () => {
     expect(state.viewState.latitude).toBeCloseTo(51.5072);
     expect(state.viewState.zoom).toBe(9);
   });
+
+  it("tracks terrain contour status and hub playbook actions in Zustand", () => {
+    useVmeshStore.getState().setContourStatus("fallback", "contours pending preprocessing");
+    expect(useVmeshStore.getState().mapStatus.contours).toBe("fallback");
+
+    const task = useVmeshStore.getState().hubPlaybook.tasks[1];
+    useVmeshStore.getState().toggleHubPlaybookTask(task.id);
+    expect(useVmeshStore.getState().hubPlaybook.tasks[1].complete).toBe(!task.complete);
+
+    useVmeshStore.getState().updateHubPlaybookTaskNotes(task.id, "stage filters at hub");
+    expect(useVmeshStore.getState().hubPlaybook.tasks[1].notes).toBe("stage filters at hub");
+  });
+
+  it("keeps micro summaries and hub gateway mocks in store state", () => {
+    const state = useVmeshStore.getState();
+    expect(state.selectedFoodNetworkSummary.assets).toBeDefined();
+    expect(state.propertySignals.every((signal) => signal.approximateLocation.includes("H3"))).toBe(
+      true
+    );
+    expect(state.hubNodeStatus.reticulum.status).toBe("bridge-connected");
+    expect(state.hubMessages[0].signaturePlaceholder).toContain("signature");
+  });
 });

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getTerrainProviderCandidates,
+  getContourProviderRegistry,
   getTerrainProviderRegistry,
   MAPTERHORN_DEFAULT_PMTILES_URL,
   MAPTERHORN_PROVIDER_ID,
@@ -68,5 +69,17 @@ describe("terrain provider registry", () => {
     expect(fabdem?.status).toBe("requires-license");
     expect(opentopo?.requiresApiKey).toBe(true);
     expect(fabdem ? toRasterDemSource(fabdem) : null).toBeNull();
+  });
+
+  it("exposes contour providers as derived or precomputed, not fake live extraction", () => {
+    const contours = getContourProviderRegistry();
+    expect(contours[0]).toMatchObject({
+      kind: "derived-dem-placeholder",
+      status: "fallback"
+    });
+    expect(contours[1]).toMatchObject({
+      kind: "precomputed-vector-pmtiles",
+      status: "unavailable"
+    });
   });
 });
