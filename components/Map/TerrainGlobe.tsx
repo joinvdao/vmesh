@@ -371,18 +371,19 @@ export function TerrainGlobe() {
   }, [selectedHexDetails]);
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-[#f3f8f7]">
-      <div className="absolute inset-0 bg-[linear-gradient(#e9f1ef_1px,transparent_1px),linear-gradient(90deg,#e9f1ef_1px,transparent_1px)] bg-[size:52px_52px] opacity-70" />
-      <div className="vmesh-globe-shell pointer-events-none absolute left-1/2 top-1/2 h-[88vmin] max-h-[1120px] w-[88vmin] max-w-[1120px] rounded-full bg-[#dbecea] shadow-[inset_-92px_-76px_132px_rgba(22,73,79,0.24),inset_42px_34px_84px_rgba(255,255,255,0.52),0_52px_135px_rgba(46,91,96,0.26)]" />
-      <div className="vmesh-globe-shell absolute left-1/2 top-1/2 h-[88vmin] max-h-[1120px] w-[88vmin] max-w-[1120px] overflow-hidden rounded-full border border-[#d6e8e4] bg-[#ecf5f3] shadow-[0_46px_130px_rgba(40,78,83,0.22)]">
+    <div className="absolute inset-0 overflow-hidden bg-[#020915]">
+      <div className="vmesh-starfield pointer-events-none absolute inset-0" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,rgba(61,122,166,0.28),transparent_34%),radial-gradient(circle_at_50%_52%,rgba(4,10,21,0)_0,rgba(4,10,21,0.42)_46%,rgba(2,7,16,0.94)_78%),linear-gradient(180deg,#071522_0%,#020915_72%)]" />
+      <div className="vmesh-globe-shell pointer-events-none absolute left-1/2 top-1/2 h-[84vmin] max-h-[1040px] w-[84vmin] max-w-[1040px] rounded-full bg-[#0b1722] shadow-[0_0_42px_rgba(188,221,255,0.68),0_0_110px_rgba(74,143,213,0.42),0_50px_140px_rgba(0,0,0,0.48),inset_-78px_-64px_118px_rgba(0,0,0,0.48),inset_38px_30px_82px_rgba(197,229,255,0.3)]" />
+      <div className="vmesh-globe-shell absolute left-1/2 top-1/2 h-[84vmin] max-h-[1040px] w-[84vmin] max-w-[1040px] overflow-hidden rounded-full border border-[#c7e2ff]/45 bg-[#06101a] shadow-[0_0_58px_rgba(180,216,255,0.58),0_0_126px_rgba(62,126,201,0.4),0_44px_130px_rgba(0,0,0,0.5)]">
         <EarthGlobeFallback />
-        <div className="pointer-events-none absolute inset-[9%] z-10 rounded-full border border-[#9bbfba]/35 opacity-70" />
+        <div className="pointer-events-none absolute inset-[7%] z-10 rounded-full border border-[#d5ecff]/35 opacity-80" />
         <div
           ref={containerRef}
-          className="relative z-10 h-full w-full opacity-[0.62] mix-blend-multiply"
+          className="relative z-10 h-full w-full opacity-[0.72] mix-blend-normal brightness-[1.06] contrast-[1.06] saturate-[0.82]"
         />
-        <div className="pointer-events-none absolute inset-0 z-20 rounded-full bg-[radial-gradient(circle_at_32%_22%,rgba(255,255,255,0.48),transparent_32%),radial-gradient(circle_at_74%_72%,rgba(21,91,99,0.34),transparent_36%),linear-gradient(120deg,rgba(255,255,255,0.16),rgba(12,55,68,0.22))]" />
-        <div className="vmesh-atmosphere-drift pointer-events-none absolute inset-[3%] z-20 rounded-full border border-white/45 shadow-[inset_20px_18px_48px_rgba(255,255,255,0.18)]" />
+        <div className="pointer-events-none absolute inset-0 z-20 rounded-full bg-[radial-gradient(circle_at_32%_22%,rgba(232,246,255,0.42),transparent_27%),radial-gradient(circle_at_73%_70%,rgba(2,9,16,0.46),transparent_42%),linear-gradient(112deg,rgba(255,255,255,0.08)_0%,rgba(10,34,52,0.08)_34%,rgba(0,0,0,0.34)_100%)]" />
+        <div className="vmesh-atmosphere-drift pointer-events-none absolute inset-[2.5%] z-20 rounded-full border border-[#d9efff]/55 shadow-[inset_24px_20px_54px_rgba(255,255,255,0.16),0_0_42px_rgba(168,213,255,0.5)]" />
         {selectedMarkerPosition ? <SelectedCellMarker position={selectedMarkerPosition} /> : null}
       </div>
       <MapControls />

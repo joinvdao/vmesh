@@ -328,7 +328,7 @@ export function createLightBasemapStyle(): StyleSpecification {
 
   return {
     version: 8,
-    name: "vmesh-light-operational",
+    name: "vmesh-civic-globe",
     sources: {
       "osm-raster": osmRaster
     },
@@ -337,7 +337,7 @@ export function createLightBasemapStyle(): StyleSpecification {
         id: "background",
         type: "background",
         paint: {
-          "background-color": "#eef5f4"
+          "background-color": "#020915"
         }
       },
       {
@@ -346,10 +346,10 @@ export function createLightBasemapStyle(): StyleSpecification {
         source: "osm-raster",
         paint: {
           "raster-opacity": 0.72,
-          "raster-saturation": -0.38,
-          "raster-contrast": -0.08,
-          "raster-brightness-min": 0.08,
-          "raster-brightness-max": 0.96
+          "raster-saturation": -0.42,
+          "raster-contrast": 0.02,
+          "raster-brightness-min": 0.02,
+          "raster-brightness-max": 0.86
         }
       }
     ],
