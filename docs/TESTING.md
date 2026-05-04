@@ -45,6 +45,10 @@ Provider tests should cover:
 - Future/provider placeholder handling for PMTiles, API DEM, dataset DEM, and STAC catalog sources.
 - Fallback order from env provider to no-token demo provider.
 - License-gated and preprocessing-required statuses.
+- Contour provider status/config, including placeholder versus precomputed contour PMTiles.
+- Macro climate, hazard, and solar scoring helpers.
+- Food-network and property mock records with privacy-safe fields.
+- Hub playbook reducer actions and mock gateway status.
 
 ## When Tests Must Change
 

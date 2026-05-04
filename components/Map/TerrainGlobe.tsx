@@ -384,6 +384,7 @@ export function TerrainGlobe() {
       <div className="pointer-events-none absolute left-1/2 top-[42%] h-[min(78vw,980px)] w-[min(78vw,980px)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#dbecea] shadow-[inset_-80px_-70px_120px_rgba(22,73,79,0.18),0_34px_80px_rgba(46,91,96,0.16)]" />
       <div className="absolute left-1/2 top-[42%] h-[min(78vw,980px)] w-[min(78vw,980px)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border border-[#d6e8e4] bg-[#ecf5f3] shadow-[0_30px_90px_rgba(40,78,83,0.16)]">
         <EarthGlobeFallback />
+        <div className="pointer-events-none absolute inset-[12%] z-10 rounded-full border border-[#9bbfba]/35 opacity-70" />
         <div
           ref={containerRef}
           className="relative z-10 h-full w-full opacity-80 mix-blend-multiply"

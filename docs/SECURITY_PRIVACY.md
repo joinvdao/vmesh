@@ -42,6 +42,8 @@ Exact coordinates and addresses can identify people, private property, or sensit
 
 Map tiles and terrain tiles are fetched client-side in the MVP. Future macro and micro data providers must document request fields, response fields, retention behavior, caching, cost controls, source terms, and fallback paths.
 
+Current macro, food-network, property, hub-network, and local-LLM records are deterministic mocks. Property records must remain approximate H3-area signals in V1: no scraping, no exact private addresses, no raw owner/contact data, and no paid listing feeds without terms review and explicit privacy controls.
+
 ## Open Terrain Source Rules
 
 - Keep Mapzen/Joerd Terrarium-style tiles, MapLibre demo terrain, and other no-token public tile sources behind the typed provider registry.
@@ -50,6 +52,8 @@ Map tiles and terrain tiles are fetched client-side in the MVP. Future macro and
 - Treat OpenTopography-style APIs as future API DEM providers. Do not call them in V1 and do not commit API keys.
 - Treat FABDEM as license-gated. Its public license is non-commercial/share-alike; commercial use requires separate licensing.
 - Do not add paid APIs, secret-bearing tile URLs, or real ingestion jobs without tests, docs, cost controls, license review, and a fallback state.
+
+Contour records are derived products. Browser terrain uses `raster-dem`; production contours require preprocessing DEM data into vector contour tiles or PMTiles with source attribution and license review.
 
 ## Logging And Analytics Restrictions
 

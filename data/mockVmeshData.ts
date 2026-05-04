@@ -3,10 +3,20 @@ import { cellToParent, getResolution, gridDisk, latLngToCell } from "h3-js";
 import { DEFAULT_U5_CELL, generateLocalU8Cells, MESH_TIER_RESOLUTIONS } from "@/lib/h3Mesh";
 import { computeAntifragilityScore } from "@/lib/meshScoring";
 import type {
+  DataProvenance,
+  FoodNetworkAsset,
+  HazardRiskSummary,
+  HubMessageEnvelope,
+  HubNodeStatus,
+  HubPlaybookState,
+  MacroClimateSummary,
   MacroPillars,
   MeshTier,
+  MicroFoodNetworkSummary,
   MicroSummary,
+  PropertySignalSummary,
   ProvenanceSummary,
+  SolarPotentialSummary,
   UserRecord,
   UserSummary,
   VmeshHexRecord
@@ -297,3 +307,166 @@ export const initialUserRecords: UserRecord[] = [
 export function getAllHexRecords(dataByTier = initialHexDataByTier): VmeshHexRecord[] {
   return [...dataByTier.U3, ...dataByTier.U5, ...dataByTier.U8];
 }
+
+export const mockProviderProvenance: DataProvenance = {
+  sourceId: "vmesh-mock-provider-boundary",
+  sourceLabel: "vmesh deterministic mock provider boundary",
+  sourceType: "mock",
+  updatedAt: "2026-05-01T00:00:00.000Z",
+  license: "Fictional sample data; no paid APIs or scraped listings",
+  confidence: 74
+};
+
+export function createMockClimateSummary(seed: number): MacroClimateSummary {
+  return {
+    currentConditions: seed % 2 === 0 ? "Warm, dry, light wind" : "Mild, coastal humidity",
+    forecastSummary: "Mock 72h forecast boundary; provider adapter not connected",
+    heatStress: 38 + ((seed * 7) % 42),
+    coldStress: 10 + ((seed * 5) % 28),
+    windExposure: 24 + ((seed * 9) % 48),
+    rainfallOutlook: 30 + ((seed * 11) % 52),
+    droughtIndicator: 22 + ((seed * 6) % 50),
+    provenance: mockProviderProvenance
+  };
+}
+
+export function createMockHazardRisk(seed: number): HazardRiskSummary {
+  const classes = ["low", "moderate", "high", "severe"] as const;
+  return {
+    floodExposureScore: 18 + ((seed * 10) % 66),
+    floodInputs: ["DEM/HAND-ready architecture", "water proximity", "lowland exposure"],
+    fireRiskClass: classes[seed % classes.length],
+    fireRiskScore: 20 + ((seed * 13) % 70),
+    fireInputs: ["vegetation dryness", "wind", "slope/topography"],
+    confidence: 68 + (seed % 18),
+    provenance: mockProviderProvenance
+  };
+}
+
+export function createMockSolarPotential(seed: number): SolarPotentialSummary {
+  return {
+    score: 48 + ((seed * 8) % 44),
+    slopeReadiness: 52 + ((seed * 6) % 38),
+    aspectReadiness: 45 + ((seed * 7) % 45),
+    cloudinessPenalty: 8 + ((seed * 5) % 32),
+    irradianceBand: seed % 3 === 0 ? "high" : seed % 3 === 1 ? "medium" : "low",
+    hubUseInterpretation: "Mock signal for sizing local charging, refrigeration, and comms loads.",
+    provenance: mockProviderProvenance
+  };
+}
+
+export const mockFoodNetworkAssets: FoodNetworkAsset[] = initialHexDataByTier.U5.slice(0, 7).map(
+  (record, index) => {
+    const types = [
+      "farm",
+      "grower",
+      "farmers-market",
+      "food-hub",
+      "community-garden",
+      "storage",
+      "distribution-point"
+    ] as const;
+    return {
+      id: `mock-food-${index + 1}`,
+      type: types[index],
+      name: `Mock ${types[index].replace("-", " ")} ${index + 1}`,
+      h3Id: record.h3Id,
+      availability: index % 2 === 0 ? "seasonal" : "year-round",
+      seasonality: index % 2 === 0 ? "spring-autumn" : "all-season",
+      contact: "not-stored",
+      provenance: mockProviderProvenance
+    };
+  }
+);
+
+export function summarizeFoodNetwork(h3Id: string): MicroFoodNetworkSummary {
+  const assets = mockFoodNetworkAssets.filter((asset) => asset.h3Id === h3Id);
+  return {
+    assets,
+    farms: assets.filter((asset) => asset.type === "farm").length,
+    growers: assets.filter((asset) => asset.type === "grower").length,
+    farmersMarkets: assets.filter((asset) => asset.type === "farmers-market").length,
+    foodHubs: assets.filter((asset) => asset.type === "food-hub").length,
+    communityGardens: assets.filter((asset) => asset.type === "community-garden").length,
+    storageAndDistribution: assets.filter(
+      (asset) => asset.type === "storage" || asset.type === "distribution-point"
+    ).length
+  };
+}
+
+export const mockPropertySignals: PropertySignalSummary[] = initialHexDataByTier.U5.slice(0, 5).map(
+  (record, index) => ({
+    id: `mock-property-${index + 1}`,
+    listingType: index % 2 === 0 ? "land" : "homestead",
+    h3Id: record.h3Id,
+    priceBand: index < 2 ? "100k-250k" : "250k-500k",
+    acreageBand: index < 2 ? "1-5" : "5-20",
+    approximateLocation: `${record.placeName} H3 area only`,
+    waterNotes: "Mock water access note; no exact address.",
+    soilNotes: "Mock soil suitability note.",
+    solarNotes: "Mock solar access note.",
+    accessNotes: "Mock access note; verify lawful source before real use.",
+    source: mockProviderProvenance
+  })
+);
+
+export function createInitialHubPlaybookState(h3Id = DEFAULT_SELECTED_HEX_ID): HubPlaybookState {
+  return {
+    active: true,
+    selectedH3Id: h3Id,
+    readinessScore: 41,
+    updatedAt: "2026-05-01T00:00:00.000Z",
+    tasks: [
+      "Water storage and filtration baseline",
+      "Food producers and shared pantry map",
+      "Solar charging and battery audit",
+      "Reticulum bridge placement",
+      "Access route and shelter check",
+      "Tool library and governance circle"
+    ].map((title, index) => ({
+      id: `hub-task-${index + 1}`,
+      h3Id,
+      dimension: (["water", "food", "power", "comms", "access", "governance"] as const)[index],
+      title,
+      phase: index < 2 ? "assess" : index < 4 ? "stabilize" : "build",
+      complete: index === 0,
+      notes: ""
+    }))
+  };
+}
+
+export const mockHubNodeStatus: HubNodeStatus = {
+  reticulum: {
+    status: "bridge-connected",
+    reachablePeers: 3,
+    queuedMessages: 1,
+    notes: "Mock local gateway; browser talks to gateway, not radio hardware."
+  },
+  meshtastic: {
+    status: "local-only",
+    connectedNode: "mock-lora-bridge",
+    radioPath: "mock",
+    notes: "Bridge scaffold only; no live LoRa transmission."
+  },
+  localLlm: {
+    status: "local-only",
+    endpoint: "http://localhost:11434",
+    modelLabel: "mock-local-llm",
+    notes: "Local API placeholder for hub-hosted model access."
+  },
+  lanMode: "offline-ready",
+  updatedAt: "2026-05-01T00:00:00.000Z"
+};
+
+export const mockHubMessages: HubMessageEnvelope[] = [
+  {
+    id: "mock-message-1",
+    h3Id: DEFAULT_SELECTED_HEX_ID,
+    timestamp: "2026-05-01T00:10:00.000Z",
+    priority: "important",
+    payloadType: "resource-report",
+    payload: "Mock pantry inventory ready for local-only sharing.",
+    signaturePlaceholder: "signature-pending-local-gateway",
+    provenance: mockProviderProvenance
+  }
+];

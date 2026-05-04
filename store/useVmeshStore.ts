@@ -4,21 +4,38 @@ import { create } from "zustand";
 
 import {
   DEFAULT_SELECTED_HEX_ID,
+  createInitialHubPlaybookState,
   generateU8RecordsForParent,
   getAllHexRecords,
   initialHexDataByTier,
-  initialUserRecords
+  initialUserRecords,
+  mockFoodNetworkAssets,
+  mockHubMessages,
+  mockHubNodeStatus,
+  mockPropertySignals,
+  summarizeFoodNetwork
 } from "@/data/mockVmeshData";
 import { DEFAULT_FOCUS, getU5ParentForLocalDetail, MESH_TIER_DEFINITIONS } from "@/lib/h3Mesh";
-import { getTerrainProviderRegistry, selectTerrainProvider } from "@/lib/terrainSources";
+import {
+  getContourProviderRegistry,
+  getTerrainProviderRegistry,
+  selectTerrainProvider
+} from "@/lib/terrainSources";
 import type {
   ActiveLayers,
+  ContourProviderConfig,
   DraftUserRecord,
+  FoodNetworkAsset,
+  HubMessageEnvelope,
+  HubNodeStatus,
+  HubPlaybookState,
   HoveredHexInfo,
   MapFlyToRequest,
   MapStatus,
   MeshTier,
   MeshTierDefinition,
+  MicroFoodNetworkSummary,
+  PropertySignalSummary,
   TerrainProviderConfig,
   TerrainProviderStatus,
   UserRecord,
@@ -42,7 +59,14 @@ export interface VmeshStore {
   draftUserRecord: DraftUserRecord;
   mapStatus: MapStatus;
   terrainProviders: TerrainProviderConfig[];
+  contourProviders: ContourProviderConfig[];
   selectedTerrainProviderId: string;
+  foodNetworkAssets: FoodNetworkAsset[];
+  propertySignals: PropertySignalSummary[];
+  selectedFoodNetworkSummary: MicroFoodNetworkSummary;
+  hubPlaybook: HubPlaybookState;
+  hubNodeStatus: HubNodeStatus;
+  hubMessages: HubMessageEnvelope[];
   dataFreshness: string;
   flyToRequest: MapFlyToRequest | null;
   setViewState: (viewState: Partial<ViewState>) => void;
@@ -58,7 +82,10 @@ export interface VmeshStore {
   clearDraftUserRecord: () => void;
   setMapStatus: (status: Partial<MapStatus>) => void;
   setTerrainStatus: (status: TerrainProviderStatus, message?: string) => void;
+  setContourStatus: (status: TerrainProviderStatus, message?: string) => void;
   setActiveTerrainProvider: (providerId: string, message?: string) => void;
+  toggleHubPlaybookTask: (taskId: string) => void;
+  updateHubPlaybookTaskNotes: (taskId: string, notes: string) => void;
 }
 
 const terrainProviderPreference =
@@ -73,6 +100,7 @@ const terrainProviders = getTerrainProviderRegistry({
     typeof process !== "undefined" ? process.env.NEXT_PUBLIC_MAPZEN_TERRARIUM_URL : undefined
 });
 const selectedProvider = selectTerrainProvider(terrainProviders, terrainProviderPreference);
+const contourProviders = getContourProviderRegistry();
 const initialSelected =
   getAllHexRecords(initialHexDataByTier).find(
     (record) => record.h3Id === DEFAULT_SELECTED_HEX_ID
@@ -121,11 +149,19 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
   mapStatus: {
     map: "idle",
     terrain: "idle",
+    contours: "fallback",
     providerId: selectedProvider.id,
     message: "Terrain source not initialized"
   },
   terrainProviders,
+  contourProviders,
   selectedTerrainProviderId: selectedProvider.id,
+  foodNetworkAssets: mockFoodNetworkAssets,
+  propertySignals: mockPropertySignals,
+  selectedFoodNetworkSummary: summarizeFoodNetwork(initialSelected.h3Id),
+  hubPlaybook: createInitialHubPlaybookState(initialSelected.h3Id),
+  hubNodeStatus: mockHubNodeStatus,
+  hubMessages: mockHubMessages,
   dataFreshness: "15m ago",
   flyToRequest: null,
   setViewState: (viewState) =>
@@ -175,6 +211,13 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
         globalResolution: selectedRecord.resolution,
         hexDataByTier,
         selectedHexDetails: selectedRecord,
+        selectedFoodNetworkSummary: summarizeFoodNetwork(selectedRecord.h3Id),
+        hubPlaybook: {
+          ...state.hubPlaybook,
+          selectedH3Id: selectedRecord.h3Id,
+          tasks: state.hubPlaybook.tasks.map((task) => ({ ...task, h3Id: selectedRecord.h3Id })),
+          updatedAt: new Date().toISOString()
+        },
         visibleHexCount: hexDataByTier[selectedTier].length
       };
     }),
@@ -248,6 +291,14 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
         message: message ?? state.mapStatus.message
       }
     })),
+  setContourStatus: (contours, message) =>
+    set((state) => ({
+      mapStatus: {
+        ...state.mapStatus,
+        contours,
+        message: message ?? state.mapStatus.message
+      }
+    })),
   setActiveTerrainProvider: (providerId, message) =>
     set((state) => ({
       selectedTerrainProviderId: providerId,
@@ -255,6 +306,33 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
         ...state.mapStatus,
         providerId,
         message: message ?? state.mapStatus.message
+      }
+    })),
+  toggleHubPlaybookTask: (taskId) =>
+    set((state) => {
+      const tasks = state.hubPlaybook.tasks.map((task) =>
+        task.id === taskId ? { ...task, complete: !task.complete } : task
+      );
+      const readinessScore = Math.round(
+        (tasks.filter((task) => task.complete).length / tasks.length) * 100
+      );
+      return {
+        hubPlaybook: {
+          ...state.hubPlaybook,
+          tasks,
+          readinessScore,
+          updatedAt: new Date().toISOString()
+        }
+      };
+    }),
+  updateHubPlaybookTaskNotes: (taskId, notes) =>
+    set((state) => ({
+      hubPlaybook: {
+        ...state.hubPlaybook,
+        tasks: state.hubPlaybook.tasks.map((task) =>
+          task.id === taskId ? { ...task, notes } : task
+        ),
+        updatedAt: new Date().toISOString()
       }
     }))
 }));

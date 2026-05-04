@@ -92,6 +92,12 @@ Meshtastic bridge operations:
 
 Do not transmit real emergency, medical, location, identity, or contact information through a live mesh integration until privacy, consent, retention, rate limiting, and operator procedures are documented and reviewed.
 
+## Local Hub Preview
+
+The current UI exposes mock statuses for Reticulum, Meshtastic bridge, and local LLM gateway readiness. These statuses are local-first scaffolding only. A production hub should run vmesh on LAN/offline hardware and connect the browser app to a narrow localhost gateway service. The gateway, not the browser, owns Reticulum identity, LXMF queues, Meshtastic hardware access, and local model endpoint access.
+
+The hub playbook stores local/mock checklist state in Zustand for the selected H3 cell. Export is currently a UI affordance for checklist readiness; persistent file export should be added only with explicit local privacy handling.
+
 ## Data Operations
 
 The V1 app distinguishes:
