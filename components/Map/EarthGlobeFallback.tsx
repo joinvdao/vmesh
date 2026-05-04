@@ -7,7 +7,7 @@ export function EarthGlobeFallback() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
       <div
-        className="absolute inset-0 scale-110 bg-cover bg-center opacity-75 saturate-[1.12] contrast-[1.06]"
+        className="vmesh-earth-rotate absolute -left-[34%] top-0 h-full w-[168%] scale-110 bg-cover bg-center opacity-80 saturate-[1.16] contrast-[1.08]"
         style={{ backgroundImage: `url(${earthTextureUrl})` }}
       />
       <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_31%_24%,rgba(255,255,255,0.68),transparent_28%),radial-gradient(circle_at_68%_64%,rgba(0,78,94,0.22),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.2),rgba(11,67,86,0.18))]" />

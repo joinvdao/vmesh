@@ -2,21 +2,23 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Layer, PickingInfo } from "@deck.gl/core";
-import { cellToLatLng } from "h3-js";
 import type maplibregl from "maplibre-gl";
 
 import { EarthGlobeFallback } from "@/components/Map/EarthGlobeFallback";
+import { flyToSearchRequest, flyToSelectedHex } from "@/components/Map/globeCamera";
+import { createGlobeRuntime } from "@/components/Map/globeRuntime";
+import type { SelectedMarkerPosition } from "@/components/Map/globeRuntime";
 import { buildH3Layer, layerOpacityForTier } from "@/components/Map/h3LayerFactory";
 import { MapControls } from "@/components/Map/MapControls";
 import { MeshLegend } from "@/components/Map/MeshLegend";
 import { MeshTooltip } from "@/components/Map/MeshTooltip";
+import { SelectedCellMarker } from "@/components/Map/SelectedCellMarker";
+import { createTerrainRuntime } from "@/components/Map/terrainRuntime";
 import { acquirePmtilesProtocol, isTerrainError } from "@/lib/mapLibreTerrainRuntime";
 import {
   createLightBasemapStyle,
   getTerrainProviderCandidates,
-  selectTerrainProvider,
-  TERRAIN_SOURCE_ID,
-  toRasterDemSource
+  selectTerrainProvider
 } from "@/lib/terrainSources";
 import type { VmeshHexRecord } from "@/lib/vmeshTypes";
 import { useVmeshStore } from "@/store/useVmeshStore";
@@ -27,6 +29,7 @@ type GlobeCapableMap = maplibregl.Map & {
 type H3HexagonLayerConstructor = typeof import("@deck.gl/geo-layers").H3HexagonLayer;
 type MapboxOverlayConstructor = typeof import("@deck.gl/mapbox").MapboxOverlay;
 type MapboxOverlayInstance = InstanceType<MapboxOverlayConstructor>;
+
 export function TerrainGlobe() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -34,14 +37,16 @@ export function TerrainGlobe() {
   const layersRef = useRef<Layer[]>([]);
   const initialViewStateRef = useRef(useVmeshStore.getState().viewState);
   const previousSelectedHexRef = useRef(useVmeshStore.getState().selectedHexId);
+  const searchSelectedHexRef = useRef<string | null>(null);
   const [h3LayerConstructor, setH3LayerConstructor] = useState<H3HexagonLayerConstructor | null>(
     null
   );
+  const [selectedMarkerPosition, setSelectedMarkerPosition] =
+    useState<SelectedMarkerPosition | null>(null);
 
   const selectedTier = useVmeshStore((state) => state.selectedTier);
   const selectedHexId = useVmeshStore((state) => state.selectedHexId);
   const selectedHexDetails = useVmeshStore((state) => state.selectedHexDetails);
-  const flyToRequest = useVmeshStore((state) => state.flyToRequest);
   const activeLayers = useVmeshStore((state) => state.activeLayers);
   const activePanel = useVmeshStore((state) => state.activePanel);
   const hexDataByTier = useVmeshStore((state) => state.hexDataByTier);
@@ -93,7 +98,7 @@ export function TerrainGlobe() {
     }
 
     const activeData = hexDataByTier[selectedTier];
-    if (activeLayers.macro || selectedTier === "U8") {
+    if (activeLayers.macro) {
       nextLayers.push(
         buildH3Layer({
           id: `${selectedTier.toLowerCase()}-active`,
@@ -122,8 +127,7 @@ export function TerrainGlobe() {
   const visibleHexCount = useMemo(() => {
     const contextCount =
       activeLayers.context && selectedTier !== "U3" ? hexDataByTier.U3.length : 0;
-    const activeCount =
-      activeLayers.macro || selectedTier === "U8" ? hexDataByTier[selectedTier].length : 0;
+    const activeCount = activeLayers.macro ? hexDataByTier[selectedTier].length : 0;
     return contextCount + activeCount;
   }, [activeLayers.context, activeLayers.macro, hexDataByTier, selectedTier]);
 
@@ -132,6 +136,7 @@ export function TerrainGlobe() {
 
     let cancelled = false;
     let releasePmtilesProtocol = () => {};
+    let unsubscribeCameraRequests = () => {};
     const provider = selectTerrainProvider(terrainProviders, selectedTerrainProviderId);
     setMapStatus({
       map: "loading",
@@ -163,7 +168,6 @@ export function TerrainGlobe() {
           ? acquirePmtilesProtocol(mapLibre)
           : () => {};
 
-        let activeTerrainIndex = -1;
         let triedAsyncFallback = false;
         const initialViewState = initialViewStateRef.current;
         const map = new mapLibre.Map({
@@ -183,50 +187,35 @@ export function TerrainGlobe() {
         const globeMap = map as GlobeCapableMap;
         globeMap.setProjection?.({ type: "globe" });
 
-        const clearTerrainSource = () => {
-          if (map.getSource(TERRAIN_SOURCE_ID)) {
-            map.setTerrain(null);
-            map.removeSource(TERRAIN_SOURCE_ID);
-          }
-        };
+        let lastFlyToRequest = useVmeshStore.getState().flyToRequest;
+        unsubscribeCameraRequests = useVmeshStore.subscribe((state) => {
+          if (!state.flyToRequest || state.flyToRequest === lastFlyToRequest) return;
+          lastFlyToRequest = state.flyToRequest;
+          searchSelectedHexRef.current = state.selectedHexDetails.h3Id;
+          flyToSearchRequest({
+            map,
+            flyToRequest: state.flyToRequest,
+            setViewState,
+            isCurrentMap: () => mapRef.current === map
+          });
+        });
 
-        const applyTerrainCandidate = (startIndex: number, fallbackReason?: string): boolean => {
-          for (let index = startIndex; index < terrainCandidates.length; index += 1) {
-            const candidate = terrainCandidates[index];
-            const source = toRasterDemSource(candidate);
-            if (!source) continue;
-
-            try {
-              clearTerrainSource();
-              map.addSource(TERRAIN_SOURCE_ID, source);
-              map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: 1.5 });
-              activeTerrainIndex = index;
-
-              const status =
-                candidate.status === "fallback" || index > 0 || fallbackReason
-                  ? "fallback"
-                  : "active";
-              const message = fallbackReason
-                ? `${candidate.label} terrain fallback after ${fallbackReason}`
-                : `${candidate.label} terrain active`;
-
-              setActiveTerrainProvider(candidate.id, message);
-              setTerrainStatus(status, message);
-              return true;
-            } catch (error) {
-              const message = error instanceof Error ? error.message : "Terrain source failed";
-              setTerrainStatus("fallback", `${candidate.label} failed: ${message}`);
-            }
-          }
-
-          setTerrainStatus("unavailable", "No map-ready terrain provider is currently available");
-          return false;
-        };
+        const terrainRuntime = createTerrainRuntime({
+          map,
+          terrainCandidates,
+          setActiveTerrainProvider,
+          setTerrainStatus
+        });
 
         let didAttachOverlay = false;
         let didAttachTerrain = false;
         let terrainRetries = 0;
         let terrainRetryTimer: number | undefined;
+        const globeRuntime = createGlobeRuntime({
+          map,
+          getCancelled: () => cancelled,
+          setSelectedMarkerPosition
+        });
 
         const attachOverlay = () => {
           if (didAttachOverlay) return;
@@ -243,6 +232,8 @@ export function TerrainGlobe() {
           });
           overlayRef.current = overlay;
           map.addControl(overlay as unknown as maplibregl.IControl);
+          globeRuntime.syncSelectedMarker();
+          globeRuntime.queueAutoSpin();
         };
 
         const tryAttachTerrain = () => {
@@ -260,7 +251,7 @@ export function TerrainGlobe() {
           }
 
           didAttachTerrain = true;
-          applyTerrainCandidate(0);
+          terrainRuntime.applyTerrainCandidate(0);
         };
 
         const onStyleReady = () => {
@@ -288,15 +279,28 @@ export function TerrainGlobe() {
             pitch: map.getPitch(),
             bearing: map.getBearing()
           });
+          globeRuntime.syncSelectedMarker();
+          globeRuntime.queueAutoSpin();
         });
+
+        map.on("move", globeRuntime.syncSelectedMarker);
+        map.on("dragstart", globeRuntime.pauseAutoSpin);
+        map.on("zoomstart", globeRuntime.pauseAutoSpin);
+        map.on("rotatestart", globeRuntime.pauseAutoSpin);
+        map.on("pitchstart", globeRuntime.pauseAutoSpin);
 
         map.on("error", (event) => {
           const message = event.error?.message ?? "Map renderer reported an error";
-          const activeProvider = terrainCandidates[activeTerrainIndex];
+          const activeProvider = terrainRuntime.getActiveTerrainProvider();
 
           if (!triedAsyncFallback && isTerrainError(activeProvider, message)) {
             triedAsyncFallback = true;
-            if (applyTerrainCandidate(activeTerrainIndex + 1, message)) {
+            if (
+              terrainRuntime.applyTerrainCandidate(
+                terrainRuntime.getActiveTerrainIndex() + 1,
+                message
+              )
+            ) {
               return;
             }
           }
@@ -308,6 +312,7 @@ export function TerrainGlobe() {
           if (terrainRetryTimer !== undefined) {
             window.clearTimeout(terrainRetryTimer);
           }
+          globeRuntime.clearAutoSpin();
         });
       } catch (error) {
         const message =
@@ -327,6 +332,7 @@ export function TerrainGlobe() {
       cancelled = true;
       overlayRef.current?.finalize();
       overlayRef.current = null;
+      unsubscribeCameraRequests();
       mapRef.current?.remove();
       releasePmtilesProtocol();
       mapRef.current = null;
@@ -352,44 +358,32 @@ export function TerrainGlobe() {
     if (previousSelectedHexRef.current === selectedHexDetails.h3Id) return;
 
     previousSelectedHexRef.current = selectedHexDetails.h3Id;
+    if (searchSelectedHexRef.current === selectedHexDetails.h3Id) {
+      searchSelectedHexRef.current = null;
+      return;
+    }
 
-    const [latitude, longitude] = cellToLatLng(selectedHexDetails.h3Id);
-    map.flyTo({
-      center: [longitude, latitude],
-      zoom: selectedHexDetails.tier === "U8" ? 9 : selectedHexDetails.tier === "U5" ? 5.2 : 2.8,
-      pitch: 38,
-      bearing: -16,
-      duration: 900,
-      essential: true
+    flyToSelectedHex({
+      map,
+      selectedHexDetails,
+      isCurrentMap: () => mapRef.current === map
     });
   }, [selectedHexDetails]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !flyToRequest) return;
-
-    map.flyTo({
-      center: [flyToRequest.longitude, flyToRequest.latitude],
-      zoom: flyToRequest.zoom,
-      pitch: 42,
-      bearing: -18,
-      duration: 2400,
-      essential: true
-    });
-  }, [flyToRequest]);
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-[#f3f8f7]">
       <div className="absolute inset-0 bg-[linear-gradient(#e9f1ef_1px,transparent_1px),linear-gradient(90deg,#e9f1ef_1px,transparent_1px)] bg-[size:52px_52px] opacity-70" />
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[88vmin] max-h-[1120px] w-[88vmin] max-w-[1120px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#dbecea] shadow-[inset_-92px_-76px_132px_rgba(22,73,79,0.24),inset_42px_34px_84px_rgba(255,255,255,0.52),0_42px_120px_rgba(46,91,96,0.22)]" />
-      <div className="absolute left-1/2 top-1/2 h-[88vmin] max-h-[1120px] w-[88vmin] max-w-[1120px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border border-[#d6e8e4] bg-[#ecf5f3] shadow-[0_38px_120px_rgba(40,78,83,0.2)]">
+      <div className="vmesh-globe-shell pointer-events-none absolute left-1/2 top-1/2 h-[88vmin] max-h-[1120px] w-[88vmin] max-w-[1120px] rounded-full bg-[#dbecea] shadow-[inset_-92px_-76px_132px_rgba(22,73,79,0.24),inset_42px_34px_84px_rgba(255,255,255,0.52),0_52px_135px_rgba(46,91,96,0.26)]" />
+      <div className="vmesh-globe-shell absolute left-1/2 top-1/2 h-[88vmin] max-h-[1120px] w-[88vmin] max-w-[1120px] overflow-hidden rounded-full border border-[#d6e8e4] bg-[#ecf5f3] shadow-[0_46px_130px_rgba(40,78,83,0.22)]">
         <EarthGlobeFallback />
         <div className="pointer-events-none absolute inset-[9%] z-10 rounded-full border border-[#9bbfba]/35 opacity-70" />
         <div
           ref={containerRef}
-          className="relative z-10 h-full w-full opacity-80 mix-blend-multiply"
+          className="relative z-10 h-full w-full opacity-[0.62] mix-blend-multiply"
         />
         <div className="pointer-events-none absolute inset-0 z-20 rounded-full bg-[radial-gradient(circle_at_32%_22%,rgba(255,255,255,0.48),transparent_32%),radial-gradient(circle_at_74%_72%,rgba(21,91,99,0.34),transparent_36%),linear-gradient(120deg,rgba(255,255,255,0.16),rgba(12,55,68,0.22))]" />
+        <div className="vmesh-atmosphere-drift pointer-events-none absolute inset-[3%] z-20 rounded-full border border-white/45 shadow-[inset_20px_18px_48px_rgba(255,255,255,0.18)]" />
+        {selectedMarkerPosition ? <SelectedCellMarker position={selectedMarkerPosition} /> : null}
       </div>
       <MapControls />
       {activePanel === "layers" ? <MeshLegend /> : null}

@@ -5,13 +5,27 @@ import { buildCellFromCoordinate } from "@/lib/h3Mesh";
 import { useVmeshStore } from "@/store/useVmeshStore";
 
 describe("vmesh store", () => {
-  it("switches tiers and tracks visible hex counts", () => {
+  it("keeps the mesh index invisible until an analytical overlay is enabled", () => {
+    useVmeshStore.getState().setLayerEnabled("macro", false);
+    useVmeshStore.getState().setLayerEnabled("context", false);
     useVmeshStore.getState().setSelectedTier("U3");
     expect(useVmeshStore.getState().selectedTier).toBe("U3");
+    expect(useVmeshStore.getState().visibleHexCount).toBe(0);
+
+    useVmeshStore.getState().setLayerEnabled("macro", true);
     expect(useVmeshStore.getState().visibleHexCount).toBe(initialHexDataByTier.U3.length);
 
     useVmeshStore.getState().setSelectedTier("U5");
     expect(useVmeshStore.getState().selectedTier).toBe("U5");
+    expect(useVmeshStore.getState().visibleHexCount).toBe(initialHexDataByTier.U5.length);
+
+    useVmeshStore.getState().setLayerEnabled("context", true);
+    expect(useVmeshStore.getState().visibleHexCount).toBe(
+      initialHexDataByTier.U5.length + initialHexDataByTier.U3.length
+    );
+
+    useVmeshStore.getState().setLayerEnabled("macro", false);
+    useVmeshStore.getState().setLayerEnabled("context", false);
   });
 
   it("selects a U5 hex and keeps local U8 detail scoped", () => {

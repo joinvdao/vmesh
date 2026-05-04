@@ -52,3 +52,60 @@ body {
   background: #b6cbc7;
   border-radius: 9999px;
 }
+
+.vmesh-globe-shell {
+  animation: vmesh-globe-hover 9s ease-in-out infinite;
+  transform: translate3d(-50%, -50%, 0);
+}
+
+.vmesh-earth-rotate {
+  animation: vmesh-earth-rotate 72s linear infinite;
+  background-size: 118% 100%;
+}
+
+.vmesh-atmosphere-drift {
+  animation: vmesh-atmosphere-drift 28s linear infinite;
+}
+
+@keyframes vmesh-globe-hover {
+  0%,
+  100% {
+    transform: translate3d(-50%, -50%, 0) translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(-50%, -50%, 0) translateY(-14px) scale(1.008);
+  }
+}
+
+@keyframes vmesh-earth-rotate {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 118% 50%;
+  }
+}
+
+@keyframes vmesh-atmosphere-drift {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+
+  50% {
+    transform: rotate(4deg) scale(1.01);
+  }
+
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vmesh-globe-shell,
+  .vmesh-earth-rotate,
+  .vmesh-atmosphere-drift {
+    animation: none;
+  }
+}

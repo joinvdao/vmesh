@@ -22,13 +22,13 @@ vmesh should feel like a precise, calm atlas for place-based decision-making:
 
 The implementation should preserve this information architecture:
 
-- Left sidebar with brand, nav, saved views, alerts, reports, API/data, settings, user block, and system status.
+- Slim left rail with brand/orbit control and icon-first navigation. Secondary dashboard surfaces open as modal panels, not permanent first-viewport columns.
 - Top header with central search, scope selector, filters, notifications, help, settings, and account controls.
 - Main map canvas occupying the central workspace.
 - Floating map tools stacked on the left side of the map.
 - A macro-to-micro vertical layer slider near the right side of the map.
-- Right selected-hex panel with score, badge, sparkline, pillar cards, composition details, and actions.
-- Bottom analytics strip with horizontally arranged cards.
+- Right selected-hex panel with score, badge, sparkline, pillar cards, composition details, and actions. It opens on selection or explicit rail action.
+- Bottom analytics strip with horizontally arranged cards. It opens on demand rather than occupying the default globe view.
 - Footer with coordinate, elevation, H3 resolution, visible hex count, freshness, security/version, and status readouts.
 
 ## vmesh-Specific Adaptation
@@ -39,7 +39,9 @@ Use `vmesh` as the product identity. The product phrase is:
 Atlas of Antifragility
 ```
 
-The mesh overlay is the main product signal. Every visible hex should imply that it can hold both macro and micro data.
+The H3 mesh is the product data spine, but it is not default decoration. The default viewport should show a clean hovering globe with selected-place affordances. Hex grids and heat overlays appear only when the user enables an analytical layer, selects a cell, or asks to inspect the mesh.
+
+Every visible hex should have a reason to be visible and should imply that it can hold both macro and micro data.
 
 Use U3/U5/U8 as the product-facing mesh zoom language:
 
@@ -85,11 +87,11 @@ The advisor panel should not imply live AI or provider calls unless that feature
 
 The central map should prioritize:
 
-- Globe projection.
+- A globe-first object that feels round, gently rotating, and hovering.
 - Terrain-aware basemap.
-- H3 mesh overlay draped and camera-synchronized with MapLibre through deck.gl.
+- Optional H3 mesh overlay draped and camera-synchronized with MapLibre through deck.gl.
 - Teal-to-mint resilience scale.
-- Clear selected-hex outline.
+- Clear selected-place/cell affordance without requiring a global grid.
 - Tooltip with H3 ID, place label, and score.
 - Legend for score interpretation.
 
