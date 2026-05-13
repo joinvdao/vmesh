@@ -27,6 +27,7 @@ The implementation should preserve this information architecture:
 - Main map canvas occupying the central workspace.
 - Floating map tools stacked on the left side of the map.
 - A macro-to-micro vertical layer slider near the right side of the map.
+- A source/provenance drawer that opens from the rail and explains active providers, mock/live/future status, licenses, confidence, and limitations.
 - Right selected-hex panel with score, badge, sparkline, pillar cards, composition details, and actions. It opens on selection or explicit rail action.
 - Bottom analytics strip with horizontally arranged cards. It opens on demand rather than occupying the default globe view.
 - Footer with coordinate, elevation, H3 resolution, visible hex count, freshness, security/version, and status readouts.
@@ -52,6 +53,7 @@ Use U3/U5/U8 as the product-facing mesh zoom language:
 Use these layer families:
 
 - Macro: climate, water, energy, biodiversity, infrastructure, hazard/risk, land use.
+- Imagery: Sentinel-2 clear-scene preview, SEN2SR enhanced products, NDVI, water index, soil/vegetation proxies.
 - Micro: property signals, farmers markets, growers, food systems, local producers, community assets, repair capacity, user-added observations.
 - User Added: notes, corrections, custom records, local assessments, links, and private observations.
 
@@ -87,18 +89,26 @@ The advisor panel should not imply live AI or provider calls unless that feature
 
 The central map should prioritize:
 
-- A globe-first object that feels round, gently rotating, and hovering.
-- A darker civic-atlas-style stage around the globe, with sparse starfield depth, atmospheric rim lighting, and the globe treated as the primary object.
+- A globe-first object that feels round, gently rotating, hoverable, and mouse-draggable like a Google Earth-style atlas.
+- A darker civic-atlas-style stage around the globe, with sparse starfield depth, atmospheric rim lighting, subtle tiled-sphere lattice cues, land/cloud texture synchronized to the MapLibre camera, and the globe treated as the primary object.
+- A light globe mode inspired by clean environmental-intelligence map demos: brighter ocean/land texture, subtler starfield, softer atmospheric rim, and enough basemap opacity to inspect place context without losing the floating atlas-object feel.
+- A dark globe mode for dense analytical work: subdued roads, glowing selected markers, teal/green data accents, and low-glare contrast for macro overlays.
+- An atlas-globe-style mode transition: distant views stay in `Orbit Globe`, while close search/zoom views become `OSS Map Output` with a clearer open MapLibre basemap.
 - Terrain-aware basemap.
+- Optional imagery raster layer that never replaces the operational basemap.
 - Optional H3 mesh overlay draped and camera-synchronized with MapLibre through deck.gl.
+- A direct mesh on/off control. The H3 mesh remains analytical UI, while the globe can still use a subtle aesthetic tiled-sphere treatment.
+- A direct dark/light globe toggle. This is a visual atlas mode only; it must not change provider selection, data provenance, mesh tier, or terrain source behavior.
 - Teal-to-mint resilience scale.
 - Clear selected-place/cell affordance without requiring a global grid.
 - Tooltip with H3 ID, place label, and score.
 - Legend for score interpretation.
+- Source transparency should live in a modal drawer, not as permanent dashboard clutter.
 
 ## Interaction Notes
 
-- The search bar should support place names and coordinates in the future.
+- The search bar supports coordinates, place names, and partial-name autocomplete, then flies the camera into the selected location with enough zoom for local inspection.
+- Search/zoom close enough should make the open-source map output legible rather than leaving the user inside a decorative globe shell.
 - Clicking a hex updates the selected panel and flies the camera to that region.
 - Hovering a hex updates a tooltip without changing selection.
 - Layer controls must be reflected in Zustand state.

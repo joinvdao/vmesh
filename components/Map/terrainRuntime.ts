@@ -3,15 +3,19 @@ import type maplibregl from "maplibre-gl";
 import { TERRAIN_SOURCE_ID, toRasterDemSource } from "@/lib/terrainSources";
 import type { TerrainProviderConfig, TerrainProviderStatus } from "@/lib/vmeshTypes";
 
+export const TERRAIN_HILLSHADE_LAYER_ID = "terrain-hillshade-overlay";
+
 export interface TerrainRuntime {
   applyTerrainCandidate: (startIndex: number, fallbackReason?: string) => boolean;
+  clearTerrain: (message?: string) => void;
   getActiveTerrainIndex: () => number;
   getActiveTerrainProvider: () => TerrainProviderConfig | undefined;
+  setTerrainCandidates: (candidates: TerrainProviderConfig[]) => void;
 }
 
 export function createTerrainRuntime({
   map,
-  terrainCandidates,
+  terrainCandidates: initialTerrainCandidates,
   setActiveTerrainProvider,
   setTerrainStatus
 }: {
@@ -20,13 +24,34 @@ export function createTerrainRuntime({
   setActiveTerrainProvider: (providerId: string, message?: string) => void;
   setTerrainStatus: (status: TerrainProviderStatus, message?: string) => void;
 }): TerrainRuntime {
+  let terrainCandidates = initialTerrainCandidates;
   let activeTerrainIndex = -1;
 
   const clearTerrainSource = () => {
+    if (map.getLayer(TERRAIN_HILLSHADE_LAYER_ID)) {
+      map.removeLayer(TERRAIN_HILLSHADE_LAYER_ID);
+    }
+
     if (map.getSource(TERRAIN_SOURCE_ID)) {
       map.setTerrain(null);
       map.removeSource(TERRAIN_SOURCE_ID);
     }
+  };
+
+  const addHillshadeOverlay = () => {
+    if (map.getLayer(TERRAIN_HILLSHADE_LAYER_ID)) return;
+
+    map.addLayer({
+      id: TERRAIN_HILLSHADE_LAYER_ID,
+      type: "hillshade",
+      source: TERRAIN_SOURCE_ID,
+      paint: {
+        "hillshade-shadow-color": "#102f39",
+        "hillshade-highlight-color": "#edf8f2",
+        "hillshade-accent-color": "#5f8c8b",
+        "hillshade-exaggeration": 0.24
+      }
+    });
   };
 
   const applyTerrainCandidate = (startIndex: number, fallbackReason?: string): boolean => {
@@ -39,6 +64,7 @@ export function createTerrainRuntime({
         clearTerrainSource();
         map.addSource(TERRAIN_SOURCE_ID, source);
         map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: 1.5 });
+        addHillshadeOverlay();
         activeTerrainIndex = index;
 
         const status =
@@ -62,7 +88,16 @@ export function createTerrainRuntime({
 
   return {
     applyTerrainCandidate,
+    clearTerrain: (message = "Terrain overlay hidden") => {
+      clearTerrainSource();
+      activeTerrainIndex = -1;
+      setTerrainStatus("idle", message);
+    },
     getActiveTerrainIndex: () => activeTerrainIndex,
-    getActiveTerrainProvider: () => terrainCandidates[activeTerrainIndex]
+    getActiveTerrainProvider: () => terrainCandidates[activeTerrainIndex],
+    setTerrainCandidates: (candidates) => {
+      terrainCandidates = candidates;
+      activeTerrainIndex = -1;
+    }
   };
 }

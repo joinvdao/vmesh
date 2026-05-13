@@ -3,168 +3,28 @@
 import { create } from "zustand";
 
 import {
-  DEFAULT_SELECTED_HEX_ID,
-  createInitialHubPlaybookState,
   createLocationHexRecord,
+  createMockMacroCellSummary,
   generateU8RecordsForParent,
-  initialHexDataByTier,
-  initialUserRecords,
-  mockFoodNetworkAssets,
-  mockHubMessages,
-  mockHubNodeStatus,
-  mockPropertySignals,
   summarizeFoodNetwork
 } from "@/data/mockVmeshData";
-import {
-  buildCellFromCoordinate,
-  DEFAULT_FOCUS,
-  getU5ParentForLocalDetail,
-  MESH_TIER_DEFINITIONS
-} from "@/lib/h3Mesh";
-import {
-  getContourProviderRegistry,
-  getTerrainProviderRegistry,
-  selectTerrainProvider
-} from "@/lib/terrainSources";
-import type {
-  ActiveLayers,
-  ContourProviderConfig,
-  DashboardPanel,
-  DraftUserRecord,
-  FoodNetworkAsset,
-  HubMessageEnvelope,
-  HubNodeStatus,
-  HubPlaybookState,
-  HoveredHexInfo,
-  MapFlyToRequest,
-  MapStatus,
-  MeshTier,
-  MeshTierDefinition,
-  MicroFoodNetworkSummary,
-  PropertySignalSummary,
-  TerrainProviderConfig,
-  TerrainProviderStatus,
-  UserRecord,
-  VmeshHexRecord,
-  ViewState
-} from "@/lib/vmeshTypes";
+import { buildCellFromCoordinate, getU5ParentForLocalDetail } from "@/lib/h3Mesh";
+import { isH3MacroLayer } from "@/lib/layerCatalog";
+import type { UserRecord } from "@/lib/vmeshTypes";
+import { initialVmeshState } from "@/store/vmeshInitialState";
+import { loadSelectedMacroWeatherAction } from "@/store/vmeshMacroActions";
+import type { VmeshStore } from "@/store/vmeshStoreTypes";
 import { findHexRecord, getVisibleHexCount, tierForRecord } from "@/store/vmeshStoreHelpers";
 
-export interface VmeshStore {
-  viewState: ViewState;
-  selectedHexId: string;
-  selectedTier: MeshTier;
-  hoveredHexInfo: HoveredHexInfo | null;
-  globalResolution: number;
-  visibleHexCount: number;
-  activeLayers: ActiveLayers;
-  activePanel: DashboardPanel | null;
-  layerScale: number;
-  meshTiers: MeshTierDefinition[];
-  hexDataByTier: Record<MeshTier, VmeshHexRecord[]>;
-  selectedHexDetails: VmeshHexRecord;
-  userRecords: UserRecord[];
-  draftUserRecord: DraftUserRecord;
-  mapStatus: MapStatus;
-  terrainProviders: TerrainProviderConfig[];
-  contourProviders: ContourProviderConfig[];
-  selectedTerrainProviderId: string;
-  foodNetworkAssets: FoodNetworkAsset[];
-  propertySignals: PropertySignalSummary[];
-  selectedFoodNetworkSummary: MicroFoodNetworkSummary;
-  hubPlaybook: HubPlaybookState;
-  hubNodeStatus: HubNodeStatus;
-  hubMessages: HubMessageEnvelope[];
-  dataFreshness: string;
-  flyToRequest: MapFlyToRequest | null;
-  setViewState: (viewState: Partial<ViewState>) => void;
-  flyToLocation: (location: Omit<MapFlyToRequest, "id">) => void;
-  selectHex: (h3Id: string, tier?: MeshTier) => void;
-  setActivePanel: (panel: DashboardPanel | null) => void;
-  togglePanel: (panel: DashboardPanel) => void;
-  setHoveredHexInfo: (hoveredHexInfo: HoveredHexInfo | null) => void;
-  setSelectedTier: (tier: MeshTier) => void;
-  setLayerEnabled: (layer: keyof ActiveLayers, enabled: boolean) => void;
-  setLayerScale: (layerScale: number) => void;
-  setVisibleHexCount: (visibleHexCount: number) => void;
-  addUserRecord: () => boolean;
-  updateDraftUserRecord: (draft: Partial<DraftUserRecord>) => void;
-  clearDraftUserRecord: () => void;
-  setMapStatus: (status: Partial<MapStatus>) => void;
-  setTerrainStatus: (status: TerrainProviderStatus, message?: string) => void;
-  setContourStatus: (status: TerrainProviderStatus, message?: string) => void;
-  setActiveTerrainProvider: (providerId: string, message?: string) => void;
-  toggleHubPlaybookTask: (taskId: string) => void;
-  updateHubPlaybookTaskNotes: (taskId: string, notes: string) => void;
-}
-
-const terrainProviderPreference =
-  typeof process !== "undefined" ? process.env.NEXT_PUBLIC_TERRAIN_PROVIDER : undefined;
-const terrainProviders = getTerrainProviderRegistry({
-  envTileJsonUrl:
-    typeof process !== "undefined" ? process.env.NEXT_PUBLIC_TERRAIN_TILEJSON_URL : undefined,
-  preferredProviderId: terrainProviderPreference,
-  mapterhornPmtilesUrl:
-    typeof process !== "undefined" ? process.env.NEXT_PUBLIC_MAPTERHORN_PMTILES_URL : undefined,
-  mapzenTerrariumUrl:
-    typeof process !== "undefined" ? process.env.NEXT_PUBLIC_MAPZEN_TERRARIUM_URL : undefined
-});
-const selectedProvider = selectTerrainProvider(terrainProviders, terrainProviderPreference);
-const contourProviders = getContourProviderRegistry();
-const initialSelected =
-  findHexRecord(initialHexDataByTier, DEFAULT_SELECTED_HEX_ID) ?? initialHexDataByTier.U5[0];
-
 export const useVmeshStore = create<VmeshStore>((set, get) => ({
-  viewState: {
-    longitude: DEFAULT_FOCUS.longitude,
-    latitude: DEFAULT_FOCUS.latitude,
-    zoom: 2.35,
-    pitch: 28,
-    bearing: -12
-  },
-  selectedHexId: initialSelected.h3Id,
-  selectedTier: "U5",
-  hoveredHexInfo: null,
-  globalResolution: 5,
-  visibleHexCount: 0,
-  activeLayers: {
-    macro: false,
-    micro: true,
-    userAdded: true,
-    terrain: true,
-    context: false
-  },
-  activePanel: null,
-  layerScale: 44,
-  meshTiers: MESH_TIER_DEFINITIONS,
-  hexDataByTier: initialHexDataByTier,
-  selectedHexDetails: initialSelected,
-  userRecords: initialUserRecords,
-  draftUserRecord: {
-    category: "observation",
-    title: ""
-  },
-  mapStatus: {
-    map: "idle",
-    terrain: "idle",
-    contours: "fallback",
-    providerId: selectedProvider.id,
-    message: "Terrain source not initialized"
-  },
-  terrainProviders,
-  contourProviders,
-  selectedTerrainProviderId: selectedProvider.id,
-  foodNetworkAssets: mockFoodNetworkAssets,
-  propertySignals: mockPropertySignals,
-  selectedFoodNetworkSummary: summarizeFoodNetwork(initialSelected.h3Id),
-  hubPlaybook: createInitialHubPlaybookState(initialSelected.h3Id),
-  hubNodeStatus: mockHubNodeStatus,
-  hubMessages: mockHubMessages,
-  dataFreshness: "15m ago",
-  flyToRequest: null,
+  ...initialVmeshState,
   setViewState: (viewState) =>
     set((state) => ({
       viewState: { ...state.viewState, ...viewState }
+    })),
+  toggleGlobeTheme: () =>
+    set((state) => ({
+      globeTheme: state.globeTheme === "dark" ? "light" : "dark"
     })),
   flyToLocation: (location) =>
     set((state) => {
@@ -183,6 +43,16 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
         ? state.hexDataByTier.U5
         : [selectedRecord, ...state.hexDataByTier.U5];
       const u8Records = generateU8RecordsForParent(h3Id, selectedRecord.placeName);
+      const generatedMacroSummaries = Object.fromEntries(
+        [selectedRecord, ...u8Records].map((record) => [
+          record.h3Id,
+          state.macroSummariesByH3[record.h3Id] ?? createMockMacroCellSummary(record)
+        ])
+      );
+      const macroSummariesByH3 = {
+        ...state.macroSummariesByH3,
+        ...generatedMacroSummaries
+      };
 
       return {
         flyToRequest: {
@@ -202,6 +72,8 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
         globalResolution: selectedRecord.resolution,
         hexDataByTier: { ...state.hexDataByTier, U5: u5Records, U8: u8Records },
         selectedHexDetails: selectedRecord,
+        macroSummariesByH3,
+        selectedMacroSummary: macroSummariesByH3[selectedRecord.h3Id],
         selectedFoodNetworkSummary: summarizeFoodNetwork(selectedRecord.h3Id),
         hubPlaybook: {
           ...state.hubPlaybook,
@@ -213,7 +85,8 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
         visibleHexCount: getVisibleHexCount(
           { ...state.hexDataByTier, U5: u5Records, U8: u8Records },
           "U5",
-          state.activeLayers
+          state.activeLayers,
+          selectedRecord.h3Id
         )
       };
     }),
@@ -245,6 +118,16 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
 
       selectedRecord =
         selectedRecord ?? findHexRecord(hexDataByTier, h3Id) ?? state.selectedHexDetails;
+      const generatedMacroSummaries = Object.fromEntries(
+        [selectedRecord, ...hexDataByTier.U8].map((record) => [
+          record.h3Id,
+          state.macroSummariesByH3[record.h3Id] ?? createMockMacroCellSummary(record)
+        ])
+      );
+      const macroSummariesByH3 = {
+        ...state.macroSummariesByH3,
+        ...generatedMacroSummaries
+      };
 
       return {
         selectedHexId: selectedRecord.h3Id,
@@ -252,6 +135,8 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
         globalResolution: selectedRecord.resolution,
         hexDataByTier,
         selectedHexDetails: selectedRecord,
+        macroSummariesByH3,
+        selectedMacroSummary: macroSummariesByH3[selectedRecord.h3Id],
         selectedFoodNetworkSummary: summarizeFoodNetwork(selectedRecord.h3Id),
         activePanel: "hex",
         hubPlaybook: {
@@ -260,7 +145,12 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
           tasks: state.hubPlaybook.tasks.map((task) => ({ ...task, h3Id: selectedRecord.h3Id })),
           updatedAt: new Date().toISOString()
         },
-        visibleHexCount: getVisibleHexCount(hexDataByTier, selectedTier, state.activeLayers)
+        visibleHexCount: getVisibleHexCount(
+          hexDataByTier,
+          selectedTier,
+          state.activeLayers,
+          selectedRecord.h3Id
+        )
       };
     }),
   setActivePanel: (activePanel) => set({ activePanel }),
@@ -275,15 +165,25 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
       globalResolution:
         state.meshTiers.find((definition) => definition.tier === tier)?.resolution ??
         state.globalResolution,
-      visibleHexCount: getVisibleHexCount(state.hexDataByTier, tier, state.activeLayers)
+      visibleHexCount: getVisibleHexCount(
+        state.hexDataByTier,
+        tier,
+        state.activeLayers,
+        state.selectedHexId
+      )
     })),
   setLayerEnabled: (layer, enabled) =>
     set((state) => ({
       activeLayers: { ...state.activeLayers, [layer]: enabled },
-      visibleHexCount: getVisibleHexCount(state.hexDataByTier, state.selectedTier, {
-        ...state.activeLayers,
-        [layer]: enabled
-      })
+      visibleHexCount: getVisibleHexCount(
+        state.hexDataByTier,
+        state.selectedTier,
+        {
+          ...state.activeLayers,
+          [layer]: enabled
+        },
+        state.selectedHexId
+      )
     })),
   setLayerScale: (layerScale) => set({ layerScale }),
   setVisibleHexCount: (visibleHexCount) => set({ visibleHexCount }),
@@ -334,6 +234,14 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
     set((state) => ({
       mapStatus: { ...state.mapStatus, ...status }
     })),
+  setBasemapStatus: (basemap, message) =>
+    set((state) => ({
+      mapStatus: {
+        ...state.mapStatus,
+        basemap,
+        message: message ?? state.mapStatus.message
+      }
+    })),
   setTerrainStatus: (terrain, message) =>
     set((state) => ({
       mapStatus: {
@@ -350,6 +258,47 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
         message: message ?? state.mapStatus.message
       }
     })),
+  setMacroStatus: (macro, message) =>
+    set((state) => ({
+      mapStatus: {
+        ...state.mapStatus,
+        macro,
+        message: message ?? state.mapStatus.message
+      }
+    })),
+  setImageryStatus: (imagery, message) =>
+    set((state) => ({
+      mapStatus: {
+        ...state.mapStatus,
+        imagery,
+        message: message ?? state.mapStatus.message
+      }
+    })),
+  setActiveBasemapProvider: (providerId, message) =>
+    set((state) => ({
+      selectedBasemapProviderId: providerId,
+      mapStatus: {
+        ...state.mapStatus,
+        basemapProviderId: providerId,
+        message: message ?? state.mapStatus.message
+      }
+    })),
+  setSelectedTerrainProvider: (providerId) =>
+    set((state) => {
+      const provider = state.terrainProviders.find((candidate) => candidate.id === providerId);
+      return {
+        selectedTerrainProviderId: providerId,
+        activeLayers: { ...state.activeLayers, terrain: true },
+        mapStatus: {
+          ...state.mapStatus,
+          terrain: "loading",
+          providerId,
+          message: provider
+            ? `Loading ${provider.label} terrain overlay`
+            : `Loading ${providerId} terrain overlay`
+        }
+      };
+    }),
   setActiveTerrainProvider: (providerId, message) =>
     set((state) => ({
       selectedTerrainProviderId: providerId,
@@ -359,6 +308,42 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
         message: message ?? state.mapStatus.message
       }
     })),
+  setActiveImageryProvider: (providerId, message) =>
+    set((state) => ({
+      selectedImageryProviderId: providerId,
+      mapStatus: {
+        ...state.mapStatus,
+        imageryProviderId: providerId,
+        message: message ?? state.mapStatus.message
+      }
+    })),
+  setSelectedMacroLayer: (selectedMacroLayer) =>
+    set((state) => ({
+      selectedMacroLayer,
+      activeLayers: { ...state.activeLayers, macro: isH3MacroLayer(selectedMacroLayer) },
+      visibleHexCount: getVisibleHexCount(
+        state.hexDataByTier,
+        state.selectedTier,
+        {
+          ...state.activeLayers,
+          macro: isH3MacroLayer(selectedMacroLayer)
+        },
+        state.selectedHexId
+      )
+    })),
+  setMacroLayerOpacity: (macroLayerOpacity) => set({ macroLayerOpacity }),
+  loadSelectedMacroWeather: () => loadSelectedMacroWeatherAction({ get, set }),
+  setSelectedImageryLayer: (selectedImageryLayer) =>
+    set((state) => ({
+      selectedImageryLayer,
+      activeLayers: { ...state.activeLayers, imagery: true },
+      mapStatus: {
+        ...state.mapStatus,
+        imagery: "active",
+        message: "Imagery layer enabled from manifest-backed provider"
+      }
+    })),
+  setImageryOpacity: (imageryOpacity) => set({ imageryOpacity }),
   toggleHubPlaybookTask: (taskId) =>
     set((state) => {
       const tasks = state.hubPlaybook.tasks.map((task) =>

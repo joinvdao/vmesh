@@ -2,18 +2,21 @@ import { describe, expect, it } from "vitest";
 
 import { DEFAULT_SELECTED_HEX_ID, initialHexDataByTier } from "@/data/mockVmeshData";
 import { buildCellFromCoordinate } from "@/lib/h3Mesh";
+import { MAPZEN_PROVIDER_ID } from "@/lib/terrainSources";
 import { useVmeshStore } from "@/store/useVmeshStore";
 
 describe("vmesh store", () => {
-  it("keeps the mesh index invisible until an analytical overlay is enabled", () => {
+  it("keeps only the selected-cell affordance visible until an analytical overlay is enabled", () => {
     useVmeshStore.getState().setLayerEnabled("macro", false);
     useVmeshStore.getState().setLayerEnabled("context", false);
     useVmeshStore.getState().setSelectedTier("U3");
     expect(useVmeshStore.getState().selectedTier).toBe("U3");
-    expect(useVmeshStore.getState().visibleHexCount).toBe(0);
+    expect(useVmeshStore.getState().visibleHexCount).toBe(1);
 
     useVmeshStore.getState().setLayerEnabled("macro", true);
-    expect(useVmeshStore.getState().visibleHexCount).toBe(initialHexDataByTier.U3.length);
+    expect(useVmeshStore.getState().visibleHexCount).toBeGreaterThanOrEqual(
+      initialHexDataByTier.U3.length
+    );
 
     useVmeshStore.getState().setSelectedTier("U5");
     expect(useVmeshStore.getState().selectedTier).toBe("U5");
@@ -72,11 +75,28 @@ describe("vmesh store", () => {
     useVmeshStore.getState().setActivePanel(null);
     expect(useVmeshStore.getState().activePanel).toBeNull();
 
+    useVmeshStore.getState().togglePanel("sources");
+    expect(useVmeshStore.getState().activePanel).toBe("sources");
+
     useVmeshStore.getState().togglePanel("playbook");
     expect(useVmeshStore.getState().activePanel).toBe("playbook");
 
     useVmeshStore.getState().togglePanel("playbook");
     expect(useVmeshStore.getState().activePanel).toBeNull();
+  });
+
+  it("toggles the globe visual theme without changing map providers", () => {
+    const beforeProvider = useVmeshStore.getState().selectedTerrainProviderId;
+    const beforeTheme = useVmeshStore.getState().globeTheme;
+
+    useVmeshStore.getState().toggleGlobeTheme();
+    const afterToggle = useVmeshStore.getState();
+
+    expect(afterToggle.globeTheme).toBe(beforeTheme === "dark" ? "light" : "dark");
+    expect(afterToggle.selectedTerrainProviderId).toBe(beforeProvider);
+
+    useVmeshStore.getState().toggleGlobeTheme();
+    expect(useVmeshStore.getState().globeTheme).toBe(beforeTheme);
   });
 
   it("tracks terrain contour status and hub playbook actions in Zustand", () => {
@@ -91,6 +111,18 @@ describe("vmesh store", () => {
     expect(useVmeshStore.getState().hubPlaybook.tasks[1].notes).toBe("stage filters at hub");
   });
 
+  it("lets users choose the terrain overlay provider at runtime", () => {
+    useVmeshStore.getState().setLayerEnabled("terrain", false);
+    useVmeshStore.getState().setSelectedTerrainProvider(MAPZEN_PROVIDER_ID);
+
+    const state = useVmeshStore.getState();
+    expect(state.selectedTerrainProviderId).toBe(MAPZEN_PROVIDER_ID);
+    expect(state.activeLayers.terrain).toBe(true);
+    expect(state.mapStatus.terrain).toBe("loading");
+    expect(state.mapStatus.providerId).toBe(MAPZEN_PROVIDER_ID);
+    expect(state.mapStatus.message).toContain("Mapzen Joerd Terrarium");
+  });
+
   it("keeps micro summaries and hub gateway mocks in store state", () => {
     const state = useVmeshStore.getState();
     expect(state.selectedFoodNetworkSummary.assets).toBeDefined();
@@ -99,5 +131,24 @@ describe("vmesh store", () => {
     );
     expect(state.hubNodeStatus.reticulum.status).toBe("bridge-connected");
     expect(state.hubMessages[0].signaturePlaceholder).toContain("signature");
+  });
+
+  it("tracks macro layer selection, provenance, and imagery state", () => {
+    useVmeshStore.getState().setSelectedMacroLayer("fire");
+    useVmeshStore.getState().setMacroLayerOpacity(0.42);
+    useVmeshStore.getState().setSelectedImageryLayer("ndvi");
+    useVmeshStore.getState().setImageryOpacity(0.5);
+
+    const state = useVmeshStore.getState();
+    expect(state.selectedMacroLayer).toBe("fire");
+    expect(state.activeLayers.macro).toBe(true);
+    expect(state.macroLayerOpacity).toBe(0.42);
+    expect(state.selectedMacroSummary.provenance.limitations).toContain("not operational");
+    expect(state.selectedImageryLayer).toBe("ndvi");
+    expect(state.activeLayers.imagery).toBe(true);
+    expect(state.imageryManifest.clearPixelRatioAoi).toBeGreaterThanOrEqual(0.95);
+
+    useVmeshStore.getState().setLayerEnabled("macro", false);
+    useVmeshStore.getState().setLayerEnabled("imagery", false);
   });
 });

@@ -45,3 +45,20 @@ Use the narrowest template that fits the work. If a livestream discussion produc
 Contributors may use any local system they prefer. Keep local ticket boards and planning exports outside the public Git index.
 
 If a planning artifact should become public, convert it into a clean GitHub Issue or public doc first. Review it for personal data, local paths, private commitments, private provider details, and security-sensitive information before committing.
+
+## Cross-App Insight Sharing
+
+vmesh may publish public-safe substrate insights for downstream apps, but each app keeps its own code, issues, docs, and release path.
+
+Use `docs/CROSS_REPO_INSIGHTS.md` for reusable lessons that are safe to disclose:
+
+- map-stack and renderer research
+- provider/source metadata
+- schema or fixture ideas
+- fidelity/provenance rules
+- playbook and hub concepts
+- public issue links across repos or apps
+
+Do not copy private planning context between repos. If a local or private note produces a public insight, rewrite it as a clean summary first. Every cross-app item should be reviewed for secrets, private locations, personal data, paid-provider commitments, license restrictions, and terms-uncleared property data.
+
+When an insight needs implementation in more than one repo, create one issue in each affected public repo and link them. Avoid creating a shared package until the same stable contract is needed by at least two apps.

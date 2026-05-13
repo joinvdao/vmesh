@@ -5,6 +5,7 @@ const eslintConfig = [
   {
     ignores: [
       ".next/**",
+      ".artifacts/**",
       "node_modules/**",
       "coverage/**",
       "agent-bootstrap-prompt/**",

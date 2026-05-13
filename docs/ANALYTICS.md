@@ -16,6 +16,8 @@ V1 defines analytics semantics but does not send live telemetry unless a reviewe
 | `user_record_saved_local`   | Tracks local/mock save success without body text.   |
 | `renderer_error`            | Captures category-level renderer failures.          |
 | `provider_error`            | Captures category-level data provider failures.     |
+| `macro_provider_status`     | Tracks macro provider category/status only.         |
+| `imagery_layer_toggled`     | Tracks imagery layer use without AOI or tile URLs.  |
 
 ## Metric Definitions
 
@@ -23,7 +25,7 @@ V1 defines analytics semantics but does not send live telemetry unless a reviewe
 - Selection latency: time from click event to updated selected hex panel.
 - Renderer error rate: sessions with at least one renderer initialization or layer update error.
 - Interaction depth: count of selected H3 cells per session.
-- Layer engagement: macro/micro layer toggles per session.
+- Layer engagement: macro/micro/imagery layer toggles per session.
 - User-added data intent: draft starts by category, without record content.
 
 ## Forbidden Properties
@@ -37,6 +39,8 @@ Do not send:
 - Exact private addresses.
 - Exact sensitive infrastructure coordinates.
 - Unreviewed real-world risk records.
+- Selected exact centroid coordinates for live provider calls unless explicitly privacy-reviewed.
+- Imagery AOI bounds, tile URLs, scene IDs, or private local cache paths.
 
 ## Cost Telemetry
 

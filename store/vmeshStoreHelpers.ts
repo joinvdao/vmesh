@@ -15,9 +15,22 @@ export function tierForRecord(record: VmeshHexRecord | null, fallback: MeshTier)
 export function getVisibleHexCount(
   dataByTier: Record<MeshTier, VmeshHexRecord[]>,
   selectedTier: MeshTier,
-  activeLayers: ActiveLayers
+  activeLayers: ActiveLayers,
+  selectedHexId?: string
 ): number {
-  const contextCount = activeLayers.context && selectedTier !== "U3" ? dataByTier.U3.length : 0;
-  const tierCount = activeLayers.macro ? dataByTier[selectedTier].length : 0;
-  return contextCount + tierCount;
+  const visibleHexIds = new Set<string>();
+
+  if (selectedHexId) {
+    visibleHexIds.add(selectedHexId);
+  }
+
+  if (activeLayers.context && selectedTier !== "U3") {
+    dataByTier.U3.forEach((record) => visibleHexIds.add(record.h3Id));
+  }
+
+  if (activeLayers.macro) {
+    dataByTier[selectedTier].forEach((record) => visibleHexIds.add(record.h3Id));
+  }
+
+  return visibleHexIds.size;
 }

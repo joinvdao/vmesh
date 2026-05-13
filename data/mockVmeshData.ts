@@ -1,6 +1,7 @@
-import { cellToParent, getResolution, gridDisk, latLngToCell } from "h3-js";
+import { cellToLatLng, cellToParent, getResolution, gridDisk, latLngToCell } from "h3-js";
 
 import { DEFAULT_U5_CELL, generateLocalU8Cells, MESH_TIER_RESOLUTIONS } from "@/lib/h3Mesh";
+import { createMockSentinelManifest } from "@/lib/imagerySources";
 import { computeAntifragilityScore } from "@/lib/meshScoring";
 import type {
   DataProvenance,
@@ -9,8 +10,11 @@ import type {
   HubMessageEnvelope,
   HubNodeStatus,
   HubPlaybookState,
+  ImageryTileManifest,
   MacroClimateSummary,
+  MacroCellSummary,
   MacroPillars,
+  MacroProvenance,
   MeshTier,
   MicroFoodNetworkSummary,
   MicroSummary,
@@ -353,6 +357,115 @@ export const mockProviderProvenance: DataProvenance = {
   license: "Fictional sample data; no paid APIs or scraped listings",
   confidence: 74
 };
+
+export const mockMacroProvenance: MacroProvenance = {
+  providerId: "vmesh-mock-macro",
+  providerLabel: "vmesh deterministic macro fallback",
+  sourceType: "mock",
+  observedAt: "2026-05-01T00:00:00.000Z",
+  generatedAt: "2026-05-01T00:00:00.000Z",
+  freshnessLabel: "deterministic mock fallback",
+  confidence: 74,
+  limitations:
+    "Mock macro data for UI and scoring development. It is not operational climate, fire, flood, or solar intelligence.",
+  license: "Fictional sample data; no paid APIs or scraped sources"
+};
+
+function macroRiskClass(score: number): "low" | "moderate" | "high" | "severe" {
+  if (score >= 78) return "severe";
+  if (score >= 58) return "high";
+  if (score >= 34) return "moderate";
+  return "low";
+}
+
+function solarClass(score: number): "low" | "medium" | "high" {
+  if (score >= 72) return "high";
+  if (score >= 42) return "medium";
+  return "low";
+}
+
+export function createMockMacroCellSummary(record: VmeshHexRecord): MacroCellSummary {
+  const seed = seedForH3Id(record.h3Id);
+  const [latitude, longitude] = cellToLatLng(record.h3Id);
+  const heat = 24 + ((seed * 7) % 48);
+  const rain = 2 + ((seed * 3) % 34);
+  const wind = 8 + ((seed * 5) % 42);
+  const cloud = 18 + ((seed * 11) % 70);
+  const floodScore = Math.min(100, Math.round(record.macro.water * 0.35 + rain * 1.2));
+  const fireScore = Math.min(
+    100,
+    Math.round(record.macro.risk * 0.45 + heat * 0.62 + wind * 0.28 - rain * 0.18)
+  );
+  const solarScore = Math.max(
+    0,
+    Math.min(100, Math.round(record.macro.energy * 0.5 + (100 - cloud) * 0.38 + heat * 0.12))
+  );
+
+  return {
+    h3Id: record.h3Id,
+    tier: record.tier,
+    resolution: record.resolution,
+    centroid: {
+      latitude,
+      longitude
+    },
+    weather: {
+      temperatureC: Math.round((14 + heat * 0.28) * 10) / 10,
+      apparentTemperatureC: Math.round((15 + heat * 0.32) * 10) / 10,
+      precipitationMm: Math.round((rain / 12) * 10) / 10,
+      rainfallMm: Math.round((rain / 14) * 10) / 10,
+      windSpeedKph: wind,
+      windGustKph: wind + 12,
+      relativeHumidityPercent: Math.max(20, Math.min(96, 78 - heat * 0.35 + rain * 0.5)),
+      cloudCoverPercent: cloud
+    },
+    forecast: {
+      next72hRainMm: rain,
+      maxTemperatureC: Math.round((17 + heat * 0.31) * 10) / 10,
+      minTemperatureC: Math.round((8 + heat * 0.13) * 10) / 10,
+      maxWindGustKph: wind + 18,
+      dominantCondition:
+        rain > 24 ? "Wet spell" : cloud > 70 ? "Cloudy" : heat > 58 ? "Heat watch" : "Settled",
+      stressScore: Math.min(100, Math.round(heat * 0.42 + rain * 0.32 + wind * 0.26))
+    },
+    climateTrend: {
+      baselineLabel: "Mock 1991-2020 baseline",
+      temperatureAnomalyC: Math.round((((seed % 15) - 4) / 10) * 10) / 10,
+      rainfallAnomalyPercent: ((seed * 7) % 46) - 18,
+      trendDirection: seed % 4 === 0 ? "stable" : "warming",
+      confidence: 55 + (seed % 28)
+    },
+    flood: {
+      exposureScore: floodScore,
+      classLabel: macroRiskClass(floodScore),
+      drivers: ["rainfall proxy", "water stress proxy", "DEM/HAND future input"],
+      confidence: 62 + (seed % 22)
+    },
+    fire: {
+      exposureScore: fireScore,
+      classLabel: macroRiskClass(fireScore),
+      drivers: ["heat proxy", "wind proxy", "vegetation dryness future input"],
+      confidence: 60 + (seed % 24)
+    },
+    solar: {
+      practicalityScore: solarScore,
+      irradianceKwhM2Day: Math.round((2.1 + solarScore * 0.045) * 10) / 10,
+      cloudPenalty: cloud,
+      classLabel: solarClass(solarScore),
+      interpretation: "Mock signal for local hub charging, refrigeration, and comms timing.",
+      confidence: 58 + (seed % 28)
+    },
+    provenance: mockMacroProvenance
+  };
+}
+
+export const initialMacroSummariesByH3: Record<string, MacroCellSummary> = Object.fromEntries(
+  getAllHexRecords().map((record) => [record.h3Id, createMockMacroCellSummary(record)])
+);
+
+export const mockImageryManifest: ImageryTileManifest = createMockSentinelManifest({
+  h3Coverage: initialHexDataByTier.U5.slice(0, 12).map((record) => record.h3Id)
+});
 
 export function createMockClimateSummary(seed: number): MacroClimateSummary {
   return {

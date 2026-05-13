@@ -33,6 +33,8 @@ const pillarLabels: { key: keyof MacroPillars; label: string; icon: LucideIcon }
 
 export function SelectedHexCard() {
   const selected = useVmeshStore((state) => state.selectedHexDetails);
+  const macroSummary = useVmeshStore((state) => state.selectedMacroSummary);
+  const imageryManifest = useVmeshStore((state) => state.imageryManifest);
   const userRecords = useVmeshStore((state) => state.userRecords);
   const foodSummary = useVmeshStore((state) => state.selectedFoodNetworkSummary);
   const propertySignals = useVmeshStore((state) => state.propertySignals);
@@ -41,7 +43,7 @@ export function SelectedHexCard() {
   const localProperties = propertySignals.filter((record) => record.h3Id === selected.h3Id);
 
   return (
-    <Card className="absolute bottom-6 right-6 top-6 z-30 flex w-[380px] flex-col overflow-hidden bg-white/94 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
+    <Card className="absolute bottom-6 right-6 top-6 z-30 flex w-[380px] flex-col overflow-hidden bg-white/[0.94] shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <div className="flex items-start justify-between border-b border-[#e6eeec] p-4">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#52616f]">
@@ -121,6 +123,48 @@ export function SelectedHexCard() {
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4 vmesh-scrollbar">
+        <div className="rounded-[8px] border border-[#d8ebe7] bg-[#f6fbfa] p-3 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-[#41515f]">Macro conditions</span>
+            <span className="text-[#0f766e]">{macroSummary.provenance.sourceType}</span>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <span className="text-[#7b8893]">Weather now</span>
+            <span className="text-right font-medium">
+              {macroSummary.weather.temperatureC.toFixed(1)} C
+            </span>
+            <span className="text-[#7b8893]">72h rain</span>
+            <span className="text-right font-medium">{macroSummary.forecast.next72hRainMm} mm</span>
+            <span className="text-[#7b8893]">Flood</span>
+            <span className="text-right font-medium">{macroSummary.flood.classLabel}</span>
+            <span className="text-[#7b8893]">Fire weather</span>
+            <span className="text-right font-medium">{macroSummary.fire.classLabel}</span>
+            <span className="text-[#7b8893]">Solar</span>
+            <span className="text-right font-medium">{macroSummary.solar.classLabel}</span>
+          </div>
+          <div className="mt-3 border-t border-[#dfe8e6] pt-2 text-[#7b8893]">
+            {macroSummary.provenance.freshnessLabel} | confidence{" "}
+            {macroSummary.provenance.confidence}%
+          </div>
+        </div>
+
+        <div className="rounded-[8px] border border-[#e6eeec] bg-[#fbfdfc] p-3 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-[#41515f]">Sentinel imagery</span>
+            <span className="text-[#0f766e]">
+              clear {Math.round(imageryManifest.clearPixelRatioAoi * 100)}%
+            </span>
+          </div>
+          <div className="mt-2 text-[#7b8893]">
+            Scene {imageryManifest.acquiredAt.slice(0, 10)} | NDVI{" "}
+            {imageryManifest.ndviMean.toFixed(2)} | NDWI {imageryManifest.ndwiMean.toFixed(2)}
+          </div>
+          <div className="mt-2 text-[#7b8893]">
+            SEN2SR is an offline/server pipeline. Enhanced imagery is not authoritative survey
+            evidence.
+          </div>
+        </div>
+
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#52616f]">
             Micro Assets

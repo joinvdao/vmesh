@@ -21,6 +21,7 @@ pnpm-debug.log*
 
 # coverage and reports
 coverage/
+.artifacts/
 knip-report.json
 .agent-ready-report.json
 refactor-queue.generated.md

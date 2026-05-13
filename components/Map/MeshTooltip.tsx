@@ -1,15 +1,21 @@
 "use client";
 
 import { useVmeshStore } from "@/store/useVmeshStore";
+import { scoreMacroCellLayer } from "@/lib/macroData";
+import { MACRO_LAYER_LABELS } from "@/lib/macroSources";
 
 export function MeshTooltip() {
   const hovered = useVmeshStore((state) => state.hoveredHexInfo);
   const hexDataByTier = useVmeshStore((state) => state.hexDataByTier);
+  const selectedMacroLayer = useVmeshStore((state) => state.selectedMacroLayer);
+  const macroSummariesByH3 = useVmeshStore((state) => state.macroSummariesByH3);
 
   if (!hovered) return null;
 
   const record = hexDataByTier[hovered.tier].find((hex) => hex.h3Id === hovered.h3Id);
   if (!record) return null;
+  const macroSummary = macroSummariesByH3[record.h3Id];
+  const macroValue = macroSummary ? scoreMacroCellLayer(macroSummary, selectedMacroLayer) : null;
 
   return (
     <div
@@ -22,6 +28,12 @@ export function MeshTooltip() {
         <span>{record.tier} mesh</span>
         <span className="font-semibold text-[#0f766e]">{record.antifragilityScore}/100</span>
       </div>
+      {macroValue !== null ? (
+        <div className="mt-2 flex items-center justify-between border-t border-[#e6eeec] pt-2">
+          <span>{MACRO_LAYER_LABELS[selectedMacroLayer]}</span>
+          <span className="font-semibold text-[#0f766e]">{macroValue}/100</span>
+        </div>
+      ) : null}
     </div>
   );
 }

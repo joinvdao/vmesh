@@ -6,7 +6,7 @@ vmesh is a [VDAO.io](https://vdao.io) community project. It is being built in pu
 
 vmesh is released under the MIT License.
 
-V1 now ships a polished Next.js dashboard shell with a MapLibre globe surface, deck.gl H3 mesh overlay plumbing, Zustand state, mock U3/U5/U8 records, local/private user records, Recharts analytics, and a provider-agnostic open-terrain foundation.
+V1 now ships a polished Next.js dashboard shell with a MapLibre globe surface, deck.gl H3 mesh overlay plumbing, Zustand state, mock U3/U5/U8 records, a fixture-backed macro package, local/private user records, Recharts analytics, provider-agnostic basemap and open-terrain foundations, macro weather/hazard/solar layer scaffolding, and a Sentinel/SEN2SR imagery pipeline boundary.
 
 ## Stack Summary
 
@@ -18,6 +18,7 @@ V1 now ships a polished Next.js dashboard shell with a MapLibre globe surface, d
 - Zustand for shared map, terrain, layer, selection, and user-data state.
 - Recharts for analytics panels.
 - lucide-react for icons.
+- Provider registries for basemaps, terrain, macro climate/weather signals, and optional imagery.
 
 ## Product Shape
 
@@ -46,10 +47,22 @@ http://localhost:3000
 Copy `.env.example` to `.env.local` for local overrides. Do not commit real secrets or paid provider tokens.
 
 - `NEXT_PUBLIC_MAP_TILE_URL`: reserved for a future configurable basemap source.
+- `NEXT_PUBLIC_BASEMAP_PROVIDER`: optional basemap preference.
+- `NEXT_PUBLIC_BASEMAP_STYLE_URL`: optional custom MapLibre style URL.
+- `NEXT_PUBLIC_BASEMAP_PMTILES_URL`: optional Protomaps/offline PMTiles basemap URL.
+- `NEXT_PUBLIC_ENABLE_REMOTE_GEOCODING`: set to `true` only when remote free-text geocoding is intentionally enabled.
 - `NEXT_PUBLIC_TERRAIN_TILEJSON_URL`: optional highest-priority raster-dem TileJSON provider.
+- `NEXT_PUBLIC_IMAGERY_PROVIDER`: optional imagery provider preference.
+- `NEXT_PUBLIC_SENTINEL_PREVIEW_TILE_URL`: optional Sentinel preview raster tile URL.
+- `NEXT_PUBLIC_SEN2SR_PMTILES_URL`: optional offline/server generated SEN2SR PMTiles URL.
+- `NEXT_PUBLIC_SEN2SR_XYZ_URL`: optional offline/server generated SEN2SR XYZ URL.
+- `NEXT_PUBLIC_OFFLINE_RASTER_PMTILES_URL`: optional local hub imagery PMTiles URL.
+- `NEXT_PUBLIC_MAPBOX_TOKEN`: optional Mapbox satellite comparison token; never commit real tokens.
 - `NEXT_PUBLIC_ANALYTICS_ENDPOINT`: optional future analytics endpoint.
 
 If no terrain env provider is configured, V1 selects a no-token demo raster-dem fallback. If terrain fails, the globe shell remains nonblank and the footer reports provider status.
+
+Open-Meteo can be used as a no-secret selected-centroid weather prototype. Heavier climate, fire, solar, wind rose, sector-map, flood, and imagery processing remains provider-boundary or offline/server work until licensing, caching, and confidence handling are reviewed.
 
 ## Open Terrain Foundation
 
@@ -57,12 +70,22 @@ If no terrain env provider is configured, V1 selects a no-token demo raster-dem 
 
 - `raster-dem-xyz`, including Mapzen/Joerd Terrarium-style tiles.
 - `raster-dem-tilejson`, including env-configured providers and the demo fallback.
-- `pmtiles-raster-dem`, reserved for Mapterhorn/PMTiles terrain packages.
+- `pmtiles-raster-dem`, including Mapterhorn PMTiles as the primary open terrain path.
 - `api-dem`, reserved for OpenTopography-style clipped DEM APIs.
 - `dataset-dem`, reserved for FABDEM, CUDEM, and similar preprocessing workflows.
 - `stac-catalog`, reserved for future open terrain catalog discovery.
 
 FABDEM is marked as license-gated/non-commercial unless separately licensed. CUDEM, OpenTopography, and dataset sources are modeled as future ingestion or preprocessing sources, not live V1 production calls.
+
+## Macro And Imagery Foundations
+
+`lib/macroSources.ts` models Open-Meteo, NASA POWER, ERA5/CDS, NASA FIRMS, wind rose, solar access, sector-map, and terrain-derived flood providers. Open-Meteo is the first live-capable no-secret adapter and falls back to deterministic mock data when unavailable.
+
+`lib/macro-packages/macroPackages.ts`, `lib/macro-packages/macroPackageValidation.ts`, and `lib/macro-packages/macroPackageImport.ts` define the offline macro package contract. The default committed package is a deterministic Western Europe fixture in `fixtures/macro-packages/`; it is used to prove the manifest, H3 summary, provenance, privacy gates, and UI disclosure path without making broad browser calls to climate providers.
+
+Solar and wind are climate/topography products. Future solar access layers should combine sun path, slope/aspect, terrain-horizon shading, optional source-backed obstruction shading, and cloud/irradiance context. Wind roses and permaculture-style climate sector maps should preserve period, source, confidence, and limitations.
+
+`lib/imagerySources.ts` models Sentinel-2 preview imagery, offline/server-generated SEN2SR PMTiles or XYZ tiles, optional Mapbox satellite comparison, and offline raster PMTiles. SEN2SR processing belongs in `pipelines/sentinel_sr/`; the browser only displays generated tiles and manifest metadata.
 
 ## Documentation Map
 
@@ -75,6 +98,7 @@ FABDEM is marked as license-gated/non-commercial unless separately licensed. CUD
 - `docs/OPERATIONS.md`: local runbook, deployment expectations, ingestion notes, and incident notes.
 - `docs/ANALYTICS.md`: event taxonomy and metric definitions.
 - `docs/RESEARCH.md`: external climate, biodiversity, terrain, and data-platform research notes.
+- `docs/CROSS_REPO_INSIGHTS.md`: public-safe substrate insights for downstream apps.
 - `docs/PROJECT_MANAGEMENT.md`: public repo and private planning boundary.
 - `docs/LIVESTREAM.md`: public weekly build log for Thursday 5pm UTC livestream notes.
 - `docs/V1_IMPLEMENTATION_PROMPT.md`: comprehensive V1 build prompt.
@@ -86,6 +110,9 @@ npm run format:check
 npm run lint
 npm test
 npm run build
+npm run macro:build -- --fixture
+npm run macro:validate -- --fixture
+npm run visual:check
 npm run agent-ready:check
 npm run public-workflow:check
 npm run privacy:check

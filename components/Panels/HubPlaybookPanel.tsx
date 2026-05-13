@@ -32,7 +32,7 @@ export function HubPlaybookPanel() {
   };
 
   return (
-    <Card className="absolute right-6 top-6 z-30 w-80 bg-white/94 p-3 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
+    <Card className="absolute right-6 top-6 z-30 w-80 bg-white/[0.94] p-3 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#52616f]">
           <ClipboardList className="h-4 w-4 text-[#0f766e]" />

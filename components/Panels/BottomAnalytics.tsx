@@ -55,7 +55,7 @@ export function BottomAnalytics() {
     .slice(0, 4);
 
   return (
-    <section className="absolute bottom-4 left-6 right-6 z-30 h-72 rounded-[14px] border border-[#dfe8e6] bg-white/94 p-3 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
+    <section className="absolute bottom-4 left-6 right-6 z-30 h-72 rounded-[14px] border border-[#dfe8e6] bg-white/[0.94] p-3 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <Button
         variant="ghost"
         size="icon"
