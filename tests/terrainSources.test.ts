@@ -41,6 +41,10 @@ describe("terrain provider registry", () => {
     const candidates = getTerrainProviderCandidates(providers);
     const mapzen = candidates.find((provider) => provider.id === MAPZEN_PROVIDER_ID);
 
+    expect(candidates.slice(0, 2).map((provider) => provider.id)).toEqual([
+      MAPTERHORN_PROVIDER_ID,
+      MAPZEN_PROVIDER_ID
+    ]);
     expect(candidates.map((provider) => provider.id)).toContain(MAPZEN_PROVIDER_ID);
     expect(mapzen?.requiresApiKey).toBe(false);
     expect(toRasterDemSource(mapzen!)).toMatchObject({

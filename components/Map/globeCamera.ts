@@ -13,14 +13,17 @@ export function flyToSelectedHex({
   isCurrentMap: () => boolean;
 }) {
   const [latitude, longitude] = cellToLatLng(selectedHexDetails.h3Id);
-  const zoom = selectedHexDetails.tier === "U8" ? 9 : selectedHexDetails.tier === "U5" ? 5.2 : 2.8;
+  const zoom =
+    selectedHexDetails.tier === "U8" ? 11.2 : selectedHexDetails.tier === "U5" ? 7.2 : 3.1;
   map.stop();
   if (!isCurrentMap()) return;
-  map.jumpTo({
+  map.flyTo({
     center: [longitude, latitude],
     zoom,
-    pitch: 38,
-    bearing: -16
+    pitch: selectedHexDetails.tier === "U3" ? 28 : 44,
+    bearing: -16,
+    duration: selectedHexDetails.tier === "U3" ? 1400 : 2100,
+    essential: true
   });
 }
 
@@ -37,17 +40,40 @@ export function flyToSearchRequest({
 }) {
   map.stop();
   if (!isCurrentMap()) return;
-  map.jumpTo({
-    center: [flyToRequest.longitude, flyToRequest.latitude],
+  const camera = {
+    center: [flyToRequest.longitude, flyToRequest.latitude] as [number, number],
     zoom: flyToRequest.zoom,
-    pitch: 42,
+    pitch: 46,
     bearing: -18
+  };
+  const zoomDelta = Math.abs(map.getZoom() - flyToRequest.zoom);
+  map.flyTo({
+    ...camera,
+    duration: Math.round(Math.min(2800, Math.max(1700, 1250 + zoomDelta * 180))),
+    essential: true
   });
   setViewState({
     longitude: flyToRequest.longitude,
     latitude: flyToRequest.latitude,
     zoom: flyToRequest.zoom,
-    pitch: 42,
+    pitch: 46,
     bearing: -18
   });
+}
+
+export function returnToOrbitGlobe({
+  map,
+  initialViewState
+}: {
+  map: maplibregl.Map;
+  initialViewState: ViewState;
+}) {
+  const camera = {
+    center: [initialViewState.longitude, initialViewState.latitude] as [number, number],
+    zoom: Math.min(initialViewState.zoom, 2.6),
+    pitch: initialViewState.pitch,
+    bearing: initialViewState.bearing
+  };
+  map.stop();
+  map.jumpTo(camera);
 }

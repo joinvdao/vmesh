@@ -32,7 +32,11 @@
     "maintenance-day": "node scripts/maintenance-day.mjs",
     "refactor:queue": "node scripts/write-refactor-queue.mjs",
     "public-workflow:check": "node scripts/public-workflow-check.mjs",
-    "privacy:check": "node scripts/privacy-check.mjs"
+    "privacy:check": "node scripts/privacy-check.mjs",
+    "macro:build": "node scripts/build-macro-package.mjs",
+    "macro:validate": "node scripts/validate-macro-package.mjs",
+    "macro:ready": "node scripts/check-macro-readiness.mjs --fixture",
+    "visual:check": "node scripts/visual-regression-check.mjs"
   },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx,mjs,cjs}": [

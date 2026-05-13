@@ -2,6 +2,7 @@
 
 import { Database, Hexagon, Lock, MapPin, ShieldCheck } from "lucide-react";
 
+import { MACRO_LAYER_LABELS } from "@/lib/macroSources";
 import { useVmeshStore } from "@/store/useVmeshStore";
 
 function formatCoordinate(value: number, positiveHemisphere: string, negativeHemisphere: string) {
@@ -15,6 +16,9 @@ export function AppFooter() {
   const dataFreshness = useVmeshStore((state) => state.dataFreshness);
   const mapStatus = useVmeshStore((state) => state.mapStatus);
   const viewState = useVmeshStore((state) => state.viewState);
+  const selectedMacroLayer = useVmeshStore((state) => state.selectedMacroLayer);
+  const selectedMacroSummary = useVmeshStore((state) => state.selectedMacroSummary);
+  const macroDataModeLabel = useVmeshStore((state) => state.macroDataModeLabel);
 
   return (
     <footer className="absolute bottom-0 left-20 right-0 z-40 flex h-10 items-center justify-between border-t border-[#dfe8e6] bg-white/90 px-5 text-[11px] text-[#6f7d88] backdrop-blur">
@@ -35,13 +39,19 @@ export function AppFooter() {
         </span>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-4">
+        <span>Basemap {mapStatus.basemapProviderId}</span>
         <span className="flex items-center gap-2">
           <MapPin className="h-3.5 w-3.5 text-[#2f9b93]" />
           Terrain {mapStatus.terrain}
         </span>
         <span>Contours {mapStatus.contours}</span>
-        <span>Provider {mapStatus.providerId}</span>
+        <span>
+          Macro {MACRO_LAYER_LABELS[selectedMacroLayer]} {mapStatus.macro}
+        </span>
+        <span>Imagery {mapStatus.imagery}</span>
+        <span>{macroDataModeLabel}</span>
+        <span>{selectedMacroSummary.provenance.sourceType}</span>
         <span>v1.0.0</span>
         <span className="flex items-center gap-2">
           <Lock className="h-3.5 w-3.5 text-[#39a995]" />

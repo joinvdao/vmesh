@@ -7,7 +7,8 @@ import { useVmeshStore } from "@/store/useVmeshStore";
 
 const tiers = ["U3", "U5", "U8"] as const;
 const layerToggles = [
-  { key: "macro", label: "Mesh overlay" },
+  { key: "macro", label: "Macro heat" },
+  { key: "imagery", label: "Imagery" },
   { key: "context", label: "Context cells" },
   { key: "micro", label: "Micro data" },
   { key: "terrain", label: "Terrain" }
@@ -23,7 +24,7 @@ export function LayerScaleControl() {
   const setSelectedTier = useVmeshStore((state) => state.setSelectedTier);
 
   return (
-    <div className="absolute right-6 top-6 z-30 w-72 rounded-[12px] border border-[#dfe8e6] bg-white/94 p-4 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
+    <div className="absolute right-6 top-6 z-30 w-72 rounded-[12px] border border-[#dfe8e6] bg-white/[0.94] p-4 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <div className="mb-4 flex items-center justify-between">
         <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#52616f]">
           Layer Controls

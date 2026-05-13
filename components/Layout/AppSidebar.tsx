@@ -3,13 +3,16 @@
 import {
   BarChart3,
   Bot,
+  CloudSun,
   ClipboardList,
   Database,
   Hexagon,
   Layers3,
   MapPlus,
+  Mountain,
   Orbit,
-  Router
+  Router,
+  Satellite
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -24,6 +27,10 @@ const railItems: {
   panel: DashboardPanel | null;
 }[] = [
   { label: "Selected hex", icon: Hexagon, panel: "hex" },
+  { label: "Macro layers", icon: CloudSun, panel: "macro" },
+  { label: "Terrain", icon: Mountain, panel: "terrain" },
+  { label: "Imagery", icon: Satellite, panel: "imagery" },
+  { label: "Sources", icon: Database, panel: "sources" },
   { label: "Layers", icon: Layers3, panel: "layers" },
   { label: "Analytics", icon: BarChart3, panel: "analytics" },
   { label: "Add local data", icon: MapPlus, panel: "add-data" },
@@ -36,7 +43,7 @@ export function AppSidebar() {
   const setActivePanel = useVmeshStore((state) => state.setActivePanel);
 
   return (
-    <aside className="absolute bottom-0 left-0 top-0 z-40 flex w-20 flex-col items-center border-r border-[#dfe8e6] bg-white/96 px-3 py-4 shadow-[2px_0_18px_rgba(31,53,58,0.04)] backdrop-blur">
+    <aside className="absolute bottom-0 left-0 top-0 z-40 flex w-20 flex-col items-center border-r border-[#dfe8e6] bg-white/[0.96] px-3 py-4 shadow-[2px_0_18px_rgba(31,53,58,0.04)] backdrop-blur">
       <Tooltip label="vmesh Atlas of Antifragility">
         <button
           className="flex h-12 w-12 items-center justify-center rounded-[10px] border border-[#bcded8] bg-[#f2fbf8] text-[#0f766e]"
@@ -69,7 +76,7 @@ export function AppSidebar() {
       </nav>
 
       <div className="flex flex-col items-center gap-3">
-        <Tooltip label="Mock data source boundary">
+        <Tooltip label="Public-safe data boundaries">
           <div className="flex h-10 w-10 items-center justify-center rounded-[9px] border border-[#e6eeec] bg-[#fbfdfc] text-[#0f766e]">
             <Database className="h-4 w-4" />
           </div>

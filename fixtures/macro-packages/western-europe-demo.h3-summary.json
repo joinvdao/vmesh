@@ -1,0 +1,1568 @@
+{
+  "schemaVersion": "vmesh-macro-package-v1",
+  "packageId": "western-europe-demo",
+  "packageVersion": "2026.05.fixture",
+  "generatedAt": "2026-05-11T00:00:00.000Z",
+  "records": [
+    {
+      "h3Id": "85393363fffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 38.67972735103008, "longitude": -9.219115234788738 },
+      "weather": {
+        "temperatureC": 25.5,
+        "apparentTemperatureC": 28.1,
+        "precipitationMm": 0.9,
+        "rainfallMm": 0.8,
+        "windSpeedKph": 27,
+        "windGustKph": 39,
+        "relativeHumidityPercent": 69.15,
+        "cloudCoverPercent": 29
+      },
+      "forecast": {
+        "next72hRainMm": 11,
+        "maxTemperatureC": 29.7,
+        "minTemperatureC": 13.3,
+        "maxWindGustKph": 45,
+        "dominantCondition": "Settled",
+        "stressScore": 28
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": 0.7,
+        "rainfallAnomalyPercent": 19,
+        "trendDirection": "warming",
+        "confidence": 79
+      },
+      "flood": {
+        "exposureScore": 30,
+        "classLabel": "low",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 81
+      },
+      "fire": {
+        "exposureScore": 50,
+        "classLabel": "moderate",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 73
+      },
+      "solar": {
+        "practicalityScore": 66,
+        "irradianceKwhM2Day": 5.1,
+        "cloudPenalty": 29,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 71
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Lisbon Estuary"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "8539220ffffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 41.14266343706539, "longitude": -8.545224454427963 },
+      "weather": {
+        "temperatureC": 27.2,
+        "apparentTemperatureC": 30,
+        "precipitationMm": 1.6,
+        "rainfallMm": 1.4,
+        "windSpeedKph": 9,
+        "windGustKph": 21,
+        "relativeHumidityPercent": 71.05,
+        "cloudCoverPercent": 65
+      },
+      "forecast": {
+        "next72hRainMm": 19,
+        "maxTemperatureC": 31.6,
+        "minTemperatureC": 14.1,
+        "maxWindGustKph": 27,
+        "dominantCondition": "Settled",
+        "stressScore": 28
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": -0.2,
+        "rainfallAnomalyPercent": 9,
+        "trendDirection": "warming",
+        "confidence": 79
+      },
+      "flood": {
+        "exposureScore": 40,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 81
+      },
+      "fire": {
+        "exposureScore": 47,
+        "classLabel": "moderate",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 79
+      },
+      "solar": {
+        "practicalityScore": 53,
+        "irradianceKwhM2Day": 4.5,
+        "cloudPenalty": 65,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 77
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Porto Watershed"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "8539235bfffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 41.13236024232135, "longitude": -7.791094282924158 },
+      "weather": {
+        "temperatureC": 31.1,
+        "apparentTemperatureC": 34.5,
+        "precipitationMm": 2.1,
+        "rainfallMm": 1.8,
+        "windSpeedKph": 19,
+        "windGustKph": 31,
+        "relativeHumidityPercent": 69.15,
+        "cloudCoverPercent": 87
+      },
+      "forecast": {
+        "next72hRainMm": 25,
+        "maxTemperatureC": 35.9,
+        "minTemperatureC": 15.9,
+        "maxWindGustKph": 37,
+        "dominantCondition": "Wet spell",
+        "stressScore": 39
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": 0,
+        "rainfallAnomalyPercent": 23,
+        "trendDirection": "warming",
+        "confidence": 63
+      },
+      "flood": {
+        "exposureScore": 47,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 65
+      },
+      "fire": {
+        "exposureScore": 58,
+        "classLabel": "high",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 81
+      },
+      "solar": {
+        "practicalityScore": 46,
+        "irradianceKwhM2Day": 4.2,
+        "cloudPenalty": 87,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 79
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Douro Valley"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "8539152ffffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 38.08910703836106, "longitude": -7.78260193482247 },
+      "weather": {
+        "temperatureC": 21.6,
+        "apparentTemperatureC": 23.6,
+        "precipitationMm": 2.6,
+        "rainfallMm": 2.2,
+        "windSpeedKph": 29,
+        "windGustKph": 41,
+        "relativeHumidityPercent": 84.05,
+        "cloudCoverPercent": 39
+      },
+      "forecast": {
+        "next72hRainMm": 31,
+        "maxTemperatureC": 25.4,
+        "minTemperatureC": 11.5,
+        "maxWindGustKph": 47,
+        "dominantCondition": "Wet spell",
+        "stressScore": 29
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": 0.2,
+        "rainfallAnomalyPercent": -9,
+        "trendDirection": "warming",
+        "confidence": 65
+      },
+      "flood": {
+        "exposureScore": 54,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 67
+      },
+      "fire": {
+        "exposureScore": 38,
+        "classLabel": "moderate",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 63
+      },
+      "solar": {
+        "practicalityScore": 60,
+        "irradianceKwhM2Day": 4.8,
+        "cloudPenalty": 39,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 61
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Alentejo Agro-Solar"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "8539115bfffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 37.03216074380978, "longitude": -7.971774062754196 },
+      "weather": {
+        "temperatureC": 25.2,
+        "apparentTemperatureC": 27.8,
+        "precipitationMm": 1.3,
+        "rainfallMm": 1.1,
+        "windSpeedKph": 46,
+        "windGustKph": 58,
+        "relativeHumidityPercent": 72,
+        "cloudCoverPercent": 54
+      },
+      "forecast": {
+        "next72hRainMm": 16,
+        "maxTemperatureC": 29.4,
+        "minTemperatureC": 13.2,
+        "maxWindGustKph": 64,
+        "dominantCondition": "Settled",
+        "stressScore": 34
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": -0.3,
+        "rainfallAnomalyPercent": 2,
+        "trendDirection": "stable",
+        "confidence": 78
+      },
+      "flood": {
+        "exposureScore": 36,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 80
+      },
+      "fire": {
+        "exposureScore": 54,
+        "classLabel": "moderate",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 78
+      },
+      "solar": {
+        "practicalityScore": 56,
+        "irradianceKwhM2Day": 4.6,
+        "cloudPenalty": 54,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 76
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Algarve Coast"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "85392097fffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 42.88868431974776, "longitude": -8.479535282509218 },
+      "weather": {
+        "temperatureC": 31.4,
+        "apparentTemperatureC": 34.8,
+        "precipitationMm": 1.7,
+        "rainfallMm": 1.4,
+        "windSpeedKph": 42,
+        "windGustKph": 54,
+        "relativeHumidityPercent": 66.3,
+        "cloudCoverPercent": 62
+      },
+      "forecast": {
+        "next72hRainMm": 20,
+        "maxTemperatureC": 36.2,
+        "minTemperatureC": 16.1,
+        "maxWindGustKph": 60,
+        "dominantCondition": "Heat watch",
+        "stressScore": 43
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": 1,
+        "rainfallAnomalyPercent": -6,
+        "trendDirection": "warming",
+        "confidence": 64
+      },
+      "flood": {
+        "exposureScore": 41,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 66
+      },
+      "fire": {
+        "exposureScore": 66,
+        "classLabel": "high",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 76
+      },
+      "solar": {
+        "practicalityScore": 56,
+        "irradianceKwhM2Day": 4.6,
+        "cloudPenalty": 62,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 74
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Galicia Food Belt"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "85184b57fffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 43.26975853199025, "longitude": -2.909330551234362 },
+      "weather": {
+        "temperatureC": 23.5,
+        "apparentTemperatureC": 25.9,
+        "precipitationMm": 2.8,
+        "rainfallMm": 2.4,
+        "windSpeedKph": 34,
+        "windGustKph": 46,
+        "relativeHumidityPercent": 83.1,
+        "cloudCoverPercent": 50
+      },
+      "forecast": {
+        "next72hRainMm": 34,
+        "maxTemperatureC": 27.5,
+        "minTemperatureC": 12.4,
+        "maxWindGustKph": 52,
+        "dominantCondition": "Wet spell",
+        "stressScore": 34
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": 0.3,
+        "rainfallAnomalyPercent": -2,
+        "trendDirection": "warming",
+        "confidence": 66
+      },
+      "flood": {
+        "exposureScore": 58,
+        "classLabel": "high",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 68
+      },
+      "fire": {
+        "exposureScore": 43,
+        "classLabel": "moderate",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 64
+      },
+      "solar": {
+        "practicalityScore": 57,
+        "irradianceKwhM2Day": 4.7,
+        "cloudPenalty": 50,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 62
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Basque Circular Coast"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "85390ca3fffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 40.372540582165755, "longitude": -3.6176032466282706 },
+      "weather": {
+        "temperatureC": 21.3,
+        "apparentTemperatureC": 23.3,
+        "precipitationMm": 1.5,
+        "rainfallMm": 1.3,
+        "windSpeedKph": 24,
+        "windGustKph": 36,
+        "relativeHumidityPercent": 77.9,
+        "cloudCoverPercent": 70
+      },
+      "forecast": {
+        "next72hRainMm": 18,
+        "maxTemperatureC": 25.1,
+        "minTemperatureC": 11.4,
+        "maxWindGustKph": 42,
+        "dominantCondition": "Settled",
+        "stressScore": 23
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": -0.2,
+        "rainfallAnomalyPercent": 2,
+        "trendDirection": "warming",
+        "confidence": 70
+      },
+      "flood": {
+        "exposureScore": 38,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 72
+      },
+      "fire": {
+        "exposureScore": 39,
+        "classLabel": "moderate",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 64
+      },
+      "solar": {
+        "practicalityScore": 49,
+        "irradianceKwhM2Day": 4.3,
+        "cloudPenalty": 70,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 62
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Madrid Water Grid"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "85394463fffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 41.40363785739752, "longitude": 2.135188474682777 },
+      "weather": {
+        "temperatureC": 29.4,
+        "apparentTemperatureC": 32.6,
+        "precipitationMm": 1.4,
+        "rainfallMm": 1.2,
+        "windSpeedKph": 37,
+        "windGustKph": 49,
+        "relativeHumidityPercent": 67.25,
+        "cloudCoverPercent": 51
+      },
+      "forecast": {
+        "next72hRainMm": 17,
+        "maxTemperatureC": 34.1,
+        "minTemperatureC": 15.2,
+        "maxWindGustKph": 55,
+        "dominantCondition": "Settled",
+        "stressScore": 38
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": 0.9,
+        "rainfallAnomalyPercent": -13,
+        "trendDirection": "warming",
+        "confidence": 63
+      },
+      "flood": {
+        "exposureScore": 37,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 65
+      },
+      "fire": {
+        "exposureScore": 60,
+        "classLabel": "high",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 75
+      },
+      "solar": {
+        "practicalityScore": 59,
+        "irradianceKwhM2Day": 4.8,
+        "cloudPenalty": 51,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 73
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Barcelona Commons"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "8539540bfffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 39.406433562933806, "longitude": -0.4299481518379183 },
+      "weather": {
+        "temperatureC": 29.1,
+        "apparentTemperatureC": 32.3,
+        "precipitationMm": 1.8,
+        "rainfallMm": 1.6,
+        "windSpeedKph": 14,
+        "windGustKph": 26,
+        "relativeHumidityPercent": 70.1,
+        "cloudCoverPercent": 76
+      },
+      "forecast": {
+        "next72hRainMm": 22,
+        "maxTemperatureC": 33.7,
+        "minTemperatureC": 15,
+        "maxWindGustKph": 32,
+        "dominantCondition": "Cloudy",
+        "stressScore": 33
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": -0.1,
+        "rainfallAnomalyPercent": 16,
+        "trendDirection": "warming",
+        "confidence": 62
+      },
+      "flood": {
+        "exposureScore": 43,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 64
+      },
+      "fire": {
+        "exposureScore": 52,
+        "classLabel": "moderate",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 80
+      },
+      "solar": {
+        "practicalityScore": 50,
+        "irradianceKwhM2Day": 4.4,
+        "cloudPenalty": 76,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 78
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Valencia Huerta"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "85391c73fffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 37.40344642767889, "longitude": -6.057403775218639 },
+      "weather": {
+        "temperatureC": 21.6,
+        "apparentTemperatureC": 23.6,
+        "precipitationMm": 2.6,
+        "rainfallMm": 2.2,
+        "windSpeedKph": 29,
+        "windGustKph": 41,
+        "relativeHumidityPercent": 84.05,
+        "cloudCoverPercent": 39
+      },
+      "forecast": {
+        "next72hRainMm": 31,
+        "maxTemperatureC": 25.4,
+        "minTemperatureC": 11.5,
+        "maxWindGustKph": 47,
+        "dominantCondition": "Wet spell",
+        "stressScore": 29
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": 0.2,
+        "rainfallAnomalyPercent": -9,
+        "trendDirection": "warming",
+        "confidence": 65
+      },
+      "flood": {
+        "exposureScore": 54,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 67
+      },
+      "fire": {
+        "exposureScore": 38,
+        "classLabel": "moderate",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 63
+      },
+      "solar": {
+        "practicalityScore": 60,
+        "irradianceKwhM2Day": 4.8,
+        "cloudPenalty": 39,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 61
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Seville Heat Commons"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "85396223fffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 42.52401647833628, "longitude": 1.6165601708911164 },
+      "weather": {
+        "temperatureC": 21.6,
+        "apparentTemperatureC": 23.6,
+        "precipitationMm": 0.4,
+        "rainfallMm": 0.4,
+        "windSpeedKph": 17,
+        "windGustKph": 29,
+        "relativeHumidityPercent": 71.05,
+        "cloudCoverPercent": 77
+      },
+      "forecast": {
+        "next72hRainMm": 5,
+        "maxTemperatureC": 25.4,
+        "minTemperatureC": 11.5,
+        "maxWindGustKph": 35,
+        "dominantCondition": "Cloudy",
+        "stressScore": 17
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": 0.5,
+        "rainfallAnomalyPercent": 5,
+        "trendDirection": "warming",
+        "confidence": 77
+      },
+      "flood": {
+        "exposureScore": 23,
+        "classLabel": "low",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 79
+      },
+      "fire": {
+        "exposureScore": 40,
+        "classLabel": "moderate",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 71
+      },
+      "solar": {
+        "practicalityScore": 46,
+        "irradianceKwhM2Day": 4.2,
+        "cloudPenalty": 77,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 69
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Pyrenees Headwaters"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "85186b6ffffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 44.89065524584045, "longitude": -0.584552008253395 },
+      "weather": {
+        "temperatureC": 27.4,
+        "apparentTemperatureC": 30.4,
+        "precipitationMm": 1.2,
+        "rainfallMm": 1,
+        "windSpeedKph": 32,
+        "windGustKph": 44,
+        "relativeHumidityPercent": 68.2,
+        "cloudCoverPercent": 40
+      },
+      "forecast": {
+        "next72hRainMm": 14,
+        "maxTemperatureC": 31.9,
+        "minTemperatureC": 14.2,
+        "maxWindGustKph": 50,
+        "dominantCondition": "Settled",
+        "stressScore": 33
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": 0.8,
+        "rainfallAnomalyPercent": 26,
+        "trendDirection": "stable",
+        "confidence": 62
+      },
+      "flood": {
+        "exposureScore": 34,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 64
+      },
+      "fire": {
+        "exposureScore": 55,
+        "classLabel": "moderate",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 74
+      },
+      "solar": {
+        "practicalityScore": 63,
+        "irradianceKwhM2Day": 4.9,
+        "cloudPenalty": 40,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 72
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Bordeaux Basin"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "8539601bfffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 43.5688245209174, "longitude": 1.416470292608797 },
+      "weather": {
+        "temperatureC": 25.2,
+        "apparentTemperatureC": 27.8,
+        "precipitationMm": 1.3,
+        "rainfallMm": 1.1,
+        "windSpeedKph": 46,
+        "windGustKph": 58,
+        "relativeHumidityPercent": 72,
+        "cloudCoverPercent": 54
+      },
+      "forecast": {
+        "next72hRainMm": 16,
+        "maxTemperatureC": 29.4,
+        "minTemperatureC": 13.2,
+        "maxWindGustKph": 64,
+        "dominantCondition": "Settled",
+        "stressScore": 34
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": -0.3,
+        "rainfallAnomalyPercent": 2,
+        "trendDirection": "stable",
+        "confidence": 78
+      },
+      "flood": {
+        "exposureScore": 36,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 80
+      },
+      "fire": {
+        "exposureScore": 54,
+        "classLabel": "moderate",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 78
+      },
+      "solar": {
+        "practicalityScore": 56,
+        "irradianceKwhM2Day": 4.6,
+        "cloudPenalty": 54,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 76
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Occitanie Food Web"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "85396817fffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 43.3568733464912, "longitude": 5.431562486150266 },
+      "weather": {
+        "temperatureC": 25.8,
+        "apparentTemperatureC": 28.4,
+        "precipitationMm": 2.7,
+        "rainfallMm": 2.3,
+        "windSpeedKph": 20,
+        "windGustKph": 32,
+        "relativeHumidityPercent": 79.3,
+        "cloudCoverPercent": 36
+      },
+      "forecast": {
+        "next72hRainMm": 32,
+        "maxTemperatureC": 30,
+        "minTemperatureC": 13.5,
+        "maxWindGustKph": 38,
+        "dominantCondition": "Wet spell",
+        "stressScore": 33
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": -0.1,
+        "rainfallAnomalyPercent": 22,
+        "trendDirection": "warming",
+        "confidence": 68
+      },
+      "flood": {
+        "exposureScore": 55,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 70
+      },
+      "fire": {
+        "exposureScore": 45,
+        "classLabel": "moderate",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 80
+      },
+      "solar": {
+        "practicalityScore": 63,
+        "irradianceKwhM2Day": 4.9,
+        "cloudPenalty": 36,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 78
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Marseille Littoral"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "851f9027fffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 45.79576677912598, "longitude": 4.930491165831567 },
+      "weather": {
+        "temperatureC": 33,
+        "apparentTemperatureC": 36.8,
+        "precipitationMm": 2.3,
+        "rainfallMm": 2,
+        "windSpeedKph": 24,
+        "windGustKph": 36,
+        "relativeHumidityPercent": 68.2,
+        "cloudCoverPercent": 28
+      },
+      "forecast": {
+        "next72hRainMm": 28,
+        "maxTemperatureC": 38.1,
+        "minTemperatureC": 16.8,
+        "maxWindGustKph": 42,
+        "dominantCondition": "Wet spell",
+        "stressScore": 44
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": 0.1,
+        "rainfallAnomalyPercent": -16,
+        "trendDirection": "stable",
+        "confidence": 64
+      },
+      "flood": {
+        "exposureScore": 50,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 66
+      },
+      "fire": {
+        "exposureScore": 63,
+        "classLabel": "high",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 62
+      },
+      "solar": {
+        "practicalityScore": 70,
+        "irradianceKwhM2Day": 5.3,
+        "cloudPenalty": 28,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 60
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Lyon Energy Valley"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "851f8edbfffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 47.40180962132397, "longitude": 8.591218303049764 },
+      "weather": {
+        "temperatureC": 33,
+        "apparentTemperatureC": 36.8,
+        "precipitationMm": 0.2,
+        "rainfallMm": 0.1,
+        "windSpeedKph": 12,
+        "windGustKph": 24,
+        "relativeHumidityPercent": 55.2,
+        "cloudCoverPercent": 66
+      },
+      "forecast": {
+        "next72hRainMm": 2,
+        "maxTemperatureC": 38.1,
+        "minTemperatureC": 16.8,
+        "maxWindGustKph": 30,
+        "dominantCondition": "Heat watch",
+        "stressScore": 32
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": 0.4,
+        "rainfallAnomalyPercent": -2,
+        "trendDirection": "stable",
+        "confidence": 76
+      },
+      "flood": {
+        "exposureScore": 19,
+        "classLabel": "low",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 78
+      },
+      "fire": {
+        "exposureScore": 64,
+        "classLabel": "high",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 70
+      },
+      "solar": {
+        "practicalityScore": 55,
+        "irradianceKwhM2Day": 4.6,
+        "cloudPenalty": 66,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 68
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Zurich Circular Hub"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "851f99cffffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 45.50588556375803, "longitude": 9.159420467390385 },
+      "weather": {
+        "temperatureC": 21.8,
+        "apparentTemperatureC": 24,
+        "precipitationMm": 1.5,
+        "rainfallMm": 1.3,
+        "windSpeedKph": 22,
+        "windGustKph": 34,
+        "relativeHumidityPercent": 77.2,
+        "cloudCoverPercent": 46
+      },
+      "forecast": {
+        "next72hRainMm": 18,
+        "maxTemperatureC": 25.7,
+        "minTemperatureC": 11.6,
+        "maxWindGustKph": 40,
+        "dominantCondition": "Settled",
+        "stressScore": 23
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": 0.9,
+        "rainfallAnomalyPercent": -6,
+        "trendDirection": "stable",
+        "confidence": 72
+      },
+      "flood": {
+        "exposureScore": 38,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 74
+      },
+      "fire": {
+        "exposureScore": 39,
+        "classLabel": "moderate",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 70
+      },
+      "solar": {
+        "practicalityScore": 58,
+        "irradianceKwhM2Day": 4.7,
+        "cloudPenalty": 46,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 68
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Milan Po Valley"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "851f0583fffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 55.669425499632865, "longitude": 12.628192104308742 },
+      "weather": {
+        "temperatureC": 29.1,
+        "apparentTemperatureC": 32.3,
+        "precipitationMm": 1.8,
+        "rainfallMm": 1.6,
+        "windSpeedKph": 14,
+        "windGustKph": 26,
+        "relativeHumidityPercent": 70.1,
+        "cloudCoverPercent": 76
+      },
+      "forecast": {
+        "next72hRainMm": 22,
+        "maxTemperatureC": 33.7,
+        "minTemperatureC": 15,
+        "maxWindGustKph": 32,
+        "dominantCondition": "Cloudy",
+        "stressScore": 33
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": -0.1,
+        "rainfallAnomalyPercent": 16,
+        "trendDirection": "warming",
+        "confidence": 62
+      },
+      "flood": {
+        "exposureScore": 43,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 64
+      },
+      "fire": {
+        "exposureScore": 52,
+        "classLabel": "moderate",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 80
+      },
+      "solar": {
+        "practicalityScore": 50,
+        "irradianceKwhM2Day": 4.4,
+        "cloudPenalty": 76,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 78
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Copenhagen Blue-Green"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    },
+    {
+      "h3Id": "85088663fffffff",
+      "tier": "U5",
+      "resolution": 5,
+      "centroid": { "latitude": 59.33753796407356, "longitude": 17.9809168702989 },
+      "weather": {
+        "temperatureC": 33.3,
+        "apparentTemperatureC": 37.1,
+        "precipitationMm": 1.9,
+        "rainfallMm": 1.6,
+        "windSpeedKph": 47,
+        "windGustKph": 59,
+        "relativeHumidityPercent": 65.35,
+        "cloudCoverPercent": 73
+      },
+      "forecast": {
+        "next72hRainMm": 23,
+        "maxTemperatureC": 38.4,
+        "minTemperatureC": 17,
+        "maxWindGustKph": 65,
+        "dominantCondition": "Cloudy",
+        "stressScore": 49
+      },
+      "climateTrend": {
+        "baselineLabel": "Fixture 1991-2020 baseline",
+        "temperatureAnomalyC": -0.4,
+        "rainfallAnomalyPercent": 1,
+        "trendDirection": "warming",
+        "confidence": 65
+      },
+      "flood": {
+        "exposureScore": 44,
+        "classLabel": "moderate",
+        "drivers": ["72h rainfall fixture", "water stress proxy", "DEM/HAND future input"],
+        "confidence": 67
+      },
+      "fire": {
+        "exposureScore": 71,
+        "classLabel": "high",
+        "drivers": ["heat proxy", "wind proxy", "vegetation dryness future input"],
+        "confidence": 77
+      },
+      "solar": {
+        "practicalityScore": 53,
+        "irradianceKwhM2Day": 4.5,
+        "cloudPenalty": 73,
+        "classLabel": "medium",
+        "interpretation": "Fixture signal for local hub charging, refrigeration, and comms timing.",
+        "confidence": 75
+      },
+      "provenance": {
+        "providerId": "open-meteo-fixture-package",
+        "providerLabel": "Open-Meteo fixture package",
+        "sourceType": "fixture",
+        "observedAt": "2026-05-01T00:00:00.000Z",
+        "generatedAt": "2026-05-11T00:00:00.000Z",
+        "freshnessLabel": "fixture package 2026-05-01 to 2026-05-04",
+        "confidence": 76,
+        "limitations": "Fixture package for local macro pipeline validation. It is not a live provider result and not operational intelligence.",
+        "license": "Fictional fixture generated from deterministic vmesh mock data"
+      },
+      "packageId": "western-europe-demo",
+      "packageVersion": "2026.05.fixture",
+      "packageMode": "fixture-package",
+      "qualityFlags": ["fixture", "bounded-aoi", "no-live-network", "Stockholm Resilience"],
+      "inputVariables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "validFrom": "2026-05-01T00:00:00.000Z",
+      "validTo": "2026-05-04T00:00:00.000Z",
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture package for pipeline and UI validation. Not operational intelligence."
+    }
+  ]
+}

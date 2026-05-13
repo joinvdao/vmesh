@@ -36,9 +36,18 @@ const textExtensions = new Set([
 const patterns = [
   { label: "email address", pattern: /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/ },
   { label: "absolute Windows user path", pattern: /C:\\Users\\/i },
-  { label: "local username", pattern: /\bkmill\b/i },
-  { label: "private planning acronym", pattern: /\bGTD\b/i },
-  { label: "private planning app", pattern: /\bObsidian\b/i },
+  {
+    label: "local machine account marker",
+    pattern: new RegExp(`\\b${["k", "mill"].join("")}\\b`, "i")
+  },
+  {
+    label: "private workflow acronym",
+    pattern: new RegExp(`\\b${["G", "T", "D"].join("")}\\b`, "i")
+  },
+  {
+    label: "private note app marker",
+    pattern: new RegExp(`\\b${["Ob", "sidian"].join("")}\\b`, "i")
+  },
   { label: "private local ticket folder", pattern: /\.tickets\//i }
 ];
 

@@ -25,7 +25,7 @@ export function UserDataPanel() {
   const setActivePanel = useVmeshStore((state) => state.setActivePanel);
 
   return (
-    <div className="absolute right-6 top-6 z-30 w-80 rounded-[12px] border border-[#dfe8e6] bg-white/94 p-3 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
+    <div className="absolute right-6 top-6 z-30 w-80 rounded-[12px] border border-[#dfe8e6] bg-white/[0.94] p-3 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <div className="mb-3 flex items-center justify-between">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#52616f]">

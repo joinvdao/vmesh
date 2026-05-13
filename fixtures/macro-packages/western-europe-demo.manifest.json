@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "vmesh-macro-package-v1",
+  "packageId": "western-europe-demo",
+  "packageVersion": "2026.05.fixture",
+  "generatedAt": "2026-05-11T00:00:00.000Z",
+  "mode": "fixture-package",
+  "aoi": {
+    "label": "Western Europe demo AOI",
+    "bounds": [-10.8, 36.4, 18.8, 60.2],
+    "centroid": { "latitude": 45.2, "longitude": 2.8 },
+    "privacy": "public-demo"
+  },
+  "h3Resolution": 5,
+  "h3Tiers": ["U5"],
+  "timeWindow": {
+    "validFrom": "2026-05-01T00:00:00.000Z",
+    "validTo": "2026-05-04T00:00:00.000Z",
+    "cadence": "fixture"
+  },
+  "sourceRun": {
+    "id": "fixture-run-20260511",
+    "generatedBy": "fixture-builder",
+    "liveNetworkUsed": false
+  },
+  "providers": [
+    {
+      "providerId": "open-meteo-fixture-package",
+      "providerLabel": "Open-Meteo fixture package",
+      "sourceType": "fixture",
+      "status": "fixture-package",
+      "requestedAt": "2026-05-11T00:00:00.000Z",
+      "modelRunAt": "2026-05-11T00:00:00.000Z",
+      "variables": [
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "cloud_cover",
+        "shortwave_radiation_proxy"
+      ],
+      "license": "Fictional fixture generated from deterministic vmesh mock data",
+      "limitations": "Fixture provider run. Replace with reviewed package output before production use.",
+      "confidence": 78
+    }
+  ],
+  "layers": [
+    "climate-trend",
+    "climate-weather",
+    "climate-rainfall",
+    "hazard-flood-lowland",
+    "hazard-fire-weather",
+    "solar-potential"
+  ],
+  "artifacts": [
+    {
+      "kind": "h3-summary-json",
+      "path": "western-europe-demo.h3-summary.json",
+      "contentHash": "sha256:b7722bcbe22dfaa4ebf0095b579f569a8a11536365e83c24b805a3ecdd6cac12",
+      "recordCount": 20,
+      "h3Resolution": 5,
+      "layerIds": [
+        "climate-trend",
+        "climate-weather",
+        "climate-rainfall",
+        "hazard-flood-lowland",
+        "hazard-fire-weather",
+        "solar-potential"
+      ],
+      "generatedAt": "2026-05-11T00:00:00.000Z"
+    }
+  ],
+  "summaryStats": {
+    "cellCount": 20,
+    "minConfidence": 76,
+    "maxConfidence": 76,
+    "meanConfidence": 76
+  },
+  "qualityGates": {
+    "maxCells": 20,
+    "fixtureOnly": true,
+    "noPrivateAddresses": true,
+    "noBrowserGridFetches": true,
+    "noPaidProviderCalls": true,
+    "h3ResolutionAligned": true,
+    "provenanceComplete": true,
+    "providerTermsReviewed": false,
+    "licenseAttributionComplete": true,
+    "freshnessWindowBounded": true,
+    "confidenceDocumented": true,
+    "limitationsDocumented": true,
+    "noAuthorityClaims": true
+  },
+  "privacy": {
+    "containsUserRecords": false,
+    "containsExactPrivateAddresses": false,
+    "aoiPrecision": "coarse-region"
+  },
+  "limitations": [
+    "Fixture-only package generated from deterministic records.",
+    "Not operational weather, climate, fire, flood, solar, wind, or emergency intelligence.",
+    "Use reviewed package workers and provider terms before production ingestion."
+  ]
+}

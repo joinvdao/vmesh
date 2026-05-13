@@ -1,7 +1,8 @@
 import type { Layer, PickingInfo } from "@deck.gl/core";
 
+import { getMacroLayerColor, scoreMacroCellLayer } from "@/lib/macroData";
 import { getAntifragilityColor } from "@/lib/meshScoring";
-import type { MeshTier, VmeshHexRecord } from "@/lib/vmeshTypes";
+import type { MacroCellSummary, MacroLayerId, MeshTier, VmeshHexRecord } from "@/lib/vmeshTypes";
 
 type H3HexagonLayerConstructor = typeof import("@deck.gl/geo-layers").H3HexagonLayer;
 
@@ -57,6 +58,94 @@ export function buildH3Layer({
     onClick,
     updateTriggers: {
       getFillColor: [selectedHexId, opacity],
+      getLineColor: [selectedHexId],
+      getLineWidth: [selectedHexId]
+    }
+  });
+}
+
+export function buildSelectedH3OutlineLayer({
+  id,
+  data,
+  selectedHexId,
+  H3HexagonLayer,
+  onHover,
+  onClick
+}: {
+  id: string;
+  data: VmeshHexRecord[];
+  selectedHexId: string;
+  H3HexagonLayer: H3HexagonLayerConstructor;
+  onHover: (info: PickingInfo<VmeshHexRecord>) => void;
+  onClick: (info: PickingInfo<VmeshHexRecord>) => void;
+}): Layer {
+  return new H3HexagonLayer<VmeshHexRecord>({
+    id,
+    data,
+    highPrecision: true,
+    pickable: true,
+    extruded: false,
+    coverage: 0.98,
+    getHexagon: (record) => record.h3Id,
+    getFillColor: (record) =>
+      record.h3Id === selectedHexId ? [20, 184, 166, 22] : [20, 184, 166, 10],
+    getLineColor: (record) =>
+      record.h3Id === selectedHexId ? [210, 255, 250, 245] : [20, 184, 166, 130],
+    getLineWidth: (record) => (record.h3Id === selectedHexId ? 3 : 1),
+    lineWidthMinPixels: 1,
+    lineWidthMaxPixels: 4,
+    onHover,
+    onClick,
+    updateTriggers: {
+      getFillColor: [selectedHexId],
+      getLineColor: [selectedHexId],
+      getLineWidth: [selectedHexId]
+    }
+  });
+}
+
+export function buildMacroH3Layer({
+  id,
+  data,
+  selectedHexId,
+  layerId,
+  opacity,
+  H3HexagonLayer,
+  onHover,
+  onClick
+}: {
+  id: string;
+  data: MacroCellSummary[];
+  selectedHexId: string;
+  layerId: MacroLayerId;
+  opacity: number;
+  H3HexagonLayer: H3HexagonLayerConstructor;
+  onHover: (info: PickingInfo<MacroCellSummary>) => void;
+  onClick: (info: PickingInfo<MacroCellSummary>) => void;
+}): Layer {
+  const alpha = Math.round(Math.min(0.86, Math.max(0.16, opacity)) * 255);
+
+  return new H3HexagonLayer<MacroCellSummary>({
+    id,
+    data,
+    highPrecision: true,
+    pickable: true,
+    extruded: false,
+    coverage: 0.82,
+    getHexagon: (summary) => summary.h3Id,
+    getFillColor: (summary) => {
+      const [r, g, b] = getMacroLayerColor(layerId, scoreMacroCellLayer(summary, layerId));
+      return [r, g, b, summary.h3Id === selectedHexId ? Math.min(245, alpha + 42) : alpha];
+    },
+    getLineColor: (summary) =>
+      summary.h3Id === selectedHexId ? [255, 255, 255, 245] : [178, 222, 214, 100],
+    getLineWidth: (summary) => (summary.h3Id === selectedHexId ? 3 : 0.8),
+    lineWidthMinPixels: 1,
+    lineWidthMaxPixels: 4,
+    onHover,
+    onClick,
+    updateTriggers: {
+      getFillColor: [selectedHexId, layerId, alpha],
       getLineColor: [selectedHexId],
       getLineWidth: [selectedHexId]
     }
