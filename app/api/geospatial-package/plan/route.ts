@@ -125,7 +125,7 @@ function plannerOptions() {
     mapterhornPmtilesUrl: process.env.NEXT_PUBLIC_MAPTERHORN_PMTILES_URL,
     mapzenTerrariumUrl: process.env.NEXT_PUBLIC_MAPZEN_TERRARIUM_URL,
     sen2srPmtilesUrl: process.env.NEXT_PUBLIC_SEN2SR_PMTILES_URL,
-    mapboxConfigured: Boolean(process.env.NEXT_PUBLIC_MAPBOX_TOKEN)
+    mapboxConfigured: Boolean(process.env.MAPBOX_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN)
   };
 }
 

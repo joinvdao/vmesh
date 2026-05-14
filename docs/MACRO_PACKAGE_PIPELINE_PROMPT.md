@@ -277,7 +277,7 @@ The UI must make the data mode obvious:
 
 The user should be able to distinguish:
 
-- Decorative globe texture.
+- Basemap-driven globe shell.
 - Operational basemap.
 - Source-backed H3 macro overlay.
 - Mock/fallback H3 macro overlay.
@@ -350,7 +350,7 @@ The current globe contains visual texture and lighting that help orientation. Th
 
 Implement one or more of:
 
-- A persistent HUD label showing `Decorative globe texture` versus `Source-backed map output`.
+- A persistent HUD label showing `Basemap-driven globe shell` versus `Source-backed map output`.
 - A data-mode badge in the globe HUD.
 - Source drawer entries that list decorative visual treatments separately from basemap, terrain, imagery, and H3 summaries.
 - Tests that confirm the text appears in orbit mode and changes in close map mode.
@@ -403,7 +403,7 @@ The work is complete when:
 - Footer reports macro data mode.
 - First viewport visual check passes.
 - Close-zoom transition visual check passes.
-- Decorative globe texture is explicitly labeled separately from source-backed basemap/map output.
+- Decorative lighting/texture cues are explicitly labeled separately from source-backed basemap/map output.
 - `U8` remains local/detail only and never global.
 - No new secrets, raw PII, private addresses, paid API calls, or downloaded provider artifacts are committed.
 

@@ -1,7 +1,6 @@
 import type { Layer, PickingInfo } from "@deck.gl/core";
 
 import { getMacroLayerColor, scoreMacroCellLayer } from "@/lib/macroData";
-import { getAntifragilityColor } from "@/lib/meshScoring";
 import type { MacroCellSummary, MacroLayerId, MeshTier, VmeshHexRecord } from "@/lib/vmeshTypes";
 
 type H3HexagonLayerConstructor = typeof import("@deck.gl/geo-layers").H3HexagonLayer;
@@ -38,14 +37,11 @@ export function buildH3Layer({
     coverage: 0.88,
     elevationScale: 1,
     getHexagon: (record) => record.h3Id,
-    getFillColor: (record) => {
-      const [r, g, b] = getAntifragilityColor(record.antifragilityScore);
-      return [r, g, b, record.h3Id === selectedHexId ? 230 : opacity];
-    },
+    getFillColor: (record) => [44, 158, 151, record.h3Id === selectedHexId ? 210 : opacity],
     getLineColor: (record) =>
       record.h3Id === selectedHexId ? [255, 255, 255, 255] : [45, 151, 144, 170],
     getLineWidth: (record) => (record.h3Id === selectedHexId ? 4 : 1),
-    getElevation: (record) => record.antifragilityScore * 10,
+    getElevation: (record) => (record.h3Id === selectedHexId ? 40 : 18),
     lineWidthMinPixels: 1,
     lineWidthMaxPixels: 5,
     material: {

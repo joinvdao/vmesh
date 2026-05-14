@@ -26,6 +26,17 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
     set((state) => ({
       globeTheme: state.globeTheme === "dark" ? "light" : "dark"
     })),
+  cycleGlobeBackdropMode: () =>
+    set((state) => {
+      const nextMode =
+        state.globeBackdropMode === "blank"
+          ? "grid"
+          : state.globeBackdropMode === "grid"
+            ? "stars"
+            : "blank";
+      return { globeBackdropMode: nextMode };
+    }),
+  setGlobeBackdropMode: (globeBackdropMode) => set({ globeBackdropMode }),
   flyToLocation: (location) =>
     set((state) => {
       const h3Id = buildCellFromCoordinate(location.latitude, location.longitude, "U5");
@@ -67,6 +78,7 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
           pitch: 42,
           bearing: -18
         },
+        activeLayers: { ...state.activeLayers, imagery: true },
         selectedHexId: selectedRecord.h3Id,
         selectedTier: "U5",
         globalResolution: selectedRecord.resolution,
@@ -81,7 +93,12 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
           tasks: state.hubPlaybook.tasks.map((task) => ({ ...task, h3Id: selectedRecord.h3Id })),
           updatedAt: new Date().toISOString()
         },
-        activePanel: "hex",
+        activePanel: null,
+        mapStatus: {
+          ...state.mapStatus,
+          imagery: "loading",
+          message: "Loading satellite-style imagery with OSM reference overlay"
+        },
         visibleHexCount: getVisibleHexCount(
           { ...state.hexDataByTier, U5: u5Records, U8: u8Records },
           "U5",
@@ -320,13 +337,20 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
   setSelectedMacroLayer: (selectedMacroLayer) =>
     set((state) => ({
       selectedMacroLayer,
-      activeLayers: { ...state.activeLayers, macro: isH3MacroLayer(selectedMacroLayer) },
+      activeLayers: {
+        ...state.activeLayers,
+        macro: isH3MacroLayer(selectedMacroLayer),
+        terrain: selectedMacroLayer.startsWith("terrain-") ? true : state.activeLayers.terrain,
+        imagery: selectedMacroLayer.startsWith("imagery-") ? true : state.activeLayers.imagery
+      },
       visibleHexCount: getVisibleHexCount(
         state.hexDataByTier,
         state.selectedTier,
         {
           ...state.activeLayers,
-          macro: isH3MacroLayer(selectedMacroLayer)
+          macro: isH3MacroLayer(selectedMacroLayer),
+          terrain: selectedMacroLayer.startsWith("terrain-") ? true : state.activeLayers.terrain,
+          imagery: selectedMacroLayer.startsWith("imagery-") ? true : state.activeLayers.imagery
         },
         state.selectedHexId
       )
@@ -339,8 +363,8 @@ export const useVmeshStore = create<VmeshStore>((set, get) => ({
       activeLayers: { ...state.activeLayers, imagery: true },
       mapStatus: {
         ...state.mapStatus,
-        imagery: "active",
-        message: "Imagery layer enabled from manifest-backed provider"
+        imagery: "loading",
+        message: "Loading imagery layer from manifest-backed provider"
       }
     })),
   setImageryOpacity: (imageryOpacity) => set({ imageryOpacity }),

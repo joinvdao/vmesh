@@ -5,6 +5,7 @@ import type {
   DashboardPanel,
   DraftUserRecord,
   FoodNetworkAsset,
+  GlobeBackdropMode,
   GlobeTheme,
   HubMessageEnvelope,
   HubNodeStatus,
@@ -36,6 +37,7 @@ import type {
 export interface VmeshState {
   viewState: ViewState;
   globeTheme: GlobeTheme;
+  globeBackdropMode: GlobeBackdropMode;
   selectedHexId: string;
   selectedTier: MeshTier;
   hoveredHexInfo: HoveredHexInfo | null;
@@ -83,6 +85,8 @@ export interface VmeshState {
 export interface VmeshActions {
   setViewState: (viewState: Partial<ViewState>) => void;
   toggleGlobeTheme: () => void;
+  cycleGlobeBackdropMode: () => void;
+  setGlobeBackdropMode: (mode: GlobeBackdropMode) => void;
   flyToLocation: (location: Omit<MapFlyToRequest, "id">) => void;
   selectHex: (h3Id: string, tier?: MeshTier) => void;
   setActivePanel: (panel: DashboardPanel | null) => void;

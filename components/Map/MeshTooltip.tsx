@@ -26,12 +26,12 @@ export function MeshTooltip() {
       <div className="mt-1">{record.placeName}</div>
       <div className="mt-2 flex items-center justify-between">
         <span>{record.tier} mesh</span>
-        <span className="font-semibold text-[#0f766e]">{record.antifragilityScore}/100</span>
+        <span className="font-semibold text-[#0f766e]">data cell</span>
       </div>
       {macroValue !== null ? (
         <div className="mt-2 flex items-center justify-between border-t border-[#e6eeec] pt-2">
           <span>{MACRO_LAYER_LABELS[selectedMacroLayer]}</span>
-          <span className="font-semibold text-[#0f766e]">{macroValue}/100</span>
+          <span className="font-semibold text-[#0f766e]">{macroValue}</span>
         </div>
       ) : null}
     </div>

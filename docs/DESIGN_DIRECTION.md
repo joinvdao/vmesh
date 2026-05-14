@@ -32,6 +32,8 @@ The implementation should preserve this information architecture:
 - Bottom analytics strip with horizontally arranged cards. It opens on demand rather than occupying the default globe view.
 - Footer with coordinate, elevation, H3 resolution, visible hex count, freshness, security/version, and status readouts.
 
+Current UI rule: antifragility scoring remains in the data model and documentation for later analysis work, but the visible product should not show an antifragility index, score badge, score-driven ranking, or score-colored default mesh. The V1-next surface is a data aggregation and display atlas first.
+
 ## vmesh-Specific Adaptation
 
 Use `vmesh` as the product identity. The product phrase is:
@@ -62,10 +64,8 @@ Use these layer families:
 The selected hex card should include:
 
 - H3 ID and place label.
-- Main antifragility or resilience score.
-- Status badge such as `High Antifragility`.
-- Trend sparkline.
-- Macro pillar cards.
+- Data package summary with tier, source count, local record count, and freshness.
+- Macro layer availability without derived scoring.
 - Micro asset summary.
 - User-added record count.
 - Source confidence and provenance summary.
@@ -75,7 +75,7 @@ The selected hex card should include:
 
 The first dashboard strip should include:
 
-- Top antifragile regions.
+- Regional data coverage.
 - Climate trend.
 - Energy availability.
 - Water stress.
@@ -99,16 +99,20 @@ The central map should prioritize:
 - Optional H3 mesh overlay draped and camera-synchronized with MapLibre through deck.gl.
 - A direct mesh on/off control. The H3 mesh remains analytical UI, while the globe can still use a subtle aesthetic tiled-sphere treatment.
 - A direct dark/light globe toggle. This is a visual atlas mode only; it must not change provider selection, data provenance, mesh tier, or terrain source behavior.
+- A direct stage backdrop control with three visual modes: blank, grid, and stars. This changes only the black/background stage treatment and must not change basemap, terrain, imagery, macro data, or mesh state.
+- A real 3D orbit globe for distant views: sphere geometry, Earth texture, bump/normal-style relief cues, cloud shell, atmosphere rim, sun lighting, drag inertia, and idle rotation. This replaces CSS-masked map tricks for the hero atlas object.
+- A clear handoff from the cinematic Three.js globe to MapLibre source-backed map output when the user searches or zooms close enough to inspect a place.
 - Teal-to-mint resilience scale.
 - Clear selected-place/cell affordance without requiring a global grid.
-- Tooltip with H3 ID, place label, and score.
-- Legend for score interpretation.
+- Tooltip with H3 ID, place label, mesh tier, and active data-layer value when a layer is enabled.
+- Legend for active data-layer interpretation.
 - Source transparency should live in a modal drawer, not as permanent dashboard clutter.
 
 ## Interaction Notes
 
 - The search bar supports coordinates, place names, and partial-name autocomplete, then flies the camera into the selected location with enough zoom for local inspection.
-- Search/zoom close enough should make the open-source map output legible rather than leaving the user inside a decorative globe shell.
+- Search/zoom close enough should make the open-source map output legible rather than leaving the user inside a decorative globe shell. Coordinate search should land in close inspection mode with satellite-style imagery enabled and an OpenStreetMap reference overlay for streets/roads.
+- Mouse-wheel zoom should work in orbit mode. Scrolling in on the Three.js globe transitions into source-backed MapLibre map output; scrolling back out preserves the orbit globe experience.
 - Clicking a hex updates the selected panel and flies the camera to that region.
 - Hovering a hex updates a tooltip without changing selection.
 - Layer controls must be reflected in Zustand state.

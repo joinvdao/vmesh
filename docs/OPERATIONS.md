@@ -44,7 +44,7 @@ http://localhost:3000
 Expected first viewport:
 
 - Fixed left sidebar, top header/search, central globe canvas, selected-place affordance, and footer telemetry.
-- Distant view labeled `Decorative globe texture`; close searched view labeled `Source-backed map output`.
+- Distant view labeled `Orbit Globe`, rendered as a real Three.js sphere with drag/idle rotation; very close detail view labeled `Source-backed map output`.
 - Visible selected-cell H3 affordance or enabled analytical mesh overlay and nonblank map/globe surface.
 - Terrain/source status visible in footer and notes panels.
 - Source/provenance drawer available from the rail for active provider, mock/future, license, confidence, and limitation review.
@@ -80,12 +80,16 @@ Basemap selection is separate from terrain selection:
 
 Optional values:
 
-- `NEXT_PUBLIC_BASEMAP_PROVIDER`: `maplibre-demo`, `openfreemap-vector`, `protomaps-pmtiles`, or `offline-shell`.
+- `NEXT_PUBLIC_BASEMAP_PROVIDER`: `maplibre-demo`, `openfreemap-vector`, `protomaps-pmtiles`, `mapbox-satellite-basemap`, or `offline-shell`.
 - `NEXT_PUBLIC_BASEMAP_STYLE_URL`: custom MapLibre style JSON URL.
 - `NEXT_PUBLIC_BASEMAP_PMTILES_URL`: hosted/local PMTiles basemap URL.
 - `NEXT_PUBLIC_ENABLE_REMOTE_GEOCODING`: defaults to `true` for no-key Nominatim autocomplete; set to `false` for privacy-sensitive or offline deployments.
 
-Do not add Mapbox or other token-bearing basemaps as defaults.
+Mapbox satellite can be selected as a base globe only when a deployment explicitly configures a restricted public token or the server-side proxy. Do not add Mapbox or other token-bearing basemaps as public defaults.
+
+The cinematic orbit globe is not a basemap provider. It uses a locally bundled NASA Blue Marble raster with procedural fallback so the public app stays token-free and nonblank. Source-backed map, terrain, labels, and overlays still come from MapLibre providers after search/zoom moves the user into close map output.
+
+Search autocomplete runs through `/api/geocode/search`, which performs bounded Nominatim lookups from the server and returns normalized fly-to suggestions. This avoids browser CORS/User-Agent problems and keeps coordinate disclosure visible in the privacy docs. Disable remote geocoding for offline/private deployments.
 
 Production open-map deployments should prefer CDN/object-storage PMTiles packages for basemaps and derived overlays. Cloudflare R2, Cloudflare CDN, or an equivalent static object store can host PMTiles archives that the browser reads through HTTP range requests. This keeps public demos cheap, cacheable, and portable to local hub mirrors.
 
@@ -197,6 +201,8 @@ Example request:
 
 The planner does not download data, call paid providers, or generate PMTiles inside the browser. It selects open/cacheable/package-ready sources where possible and reports preprocessing, token, license, paid, blocked, or missing states honestly. A future local/server package worker should consume the plan and write PMTiles, vector tiles, raster tiles, COGs, GeoParquet extracts, H3 summaries, and manifests outside Git.
 
+Production package serving should be asynchronous. The API should accept a bounded AOI/H3 request, return a source plan plus package/job identifiers, and let workers build or refresh artifacts in storage. Consumers should be able to poll or fetch a manifest without learning provider-specific logic. Cache hits can return immediately; cache misses should queue work while the consumer app continues with its own fallback UI. Public vmesh operations docs should describe this generic consumer contract and must not include private downstream repo names, local paths, exact private AOIs, provider credentials, or unpublished commercial details.
+
 Generated package artifacts and caches must live in object storage, local hub storage, or another configured package store, never in the public repo unless they are small sanitized fixtures.
 
 Production hardening now enforced at the API boundary:
@@ -284,9 +290,12 @@ Optional imagery env vars:
 - `NEXT_PUBLIC_SEN2SR_PMTILES_URL`
 - `NEXT_PUBLIC_SEN2SR_XYZ_URL`
 - `NEXT_PUBLIC_OFFLINE_RASTER_PMTILES_URL`
+- `MAPBOX_TOKEN`
+- `NEXT_PUBLIC_MAPBOX_PROXY_ENABLED`
+- `NEXT_PUBLIC_MAPBOX_PROXY_URL`
 - `NEXT_PUBLIC_MAPBOX_TOKEN`
 
-Mapbox satellite remains optional and disabled without `NEXT_PUBLIC_MAPBOX_TOKEN`. Do not commit generated imagery, downloaded scenes, private AOIs, or large tile archives.
+Mapbox satellite remains optional for both the base globe and comparison imagery. Use server-only `MAPBOX_TOKEN` plus the public proxy flag/url for secret-class tokens; use `NEXT_PUBLIC_MAPBOX_TOKEN` only for restricted public `pk.*` tokens. Do not commit generated imagery, downloaded scenes, private AOIs, token-bearing tile URLs, or large tile archives.
 
 ## Agricultural Field Boundary Operations
 

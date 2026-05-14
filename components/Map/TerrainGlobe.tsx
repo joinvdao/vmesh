@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Layer } from "@deck.gl/core";
 import type maplibregl from "maplibre-gl";
 
@@ -21,17 +21,21 @@ import { useImageryRasterLayer } from "@/components/Map/useImageryRasterLayer";
 import { useSelectedHexFlyTo } from "@/components/Map/useSelectedHexFlyTo";
 import { useTerrainGlobeRenderer } from "@/components/Map/useTerrainGlobeRenderer";
 import { useTerrainGlobeLayers } from "@/components/Map/useTerrainGlobeLayers";
-import { getGlobeViewerMode, getMapCanvasOpacity } from "@/lib/globeViewer";
-import type { GlobeViewerMode } from "@/lib/globeViewer";
+import { toMapLibreBasemapStyle } from "@/lib/basemapSources";
+import { getGlobeViewerMode, getMapCanvasOpacity, type GlobeViewerMode } from "@/lib/globeViewer";
 import { getTerrainProviderCandidates } from "@/lib/terrainSources";
 import { useVmeshStore } from "@/store/useVmeshStore";
 
-type H3HexagonLayerConstructor = typeof import("@deck.gl/geo-layers").H3HexagonLayer;
+type H3LayerCtor = typeof import("@deck.gl/geo-layers").H3HexagonLayer;
 type MapboxOverlayConstructor = typeof import("@deck.gl/mapbox").MapboxOverlay;
 type MapboxOverlayInstance = InstanceType<MapboxOverlayConstructor>;
 type ProjectionCapableMap = maplibregl.Map & {
   setProjection?: (projection: { type: "globe" } | { type: "mercator" }) => void;
 };
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
 
 export function TerrainGlobe() {
   const [initialViewState] = useState(() => useVmeshStore.getState().viewState);
@@ -46,12 +50,11 @@ export function TerrainGlobe() {
   const cameraZoomRef = useRef(initialViewState.zoom);
   const previousSelectedHexRef = useRef(useVmeshStore.getState().selectedHexId);
   const initialTerrainProviderIdRef = useRef(useVmeshStore.getState().selectedTerrainProviderId);
+  const appliedBasemapProviderIdRef = useRef(useVmeshStore.getState().selectedBasemapProviderId);
   const searchSelectedHexRef = useRef<string | null>(null);
   const terrainRuntimeRef = useRef<TerrainRuntime | null>(null);
   const lastSourceBackedMapKeyRef = useRef<string | null>(null);
-  const [h3LayerConstructor, setH3LayerConstructor] = useState<H3HexagonLayerConstructor | null>(
-    null
-  );
+  const [h3LayerConstructor, setH3LayerConstructor] = useState<H3LayerCtor | null>(null);
   const [viewerMode, setViewerMode] = useState<GlobeViewerMode>(initialViewerMode);
   const [cameraZoom, setCameraZoom] = useState(initialViewState.zoom);
   const [terrainRuntimeReady, setTerrainRuntimeReady] = useState(false);
@@ -64,6 +67,7 @@ export function TerrainGlobe() {
   const activeLayers = useVmeshStore((state) => state.activeLayers);
   const activePanel = useVmeshStore((state) => state.activePanel);
   const globeTheme = useVmeshStore((state) => state.globeTheme);
+  const globeBackdropMode = useVmeshStore((state) => state.globeBackdropMode);
   const basemapProviders = useVmeshStore((state) => state.basemapProviders);
   const selectedBasemapProviderId = useVmeshStore((state) => state.selectedBasemapProviderId);
   const terrainProviders = useVmeshStore((state) => state.terrainProviders);
@@ -73,6 +77,7 @@ export function TerrainGlobe() {
   const imageryOpacity = useVmeshStore((state) => state.imageryOpacity);
   const setVisibleHexCount = useVmeshStore((state) => state.setVisibleHexCount);
   const setViewState = useVmeshStore((state) => state.setViewState);
+  const setBasemapStatus = useVmeshStore((state) => state.setBasemapStatus);
   const setTerrainStatus = useVmeshStore((state) => state.setTerrainStatus);
   const setImageryStatus = useVmeshStore((state) => state.setImageryStatus);
   const setActiveImageryProvider = useVmeshStore((state) => state.setActiveImageryProvider);
@@ -110,6 +115,56 @@ export function TerrainGlobe() {
     setSourceBackedMapBackground(map, false);
     returnToOrbitGlobe({ map, initialViewState: nextViewState });
   };
+
+  const handleOrbitWheelZoom = useCallback(
+    (deltaY: number) => {
+      const map = mapRef.current;
+      const zoomDelta = clamp(-deltaY / 360, -1.1, 1.1);
+      const nextZoom = clamp(viewState.zoom + zoomDelta, 1.85, 16.4);
+      const nextViewerMode = getGlobeViewerMode(nextZoom);
+      const nextViewState = {
+        longitude: viewState.longitude,
+        latitude: viewState.latitude,
+        zoom: nextZoom,
+        pitch: nextViewerMode === "oss-map-output" ? 46 : viewState.pitch,
+        bearing: nextViewerMode === "oss-map-output" ? -18 : viewState.bearing
+      };
+
+      viewerModeRef.current = nextViewerMode;
+      cameraZoomRef.current = nextZoom;
+      setViewerMode(nextViewerMode);
+      setCameraZoom(nextZoom);
+      setViewState(nextViewState);
+
+      if (!map) return;
+      if (nextViewerMode === "oss-map-output") {
+        applySourceBackedMapOutput({
+          map,
+          camera: nextViewState,
+          basemapProvider: selectedBasemapProvider,
+          refreshRasterSource: true
+        });
+        return;
+      }
+
+      try {
+        (map as ProjectionCapableMap).setProjection?.({ type: "globe" });
+        setSourceBackedMapBackground(map, false);
+        map.stop();
+        map.easeTo({
+          center: [nextViewState.longitude, nextViewState.latitude],
+          zoom: nextViewState.zoom,
+          pitch: nextViewState.pitch,
+          bearing: nextViewState.bearing,
+          duration: 180,
+          essential: true
+        });
+      } catch {
+        // The Three.js globe remains responsive if MapLibre is mid-style transition.
+      }
+    },
+    [selectedBasemapProvider, setViewState, viewState]
+  );
 
   useTerrainGlobeRenderer({
     containerRef,
@@ -199,6 +254,62 @@ export function TerrainGlobe() {
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map || !selectedBasemapProvider) return;
+    if (appliedBasemapProviderIdRef.current === selectedBasemapProviderId) return;
+
+    appliedBasemapProviderIdRef.current = selectedBasemapProviderId;
+    lastSourceBackedMapKeyRef.current = null;
+    setBasemapStatus("loading", `Switching basemap to ${selectedBasemapProvider.label}`);
+
+    let didFinish = false;
+    let fallbackTimer: number | undefined;
+    const finishBasemapSwitch = () => {
+      if (didFinish || mapRef.current !== map) return;
+      if (!map.isStyleLoaded()) return;
+      didFinish = true;
+      try {
+        (map as ProjectionCapableMap).setProjection?.({
+          type: effectiveViewerMode === "oss-map-output" ? "mercator" : "globe"
+        });
+        setSourceBackedMapBackground(map, effectiveViewerMode === "oss-map-output");
+      } catch {
+        // Projection support is version-dependent; the selected style still loads.
+      }
+
+      overlayRef.current?.setProps({ layers: layersRef.current });
+      if (activeLayers.terrain) {
+        terrainRuntimeRef.current?.applyTerrainCandidate(0);
+      }
+      setBasemapStatus("active", `${selectedBasemapProvider.label} basemap active`);
+      map.resize();
+      map.triggerRepaint();
+    };
+
+    try {
+      map.stop();
+      map.setStyle(toMapLibreBasemapStyle(selectedBasemapProvider), { diff: false });
+      map.once("style.load", finishBasemapSwitch);
+      map.once("styledata", finishBasemapSwitch);
+      fallbackTimer = window.setTimeout(finishBasemapSwitch, 2400);
+    } catch {
+      setBasemapStatus("error", `${selectedBasemapProvider.label} basemap failed to load`);
+    }
+
+    return () => {
+      if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer);
+      map.off("style.load", finishBasemapSwitch);
+      map.off("styledata", finishBasemapSwitch);
+    };
+  }, [
+    activeLayers.terrain,
+    effectiveViewerMode,
+    selectedBasemapProvider,
+    selectedBasemapProviderId,
+    setBasemapStatus
+  ]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     if (!map || !flyToRequest) return;
 
     searchSelectedHexRef.current = selectedHexDetails.h3Id;
@@ -224,11 +335,13 @@ export function TerrainGlobe() {
         });
       } else {
         map.stop();
-        map.jumpTo({
+        map.flyTo({
           center: [flyToRequest.longitude, flyToRequest.latitude],
           zoom: flyToRequest.zoom,
           pitch: 46,
-          bearing: -18
+          bearing: -18,
+          duration: Math.round(Math.min(4200, Math.max(1900, 1300 + flyToRequest.zoom * 170))),
+          essential: true
         });
       }
       setViewState({
@@ -311,7 +424,6 @@ export function TerrainGlobe() {
     <div
       className="absolute inset-0 overflow-hidden bg-[#02050c]"
       data-view-zoom={viewState.zoom.toFixed(2)}
-      data-fly-to-zoom={flyToRequest?.zoom.toFixed(2) ?? ""}
       data-viewer-mode={effectiveViewerMode}
       data-map-opacity={mapOpacity}
     >
@@ -321,8 +433,12 @@ export function TerrainGlobe() {
         globeShellClassName={globeShellClassName}
         viewerMode={effectiveViewerMode}
         globeTheme={globeTheme}
+        backdropMode={globeBackdropMode}
         mapOpacity={mapOpacity}
         selectedMarkerPosition={selectedMarkerPosition}
+        targetCoordinate={{ latitude: viewState.latitude, longitude: viewState.longitude }}
+        flightId={flyToRequest?.id ?? null}
+        onOrbitWheelZoom={handleOrbitWheelZoom}
       />
       <GlobeModeHud
         mode={effectiveViewerMode}

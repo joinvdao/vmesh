@@ -26,13 +26,17 @@ function isPackageLayerId(value: string): value is PackageLayerId {
   ].includes(value);
 }
 
+function isMapboxConfigured() {
+  return Boolean(process.env.MAPBOX_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
+}
+
 export async function GET(req: NextRequest) {
   const sources = getGeospatialSourceRegistry({
     basemapPmtilesUrl: process.env.NEXT_PUBLIC_BASEMAP_PMTILES_URL,
     mapterhornPmtilesUrl: process.env.NEXT_PUBLIC_MAPTERHORN_PMTILES_URL,
     mapzenTerrariumUrl: process.env.NEXT_PUBLIC_MAPZEN_TERRARIUM_URL,
     sen2srPmtilesUrl: process.env.NEXT_PUBLIC_SEN2SR_PMTILES_URL,
-    mapboxConfigured: Boolean(process.env.NEXT_PUBLIC_MAPBOX_TOKEN)
+    mapboxConfigured: isMapboxConfigured()
   });
   const layer = req.nextUrl.searchParams.get("layer");
   const filteredSources =

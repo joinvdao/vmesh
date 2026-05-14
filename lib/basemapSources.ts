@@ -1,10 +1,12 @@
 import type { RasterSourceSpecification, StyleSpecification } from "maplibre-gl";
 
+import { MAPBOX_SATELLITE_PROXY_TILE_URL } from "@/lib/mapboxSatelliteProxy";
 import type { BasemapProviderConfig } from "@/lib/vmeshTypes";
 
 export const ENV_BASEMAP_PROVIDER_ID = "env-custom-style";
 export const PROTOMAPS_BASEMAP_PROVIDER_ID = "protomaps-pmtiles";
 export const OPENFREEMAP_BASEMAP_PROVIDER_ID = "openfreemap-vector";
+export const MAPBOX_SATELLITE_BASEMAP_PROVIDER_ID = "mapbox-satellite-basemap";
 export const MAPLIBRE_DEMO_BASEMAP_PROVIDER_ID = "maplibre-demo";
 export const OFFLINE_SHELL_BASEMAP_PROVIDER_ID = "offline-shell";
 export const DEFAULT_OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
@@ -14,6 +16,8 @@ export interface BasemapProviderRegistryOptions {
   preferredProviderId?: string;
   customStyleUrl?: string;
   protomapsPmtilesUrl?: string;
+  mapboxToken?: string;
+  mapboxProxyUrl?: string;
 }
 
 function withPriority(
@@ -25,6 +29,21 @@ function withPriority(
 
 function toPmtilesProtocolUrl(sourceUrl: string): string {
   return sourceUrl.startsWith("pmtiles://") ? sourceUrl : `pmtiles://${sourceUrl}`;
+}
+
+function createMapboxSatelliteTileUrl(options: BasemapProviderRegistryOptions): string {
+  if (options.mapboxProxyUrl) return options.mapboxProxyUrl;
+  if (!options.mapboxToken) return "";
+
+  return `https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.jpg90?access_token=${encodeURIComponent(
+    options.mapboxToken
+  )}`;
+}
+
+export function isMapReadyBasemapProvider(provider: BasemapProviderConfig): boolean {
+  if (provider.kind === "offline-shell") return true;
+  if (!provider.sourceUrl) return false;
+  return provider.status === "available" || provider.status === "fallback";
 }
 
 export function getBasemapProviderRegistry(
@@ -52,6 +71,8 @@ export function getBasemapProviderRegistry(
   }
 
   const protomapsStatus = options.protomapsPmtilesUrl ? "available" : "future";
+  const mapboxSatelliteTileUrl = createMapboxSatelliteTileUrl(options);
+  const hasMapboxSatelliteAccess = Boolean(mapboxSatelliteTileUrl);
   const registry: BasemapProviderConfig[] = [
     ...configuredProviders,
     withPriority(
@@ -82,6 +103,23 @@ export function getBasemapProviderRegistry(
         notes: "No-token vector style candidate for richer open geography."
       },
       20
+    ),
+    withPriority(
+      {
+        id: MAPBOX_SATELLITE_BASEMAP_PROVIDER_ID,
+        label: "Mapbox satellite basemap",
+        kind: "mapbox-satellite-raster",
+        sourceUrl: mapboxSatelliteTileUrl,
+        attribution: "Mapbox satellite imagery",
+        license: "Mapbox terms; token required",
+        requiresApiKey: true,
+        status: hasMapboxSatelliteAccess ? "available" : "requires-api-key",
+        notes:
+          options.mapboxProxyUrl === MAPBOX_SATELLITE_PROXY_TILE_URL
+            ? "Optional source-backed Earth imagery through the server-side Mapbox proxy. Never the public no-token default."
+            : "Optional source-backed Earth imagery for deployments with a restricted public Mapbox token or reviewed proxy."
+      },
+      25
     ),
     withPriority(
       {
@@ -141,6 +179,7 @@ export function getBasemapProviderCandidates(
     preferredProviderId,
     MAPLIBRE_DEMO_BASEMAP_PROVIDER_ID,
     OPENFREEMAP_BASEMAP_PROVIDER_ID,
+    MAPBOX_SATELLITE_BASEMAP_PROVIDER_ID,
     PROTOMAPS_BASEMAP_PROVIDER_ID,
     OFFLINE_SHELL_BASEMAP_PROVIDER_ID
   ].filter((id): id is string => Boolean(id));
@@ -149,11 +188,13 @@ export function getBasemapProviderCandidates(
 
   priorityIds.forEach((id) => {
     const provider = byId.get(id);
-    if (provider && !ordered.includes(provider)) ordered.push(provider);
+    if (provider && isMapReadyBasemapProvider(provider) && !ordered.includes(provider)) {
+      ordered.push(provider);
+    }
   });
 
   providers.forEach((provider) => {
-    if (!ordered.includes(provider)) ordered.push(provider);
+    if (isMapReadyBasemapProvider(provider) && !ordered.includes(provider)) ordered.push(provider);
   });
 
   return ordered;
@@ -175,7 +216,7 @@ export function createOperationalRasterBasemapStyle(
     sources["osm-raster"] = {
       type: "raster",
       tiles: [provider.sourceUrl],
-      tileSize: 256,
+      tileSize: provider.kind === "mapbox-satellite-raster" ? 512 : 256,
       attribution: provider.attribution
     };
   }
@@ -200,11 +241,11 @@ export function createOperationalRasterBasemapStyle(
               type: "raster" as const,
               source: "osm-raster",
               paint: {
-                "raster-opacity": 0.18,
-                "raster-saturation": -0.45,
-                "raster-contrast": 0.12,
+                "raster-opacity": provider.kind === "mapbox-satellite-raster" ? 0.9 : 0.78,
+                "raster-saturation": provider.kind === "mapbox-satellite-raster" ? -0.04 : -0.22,
+                "raster-contrast": provider.kind === "mapbox-satellite-raster" ? 0.08 : 0.06,
                 "raster-brightness-min": 0,
-                "raster-brightness-max": 0.72
+                "raster-brightness-max": provider.kind === "mapbox-satellite-raster" ? 0.92 : 0.96
               }
             }
           ]

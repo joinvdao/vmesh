@@ -1,6 +1,7 @@
 import type { RasterSourceSpecification } from "maplibre-gl";
 
 import { buildCellFromCoordinate, getNeighborCells } from "@/lib/h3Mesh";
+import { MAPBOX_SATELLITE_PROXY_TILE_URL } from "@/lib/mapboxSatelliteProxy";
 import {
   SEN2SR_LITE_RGBN_MODEL_ID,
   SEN2SR_REPOSITORY_URL,
@@ -38,6 +39,7 @@ export const DEFAULT_SENTINEL_PREVIEW_TILE_URL =
 
 export interface ImageryProviderRegistryOptions {
   mapboxToken?: string;
+  mapboxProxyUrl?: string;
   sentinelPreviewTileUrl?: string;
   sen2srPmtilesUrl?: string;
   sen2srXyzUrl?: string;
@@ -75,9 +77,12 @@ function toPmtilesProtocolUrl(sourceUrl: string): string {
 export function getImageryProviderRegistry(
   options: ImageryProviderRegistryOptions = {}
 ): ImageryProviderConfig[] {
-  const mapboxTileUrl = options.mapboxToken
-    ? `https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.jpg90?access_token=${options.mapboxToken}`
-    : "";
+  const mapboxTileUrl = options.mapboxProxyUrl
+    ? options.mapboxProxyUrl
+    : options.mapboxToken
+      ? `https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.jpg90?access_token=${options.mapboxToken}`
+      : "";
+  const hasMapboxAccess = Boolean(mapboxTileUrl);
 
   const registry = [
     withPriority(
@@ -133,9 +138,11 @@ export function getImageryProviderRegistry(
         attribution: "Mapbox satellite imagery",
         license: "Mapbox terms; token required",
         requiresApiKey: true,
-        status: options.mapboxToken ? "available" : "requires-api-key",
+        status: hasMapboxAccess ? "available" : "requires-api-key",
         notes:
-          "Optional comparison imagery only. It is never the open-source public-demo default and must not commit tokens."
+          options.mapboxProxyUrl === MAPBOX_SATELLITE_PROXY_TILE_URL
+            ? "Optional comparison imagery through the server-side Mapbox proxy. It is never the open-source public-demo default."
+            : "Optional comparison imagery only. It is never the open-source public-demo default and must not commit tokens."
       },
       80
     ),

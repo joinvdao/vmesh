@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { isMapReadyBasemapProvider } from "@/lib/basemapSources";
 import { useVmeshStore } from "@/store/useVmeshStore";
 
 const tiers = ["U3", "U5", "U8"] as const;
@@ -18,13 +19,16 @@ export function LayerScaleControl() {
   const layerScale = useVmeshStore((state) => state.layerScale);
   const selectedTier = useVmeshStore((state) => state.selectedTier);
   const activeLayers = useVmeshStore((state) => state.activeLayers);
+  const basemapProviders = useVmeshStore((state) => state.basemapProviders);
+  const selectedBasemapProviderId = useVmeshStore((state) => state.selectedBasemapProviderId);
   const setActivePanel = useVmeshStore((state) => state.setActivePanel);
+  const setActiveBasemapProvider = useVmeshStore((state) => state.setActiveBasemapProvider);
   const setLayerEnabled = useVmeshStore((state) => state.setLayerEnabled);
   const setLayerScale = useVmeshStore((state) => state.setLayerScale);
   const setSelectedTier = useVmeshStore((state) => state.setSelectedTier);
 
   return (
-    <div className="absolute right-6 top-6 z-30 w-72 rounded-[12px] border border-[#dfe8e6] bg-white/[0.94] p-4 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
+    <div className="vmesh-scrollbar absolute right-6 top-6 z-30 max-h-[calc(100%-48px)] w-72 overflow-y-auto rounded-[12px] border border-[#dfe8e6] bg-white/[0.94] p-4 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <div className="mb-4 flex items-center justify-between">
         <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#52616f]">
           Layer Controls
@@ -57,6 +61,39 @@ export function LayerScaleControl() {
             {layer.label}
           </button>
         ))}
+      </div>
+
+      <div className="mb-4 rounded-[10px] border border-[#e3ece9] bg-white/[0.86] p-3">
+        <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#52616f]">
+          Base globe
+        </div>
+        <div className="grid gap-2">
+          {basemapProviders.map((provider) => {
+            const mapReady = isMapReadyBasemapProvider(provider);
+            const selected = selectedBasemapProviderId === provider.id;
+            return (
+              <button
+                key={provider.id}
+                className={`rounded-[8px] border px-2 py-2 text-left text-[11px] transition ${
+                  selected
+                    ? "border-[#78c8bd] bg-[#e8f6f3] text-[#0f766e]"
+                    : mapReady
+                      ? "border-[#e3ece9] bg-white text-[#52616f] hover:border-[#b7dcd5]"
+                      : "border-[#eef2f1] bg-[#f8faf9] text-[#9aa6ad]"
+                }`}
+                disabled={!mapReady}
+                onClick={() =>
+                  setActiveBasemapProvider(provider.id, `Switching to ${provider.label}`)
+                }
+              >
+                <span className="block font-semibold">{provider.label}</span>
+                <span className="mt-1 block text-[9px] uppercase tracking-[0.08em]">
+                  {mapReady ? provider.kind : provider.status}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mb-2 flex justify-between text-[11px] text-[#6f7d88]">

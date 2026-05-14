@@ -43,6 +43,78 @@ Implementation boundary:
 - Do not turn PMTiles into a data-truth shortcut; source geometries, transformation methods, licenses, and H3 aggregation metadata must still be stored in provenance records.
 - Keep CDN-hosted public packages token-free where possible, and keep private AOIs, generated local hub packages, and exact user data out of public archives.
 
+### Async Package Provider Boundary
+
+vmesh should be an application in its own right and an asynchronous package provider for downstream apps. The useful contract is not a direct import of another app's internals; it is a clean package lifecycle:
+
+```text
+AOI/H3 request
+  -> source registry and coverage probe
+  -> source-honest package plan
+  -> cache hit or queued package job
+  -> worker-generated artifacts
+  -> manifest URLs plus provenance and limitations
+```
+
+Potential vmesh relevance:
+
+- Lets consumer apps ask for terrain, imagery, vectors, landcover, hydrology, parcel context, climate, and H3 summaries without knowing provider-specific logic.
+- Keeps heavy STAC search, OSM/Overture extraction, national DTM clipping, Sentinel/SEN2SR, contour generation, and climate-grid processing outside the browser.
+- Makes cache identity, source version, AOI disclosure, license review, cost events, and rejected-provider reasons first-class package metadata.
+- Allows vmesh to remain standalone: the atlas can inspect the same package manifests and H3 summaries that external apps consume.
+
+Implementation boundary:
+
+- Public vmesh docs should describe generic downstream apps and public-safe contracts only.
+- Do not name private consumer repos, local folders, exact private AOIs, provider credentials, paid quotes, or unpublished product plans.
+- Package workers may produce artifacts for another app, but the manifest must remain reusable, source-honest, and independent of that app's renderer.
+
+### Awesome Geospatial Index
+
+References:
+
+- `https://github.com/sacridini/Awesome-Geospatial`
+- Latest reviewed commit: `f4ecefa1deba7d29240ddfc823c526b47b63ea80`
+
+Awesome Geospatial is a CC0-licensed, public index of geospatial tools and resources. GitHub metadata on 2026-05-14 showed it as active, public, non-archived, and broadly used, with more than 5,000 stars and hundreds of forks. It is not a package to install; it is a scouting index for vmesh source registries, package workers, and future implementation choices.
+
+High-signal areas for vmesh:
+
+- Source-backed backend stack: PostGIS, pgRouting, DuckDB Spatial/PostGEESE, duckdb-raster, Rasdaman, TileDB, GeoPackage, Spatialite, and Atlas4D-style PostGIS/TimescaleDB/pgvector/H3 patterns.
+- Map rendering and delivery: MapLibre GL, deck.gl, CesiumJS, NASA WebWorldWind, Mapzen Tangram, geojson-vt, Planetiler, Baremaps, Tegola, Martin, pg_tileserv, GeoServer, GeoTrellis Server, Terracotta, and PostGIS vector-tile utilities.
+- Open map ingestion: OpenStreetMap API, Geofabrik extracts, Mapzen metro extracts, osm2pgsql, pyrosm, QuackOSM, OSMnx, osmdata/osmextract, OpenStreetMapX, and Organic Maps/MAPS.ME as offline-map references.
+- Raster and EO pipelines: GDAL, Rasterio, rio-cogeo, rioxarray, stackstac, stactools, PySTAC, stac-fastapi, sat-search, Sentinel Toolboxes, sen2cor, Sentinel-2 AWS, deck.gl-raster, xarray, xcube, and xarray-spatial.
+- Terrain/hydrology: TauDEM, TIN Terrain, pydelatin, pymartini, DEM.Net, SRTM/elevation tooling, and LiDAR/Potree/EPT-adjacent references.
+- Climate and environmental data: cdsapi for Copernicus CDS/ERA5, Climata, wxee, climateR, rnoaa, NOAA/GEE references, NASA POWER client references, and environmental data portals such as ZipCheckup.
+- Mobile/offline extension points: MapLibre Compose, MapLibre GL Native, Organic Maps, MAPS.ME, Mapbox mobile SDK references, and field-survey apps such as Mergin Maps.
+- ML and annotation context: Solaris, segmentation/image-classification tools, Sentinel/GEE processing libraries, and annotation workflows that can feed future imagery-derived H3 summaries.
+
+Priority shortlist for vmesh:
+
+- Open map package workers: Planetiler, osm2pgsql, pyrosm, QuackOSM, Geofabrik extracts, Mapzen metro extracts, Natural Earth, Overture Maps GeoParquet, Martin, Baremaps, and PostGIS vector-tile utilities.
+- Raster and imagery services: titiler, rio-tiler, Terracotta, localtileserver, Mapchete, Rasterio, rio-cogeo, rioxarray, xarray, xcube, deck.gl-raster, and COG validators.
+- Earth-observation discovery and preprocessing: PySTAC, stac-fastapi, stactools, stackstac, EODAG, Sentinel Toolboxes, sen2cor, sat-search, Sentinel-2 AWS, USGS Earth Explorer, Planetary Computer clients, and GERS land-change references such as CCDC, COLD, and Cmask.
+- Terrain, hydrology, and surface processing: PDAL, Entwine, Potree, Laspy, LAZ/LAS tooling, pydelatin, pymartini, WhiteboxTools, RichDEM, pyDEM, Open Topo Data, and Open-Elevation.
+- Climate/environment providers: cdsapi, climateR, Climata, HyRiver, Siphon/THREDDS, xarray/netCDF tooling, OpenAQ clients, and environmental datasets such as ZipCheckup after license/provenance review.
+- Graph and network analysis: pgRouting, OSMnx, city2graph, NetworkX, srai, momepy, urbanaccess, and spatial representation tooling for later knowledge-graph edges.
+- Source security and governance: gisweep for auditing exposed map services, Bounding Box Tool for AOI/STAC/H3 handoff, GeoGig/Kart for versioned geodata, and explicit license/terms review for every provider.
+
+Potential vmesh use:
+
+- Use it as a backlog seed for `lib/geospatialPackage/sourceRegistry*`, not as an automatic dependency list.
+- Tag each candidate by role: renderer-ready source, package-worker tool, preprocessing-only dataset/tool, optional commercial/API service, or research-only reference.
+- Prioritize open, static-package-friendly tools that produce PMTiles, COG, GeoParquet, Zarr, MVT, H3 summary JSON, or PostGIS-ready artifacts.
+- Compare candidates against vmesh's existing contracts: source provenance, license, attribution, confidence, freshness, privacy, and no browser-wide data pulls.
+- Use it to populate a structured source-screening queue with fields for layer category, global/regional coverage, license, update cadence, package format, preprocessing cost, offline suitability, and production readiness.
+
+Implementation boundary:
+
+- Awesome lists are unevenly maintained and include commercial, obsolete, duplicated, and license-sensitive entries. Every candidate needs separate project-health and license review.
+- Do not adopt Mapbox, Google Earth Engine, Earth Engine-derived products, ArcGIS, commercial APIs, or token-gated services as public defaults just because they appear in the list.
+- Do not treat raster tiles, screenshots, or visual basemaps as source truth. vmesh should prefer source datasets, reproducible preprocessing, and signed/hashed package manifests.
+- Do not assume that a tool's code license covers bundled datasets, model weights, generated tiles, third-party APIs, or redistribution of provider output.
+- A fork is not needed; this remains a research index.
+
 ### MapLibre Compose
 
 Reference: `https://github.com/maplibre/maplibre-compose`
@@ -59,6 +131,30 @@ Implementation boundary:
 
 - Not a Next.js/web dependency and not a replacement for the current MapLibre GL JS plus deck.gl renderer.
 - Any future Android client should consume clean vmesh package contracts rather than duplicating provider-selection logic.
+
+### mapgl Draw Attributes Workflow
+
+References:
+
+- `https://gist.github.com/walkerke/30a0d3dc7bfb57c78bfc6f0eb2a746c4`
+- `https://walker-data.com/mapgl/reference/add_draw_control.html`
+- `https://walkerke.r-universe.dev/mapgl`
+
+Kyle Walker's `draw-attributes-mapgl.R` gist is a compact example of a field/intelligence workflow built on R `mapgl`, Mapbox GL / MapLibre GL, `tidycensus`, `sf`, and `mapbox-gl-draw`-style controls. The example loads 2024 ACS block-group population geometry for Texas, adds a hidden choropleth layer, enables a draw control with radius drawing, records user-entered attributes such as `site_id` and notes, returns drawn features as `sf`, then spatially joins drawn sites against block groups to summarize population by site.
+
+Potential vmesh relevance:
+
+- Strong reference for user-drawn AOI, local hub catchment, evacuation radius, garden/market service area, or field-observation capture.
+- Attribute editing on drawn features maps cleanly to vmesh user-added records: title, category, notes, confidence, visibility, provenance, and selected H3 coverage.
+- The pattern of drawing first, then joining to authoritative source layers is exactly the boundary vmesh needs: user sketch is context, not source truth.
+- `mapgl` exposes MapLibre/Mapbox controls, layer controls, PMTiles, raster DEM, H3J, query-rendered-features, story maps, and Turf helpers that are worth tracking as R/prototyping references.
+
+Implementation boundary:
+
+- `mapgl` is an R/Shiny workflow reference, not a vmesh runtime dependency.
+- vmesh should implement similar drawing/attribute capture in React/MapLibre/deck.gl with typed local records, H3 coverage, privacy defaults, and source provenance.
+- User-drawn polygons, radii, and notes must default to private-local and must not be treated as parcel, survey, hazard, or infrastructure truth.
+- Any future census/demographic join must preserve provider terms and avoid exposing sensitive user AOIs without consent.
 
 ### Tilia Lightweight Leaflet Runtime
 
@@ -134,6 +230,55 @@ Implementation boundary:
 
 - Do not hotlink or ingest CLSS tiles into vmesh without license and access review.
 - Treat CLSS as an architectural reference for open LiDAR/raster delivery, not a V1 provider.
+
+### q3dweb Lightweight Point-Cloud Viewer
+
+Reference: `https://github.com/Panasonic-Advanced-Technology/q3dweb`
+
+`q3dweb` is an MIT-licensed Three.js/WebGL point-cloud viewer for the browser. Its README describes support for PCD, PLY, LAS, LAZ, and E57 files, including georeferenced LAS/LAZ overlays on map tiles. Default tile references include OpenStreetMap and Japan GSI map/aerial sources, with explicit attribution notes. The repo also includes LAZ decoding through `laz-perf`, an E57 WebAssembly path, projection conversion through `proj4`, measurement controls, and a camera/film-maker workflow.
+
+Potential vmesh relevance:
+
+- Useful reference for a future point-cloud sidecar viewer that can inspect local LiDAR, drone photogrammetry, scan-to-map outputs, or site survey files without installing a heavy desktop GIS.
+- LAS/LAZ CRS handling and tile-overlay logic align with vmesh package manifests that need to preserve source CRS, bounds, vertical datum, and acquisition metadata.
+- E57 support is relevant for local hub/site scans, structure documentation, infrastructure inspection, and before/after disaster assessment.
+- Film-maker/camera keyframes are a good reference for shareable fly-throughs of macro terrain, point clouds, and local hub evidence packages.
+
+Implementation boundary:
+
+- Do not render dense point clouds inside the main MapLibre globe by default. Keep point clouds as sidecar inspection assets or derived products such as DEM, DSM, contours, building/canopy obstruction layers, PMTiles previews, or H3 summaries.
+- Treat public OSM/GSI tile examples as viewer context only; production vmesh packages must use provider-specific attribution and tile-use terms.
+- Validate large-file memory behavior, streaming, CRS transforms, vertical units, and browser safety before adopting any code path.
+- If code is reused, preserve MIT notices plus third-party notices for Three.js, `laz-perf`, `proj4`, E57/WASM dependencies, and tile providers.
+
+### Saitama Road And River Point-Cloud Atlas
+
+References:
+
+- `https://experience.arcgis.com/experience/d88b12836c194e8dbaa73155a23d0400/`
+- `https://www.geospatial.jp/ckan/dataset/road-pointcloud-saitama`
+- `https://www.geospatial.jp/ckan/dataset/river-pointcloud-saitama`
+
+The Saitama Prefecture road/river 3D map is an ArcGIS Experience Builder public app titled `道路・河川の３Dマップ`. Its public item metadata identifies it as an ArcGIS `Web Experience` backed by a `Web Scene`. The scene contains ArcGIS `PointCloudLayer` preview groups for road, river, and mountainous-area point clouds, plus ArcGIS feature layers for download footprints/records. The app includes standard operational widgets for map, layer list, legend, filters, search/geocoding, attribute table, data-add panels, and office/route/river aggregation panels.
+
+The linked G-Spatial Information Center datasets describe the source data:
+
+- Road point clouds: mobile mapping system / vehicle photo-laser survey data, 2021-2025, downloadable by map sheet, CRS `JGD_2011_Japan_Zone_9`, CC BY 4.0, average ZIP about 420 MB and largest about 8.2 GB.
+- River point clouds: UAV drone and narrow multibeam survey data, 2022-2025, downloadable by map sheet, CRS `JGD_2011_Japan_Zone_9`, CC BY 4.0, average ZIP about 520 MB and largest about 1.0 GB.
+
+Potential vmesh relevance:
+
+- Excellent architecture reference for separating heavy point-cloud preview from downloadable source packages.
+- Shows a practical catalog pattern: feature footprints/records drive search, filter, table, and download interactions, while point-cloud layers provide 3D visual preview.
+- Reinforces that vmesh package manifests need CRS, acquisition years, collection method, provider, license, file size, coverage geometry, and layer role before making dense data available.
+- Useful for future road/river corridor packages, local infrastructure inspection, flood-channel context, and post-disaster change assessment sidecars.
+
+Implementation boundary:
+
+- ArcGIS `PointCloudLayer` and Experience Builder are proprietary Esri runtime patterns. vmesh should learn the catalog/preview/download separation, not make Esri a default dependency.
+- Do not hotlink ArcGIS point-cloud services or redistribute Saitama downloads without preserving CC BY attribution, terms, CRS, and source metadata.
+- Keep raw point clouds as sidecar inspection/download products; derive DEM/DSM, contours, bridge/road/river corridor context, or H3 summaries through worker pipelines when needed.
+- Large files require package planning, resumable downloads, tiling/indexing, cache budgets, and user warnings before local hub/offline use.
 
 ## Climate Models And Digital Twins
 
@@ -454,6 +599,29 @@ Research question:
 
 - Which terrain provider should be considered authoritative for public demos versus production deployments once attribution, update cadence, coverage, and reliability are reviewed?
 
+### Terrain Source Expansion Watchlist
+
+Downstream site-package research identified a broader terrain ladder that vmesh should track in source registries and package-worker docs.
+
+Global and coastal candidates:
+
+- GEDTM30, Copernicus DEM GLO-30/GLO-90, JAXA AW3D30, ASTER GDEM, NASADEM, SRTM, FABDEM, EarthDEM, and NASA Earthdata DEM catalog routes are comparison/fallback terrain candidates. Most should remain `generic-dem`, DSM-style, inferred-DTM, or license-gated until a worker proves source semantics, datum, coverage, and licensing.
+- NOAA CUDEM, NOAA Digital Coast, GEBCO, ETOPO, CoastalDEM, DeltaDTM, DiluviumDEM, and OpenTELEMAC-style tooling belong in coastal/topobathy or hydrodynamic research lanes, not generic inland DTM defaults.
+- FathomDEM/FathomDEM+ and commercial terrain products are premium or license-reviewed candidates rather than public defaults.
+
+Regional high-trust DTM candidates:
+
+- Great Britain: Environment Agency LiDAR DTM, Scottish Remote Sensing Portal LiDAR, OS Terrain 50, and OS Terrain 5.
+- North America: USGS 3DEP, NOAA coastal products, Canada HRDEM, British Columbia LidarBC, and Alberta provincial lidar/elevation.
+- Europe: Netherlands AHN, Bavaria DGM1, France IGN RGE ALTI, Spain CNIG MDT, swissALTI3D, Finland NLS elevation, and Norway Hoydedata.
+- Other strong regional rails: LINZ New Zealand elevation and Geoscience Australia ELVIS.
+
+Implementation boundary:
+
+- Every source needs AOI coverage probes, CRS and vertical-datum preservation, source vintage, no-data checks, license notes, and a ground-model role.
+- DSM, stereo surface products, canopy models, and super-resolved imagery may inform surface/context layers but must not silently become bare-earth DTM.
+- Tooling references such as CUDEM, `dsm2dtm`, and sea-level visualization repos are not data sources by themselves.
+
 ## Earth Observation Imagery And Super Resolution
 
 ### Sentinel-2 L2A Through STAC
@@ -573,6 +741,43 @@ Implementation boundary:
 
 - Do not copy private repo context, private AOIs, local tickets, provider tokens, or downloaded source artifacts.
 - Use this as a public-safe contract pattern: manifests, source provenance, rejected-source reasons, role confidence caps, and tests.
+
+### Built Environment, Capture, And Graph Context
+
+Several downstream research notes are directly relevant to vmesh's package backlog:
+
+- Microsoft Global ML Building Footprints, Google Open Buildings, Google Open Buildings 2.5D Temporal, GlobalBuildingAtlas, Overture buildings, OSM buildings, Roofer, PLATEAU/CityGML converters, and TomoSAR building-height research all belong to the building/context ladder. They should never alter terrain trust.
+- Streets GL, OSM Buildings, F4map, Map3D, prettymaps, and `arnis` are renderer or conversion references for recognizable OSM-derived worlds, vector-tile styling, LoD1 building massing, road hierarchy, and lightweight GLB export. Map3D is especially relevant as an active React Three Fiber example, but its direct OSM/Overpass browser fetches and generated GLBs must stay downstream of vmesh source plans, provenance, and cache boundaries. They are not source authority.
+- `city2graph` is a strong worker-side reference for turning source-backed roads, buildings, parcels, transit, and points into graph metrics before summarizing them back to H3.
+- `Mazzap`, q3dweb, Potree/EPT-style viewers, SphereSfM, 3DGS pipeline guides, geo-registration tooling, RADIO-ViPE, Fast3R, and user-uploaded LiDAR/photogrammetry are a separate user-supplied/capture lane. These can improve recognizability and inspection, but must carry upload rights, privacy controls, scale/georegistration QA, and source provenance.
+
+World-model conditioning opportunity:
+
+- A Map3D-style worker can turn a vmesh source package into a lightweight visual blockout: terrain plane or mesh, orthophoto or raster context, road strokes, water masks, vegetation hints, and simple building massing.
+- That blockout can then be rendered into model-facing media such as equirectangular panoramas, short flythrough videos, north/east/south/west source views, depth/height hints, or optional GLB reference assets.
+- This is useful because external world-generation systems often respond better to visual layout conditioning than to raw geospatial tables, while vmesh still preserves the source package as the auditable truth object.
+
+Implementation boundary:
+
+- Keep source-backed vectors, point clouds, splats, and generated meshes separate from the H3 index and from terrain-role claims.
+- Store graph/capture outputs as package artifacts or sidecar manifests with source ids, licenses, vintages, coordinate frames, confidence, and privacy flags.
+- Treat rendered blockouts, panoramas, videos, and exported GLBs as conditioning or visual artifacts. They must point back to package manifests, not replace source-backed terrain, vectors, imagery, H3 summaries, or provenance.
+- Avoid copying GPL/AGPL tooling into the MIT app unless a separate license-compliance path is deliberately chosen.
+
+### Advisory Context Source Watchlist
+
+vmesh's macro/micro atlas should also track context layers that are useful for interpretation but not land truth:
+
+- NASA Black Marble / VIIRS Nighttime Lights can support settlement intensity, electrification, outage/disaster context, night ambience, skyglow, and light-pollution screening at coarse resolution.
+- Open Infrastructure Map is an OSM-derived infrastructure context and vector-tile pipeline reference for power, telecoms, petroleum, water, and transport features where mapped.
+- Amazon Location Service is a basemap/search/routing/provider-redundancy candidate, with Open Data Maps separate from commercial Esri/HERE/GrabMaps provider options.
+- AEMET OpenData is a useful national-weather example for station observations, precipitation, radiation, radar/satellite products, forecasts, warnings, climatologies, and normals.
+- DF Walker and similar field apps are user-authored observation/capture patterns for vegetation, forestry, polygon notes, offline orthophoto work, and GeoJSON export.
+
+Implementation boundary:
+
+- Infrastructure, nighttime lights, field notes, weather, and climate normals are advisory/context layers unless a source-specific contract says otherwise.
+- They must not imply official utility location, service capacity, safety, parcel status, property-scale lighting truth, rainfall truth, hydrology truth, or legal/planning authority.
 
 ### Mapbox Satellite Optionality
 

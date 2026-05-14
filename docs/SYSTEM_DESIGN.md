@@ -8,6 +8,8 @@ V1 implements the screenshot-directed vmesh dashboard with a fixed Next.js app s
 
 The H3 mesh is treated as an indexing and retrieval layer first. The visible grid is optional analytical UI, not the default visual product.
 
+The architecture should preserve vmesh's two-part identity: an atlas of antifragility for macro/micro earth intelligence, and a source-honest geospatial package broker that makes that intelligence explainable, reusable, privacy-aware, and difficult to overclaim. The broker does not replace the atlas; it protects the atlas by separating source truth, inferred context, generated/visual context, user observations, rejected providers, and package artifacts.
+
 ## Architecture
 
 ```text
@@ -36,6 +38,7 @@ State
   draft user-added records
 
 Geospatial renderer
+  Three.js orbit globe for distant cinematic Earth mode
   MapLibre operational basemap
   raster-dem terrain source normalization
   deck.gl MapboxOverlay
@@ -54,6 +57,14 @@ Data model
   provenance and confidence
   derived antifragility scores
 
+Source-honest package broker
+  source registries and coverage probes
+  selected and rejected source reasons
+  source role and confidence boundaries
+  privacy disclosure and cache keys
+  package manifests and artifact refs
+  downstream app package plans
+
 Analytics
   Recharts panels
   derived mesh metrics
@@ -68,7 +79,7 @@ Resilient comms
 
 ## Data Flow
 
-MapLibre owns the basemap, terrain, and camera. deck.gl attaches through `MapboxOverlay` so H3 layer rendering follows the map camera. The renderer uses a two-mode visual wrapper: distant camera states present an `Orbit Globe` object, while close search/zoom states switch to `OSS Map Output` so the open MapLibre basemap becomes legible for local work. Zustand holds the selected H3 cell, hover metadata, mesh tier, active layers, map status, terrain status, the macro package manifest, package-backed H3 summaries, prepopulated hex summaries, and local draft records. React panels subscribe to Zustand slices rather than reading directly from map instances.
+The renderer has two coordinated surfaces. Three.js owns the distant `Orbit Globe`: a real sphere mesh with procedural open-asset-ready Earth texture, bump relief cues, cloud shell, atmosphere, directional light, drag inertia, idle rotation, and dark/light visual modes. MapLibre owns the source-backed basemap, terrain, close-map camera, imagery, labels, and map events. deck.gl attaches through `MapboxOverlay` so H3 layer rendering follows the MapLibre camera when analytical layers are enabled. Close search/zoom states switch to `OSS Map Output` so the open MapLibre basemap becomes legible for local work. Zustand holds the selected H3 cell, hover metadata, mesh tier, active layers, map status, terrain status, the macro package manifest, package-backed H3 summaries, prepopulated hex summaries, and local draft records. React panels subscribe to Zustand slices rather than reading directly from map instances.
 
 App-pulled datasets should enter through typed provider adapters. User-added data enters through explicit local state actions with provenance, confidence, timestamp, and private-local visibility.
 
@@ -80,6 +91,8 @@ Resilient communications should enter through a local bridge, not directly throu
 
 - `MeshTier`: `U3`, `U5`, and `U8`, mapped to H3 resolutions 3, 5, and 8.
 - `GlobeTheme`: `dark` or `light`, stored in Zustand as a visual mode for the atlas globe. It changes stage, ocean/land treatment, map opacity, and rim lighting without changing provider IDs, data provenance, or mesh state.
+- `GlobeBackdropMode`: `blank`, `grid`, or `stars`, stored in Zustand as a visual-only stage setting. It changes the background behind the globe without changing map providers, imagery, terrain, macro data, H3 tier, or selected cell state.
+- `EarthTextureSourceConfig`: far-zoom globe texture source metadata for the bundled NASA Blue Marble raster, procedural Natural Earth-style fallback visuals, optional token-gated Mapbox satellite, future Sentinel/SEN2SR package textures, and offline fallback textures. These are visual-context sources, not macro data.
 - `MacroLayerDefinition`: category, providers, readiness, status, source type, visualization type, opacity, attribution, license, freshness, confidence, limitations, map readiness, preprocessing requirement, and public-demo safety for every macro atlas layer.
 - `SourceBrokerReport`: open-data-first source selection report for selected basemap, terrain, climate, imagery, candidate counts, rejected-source reasons, layer catalog summary, open-map summary, and package manifest.
 - `DataPackageManifest`: site-package-style contract for terrain, imagery, landcover, environment, contours, H3 summaries, provenance, selected sources, and rejected sources.
@@ -238,6 +251,8 @@ Macro production readiness has two explicit scopes. `production-core` covers rev
 
 - If terrain tiles fail, the globe shell, basemap, H3 overlay, and DOM panels remain usable.
 - If the user flies into a coordinate or autocomplete place result, the viewer can transition from the cinematic globe wrapper into a rectangular open-source map output while preserving the same MapLibre/deck.gl camera state.
+- Coordinate and close-place search enables the imagery layer by default for local inspection and can add an OpenStreetMap raster reference overlay above the satellite-style imagery so roads and streets remain visible.
+- Mouse-wheel zoom over the Three.js orbit globe updates Zustand camera state and crosses into `OSS Map Output` once the source-backed inspection threshold is reached.
 - Close source-backed map output keeps the terrain runtime available, so users can switch the searched area between flat basemap context and Mapterhorn/Mapzen terrain relief without rebuilding the map.
 - If the primary terrain provider fails during setup or tile loading, the renderer attempts the next map-ready candidate and updates Zustand/footer status.
 - If the terrain provider is not map-ready, the footer reports `unavailable` with the provider message.
@@ -256,15 +271,16 @@ The V1 UI exposes a visible contour placeholder/status so users can see that the
 
 V1 basemap kinds:
 
-| Kind                 | V1 behavior                                                                |
-| -------------------- | -------------------------------------------------------------------------- |
-| `custom-style-json`  | Highest-priority environment configured MapLibre style URL.                |
-| `protomaps-pmtiles`  | Offline-friendly future vector basemap, enabled when a PMTiles URL is set. |
-| `openfreemap-vector` | No-token vector style candidate for richer open geography.                 |
-| `maplibre-demo`      | Default token-free OSM raster fallback that keeps the globe nonblank.      |
-| `offline-shell`      | Last-resort nonblank local globe surface when no basemap can be fetched.   |
+| Kind                      | V1 behavior                                                                |
+| ------------------------- | -------------------------------------------------------------------------- |
+| `custom-style-json`       | Highest-priority environment configured MapLibre style URL.                |
+| `protomaps-pmtiles`       | Offline-friendly future vector basemap, enabled when a PMTiles URL is set. |
+| `openfreemap-vector`      | No-token vector style candidate for richer open geography.                 |
+| `mapbox-satellite-raster` | Optional token/proxy-gated satellite base globe for reviewed deployments.  |
+| `maplibre-demo`           | Default token-free OSM raster fallback that keeps the globe nonblank.      |
+| `offline-shell`           | Last-resort nonblank local globe surface when no basemap can be fetched.   |
 
-Basemap status is stored in Zustand and shown in footer telemetry. Mapbox is not a default basemap provider.
+Basemap status is stored in Zustand and shown in footer telemetry. Mapbox satellite is modeled as an optional token/proxy-gated basemap provider, but it is not the public open-source default.
 
 For production, open basemaps should prefer self-hosted or CDN-hosted PMTiles generated from OSM/Overture/Natural Earth/Nextzen-style open sources where licensing permits. Public OSM raster tiles are fallback visual context, not a scalable production dependency.
 
@@ -359,7 +375,9 @@ V1 imagery kinds:
 | `sentinel2-sen2sr-pmtiles`  | Future offline/server generated SEN2SR raster PMTiles.                   |
 | `sentinel2-sen2sr-xyz`      | Future offline/server generated XYZ tiles.                               |
 | `mapbox-satellite-optional` | Token-gated optional comparison layer; disabled without env token.       |
-| `offline-raster-pmtiles`    | Future local hub/offline imagery bundle.                                 |
+
+The same server-side Mapbox proxy contract can power `mapbox-satellite-basemap` for deployments that explicitly choose a Mapbox-backed base globe. The renderer still uses MapLibre GL JS, keeps Mapbox token use out of public defaults, and falls back to open OSM/OpenFreeMap/PMTiles paths when Mapbox is not configured.
+| `offline-raster-pmtiles` | Future local hub/offline imagery bundle. |
 
 The browser displays tiles and summaries only. Sentinel-2 STAC search, SCL cloud-mask validation, SEN2SRLite inference, COG writing, and tile generation belong in `pipelines/sentinel_sr/` as server/local-hub processing. H3 stores derived summaries such as NDVI, NDWI, NBR, vegetation cover proxy, bare soil proxy, water presence proxy, and cloud-free confidence.
 

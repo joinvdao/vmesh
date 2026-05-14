@@ -2,6 +2,7 @@
 
 import {
   Bookmark,
+  CheckCircle2,
   Droplet,
   Expand,
   Landmark,
@@ -13,12 +14,9 @@ import {
   Zap
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Line, LineChart } from "recharts";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getScoreStatus } from "@/lib/meshScoring";
 import type { MacroPillars } from "@/lib/vmeshTypes";
 import { useVmeshStore } from "@/store/useVmeshStore";
 
@@ -86,23 +84,25 @@ export function SelectedHexCard() {
       </div>
 
       <div className="border-b border-[#e6eeec] p-4">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#52616f]">
-              Antifragility Index
-            </div>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-4xl font-light text-[#0f766e]">
-                {selected.antifragilityScore}
-              </span>
-              <span className="text-sm text-[#7b8893]">/100</span>
-            </div>
-            <Badge className="mt-2">{getScoreStatus(selected.antifragilityScore)}</Badge>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#52616f]">
+          Data package
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+          <div className="rounded-[8px] border border-[#e6eeec] bg-[#fbfdfc] p-2">
+            <div className="text-[#7b8893]">Tier</div>
+            <div className="mt-1 font-mono font-semibold text-[#0f766e]">{selected.tier}</div>
           </div>
-          <div className="h-16 w-28 overflow-hidden">
-            <LineChart width={112} height={64} data={selected.trend}>
-              <Line type="monotone" dataKey="value" stroke="#2f9b93" strokeWidth={2} dot={false} />
-            </LineChart>
+          <div className="rounded-[8px] border border-[#e6eeec] bg-[#fbfdfc] p-2">
+            <div className="text-[#7b8893]">Sources</div>
+            <div className="mt-1 font-semibold text-[#0f766e]">
+              {selected.provenance.sourceCount}
+            </div>
+          </div>
+          <div className="rounded-[8px] border border-[#e6eeec] bg-[#fbfdfc] p-2">
+            <div className="text-[#7b8893]">Records</div>
+            <div className="mt-1 font-semibold text-[#0f766e]">
+              {localRecords.length + foodSummary.assets.length + localProperties.length}
+            </div>
           </div>
         </div>
       </div>
@@ -110,14 +110,14 @@ export function SelectedHexCard() {
       <div className="grid grid-cols-2 gap-2 border-b border-[#e6eeec] p-3">
         {pillarLabels.map((pillar) => (
           <div key={pillar.key} className="rounded-[8px] border border-[#e6eeec] bg-white p-2">
-            <div className="flex items-center gap-2 text-xs text-[#52616f]">
-              <pillar.icon className="h-4 w-4 text-[#0f766e]" />
-              <span>{pillar.label}</span>
+            <div className="flex items-center justify-between gap-2 text-xs text-[#52616f]">
+              <span className="flex items-center gap-2">
+                <pillar.icon className="h-4 w-4 text-[#0f766e]" />
+                <span>{pillar.label}</span>
+              </span>
+              <CheckCircle2 className="h-3.5 w-3.5 text-[#7dbeb5]" />
             </div>
-            <div className="mt-1 flex items-baseline gap-1 text-[#0f766e]">
-              <span className="text-sm font-semibold">{selected.macro[pillar.key]}</span>
-              <span className="text-[10px] text-[#7b8893]">/100</span>
-            </div>
+            <div className="mt-1 text-[11px] text-[#7b8893]">Layer available</div>
           </div>
         ))}
       </div>
@@ -125,7 +125,7 @@ export function SelectedHexCard() {
       <div className="flex-1 space-y-4 overflow-y-auto p-4 vmesh-scrollbar">
         <div className="rounded-[8px] border border-[#d8ebe7] bg-[#f6fbfa] p-3 text-xs">
           <div className="flex items-center justify-between">
-            <span className="font-medium text-[#41515f]">Macro conditions</span>
+            <span className="font-medium text-[#41515f]">Macro observations</span>
             <span className="text-[#0f766e]">{macroSummary.provenance.sourceType}</span>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
@@ -133,18 +133,37 @@ export function SelectedHexCard() {
             <span className="text-right font-medium">
               {macroSummary.weather.temperatureC.toFixed(1)} C
             </span>
+            <span className="text-[#7b8893]">Humidity</span>
+            <span className="text-right font-medium">
+              {macroSummary.weather.relativeHumidityPercent}%
+            </span>
+            <span className="text-[#7b8893]">Wind</span>
+            <span className="text-right font-medium">{macroSummary.weather.windSpeedKph} kph</span>
             <span className="text-[#7b8893]">72h rain</span>
             <span className="text-right font-medium">{macroSummary.forecast.next72hRainMm} mm</span>
-            <span className="text-[#7b8893]">Flood</span>
-            <span className="text-right font-medium">{macroSummary.flood.classLabel}</span>
-            <span className="text-[#7b8893]">Fire weather</span>
-            <span className="text-right font-medium">{macroSummary.fire.classLabel}</span>
-            <span className="text-[#7b8893]">Solar</span>
-            <span className="text-right font-medium">{macroSummary.solar.classLabel}</span>
+            <span className="text-[#7b8893]">Cloud cover</span>
+            <span className="text-right font-medium">
+              {macroSummary.weather.cloudCoverPercent}%
+            </span>
           </div>
           <div className="mt-3 border-t border-[#dfe8e6] pt-2 text-[#7b8893]">
             {macroSummary.provenance.freshnessLabel} | confidence{" "}
             {macroSummary.provenance.confidence}%
+          </div>
+        </div>
+
+        <div className="rounded-[8px] border border-[#e6eeec] bg-[#fbfdfc] p-3 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-[#41515f]">Layer bundle</span>
+            <span className="text-[#0f766e]">{pillarLabels.length} macro layers</span>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {pillarLabels.map((pillar) => (
+              <div key={pillar.key} className="flex items-center gap-2 text-[#52616f]">
+                <pillar.icon className="h-4 w-4 text-[#0f766e]" />
+                <span>{pillar.label}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -178,23 +197,6 @@ export function SelectedHexCard() {
             <span className="text-right font-medium">{selected.micro.growers}</span>
             <span className="text-[#7b8893]">Community assets</span>
             <span className="text-right font-medium">{selected.micro.communityAssets}</span>
-          </div>
-        </div>
-
-        <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#52616f]">
-            Composition
-          </div>
-          <div className="mt-3 flex items-end gap-3 border-b border-[#e6eeec] pb-2 text-center text-[10px] text-[#7b8893]">
-            {pillarLabels.map((pillar) => (
-              <div key={pillar.key} className="flex-1">
-                <div
-                  className="mx-auto mb-2 w-1.5 rounded-full bg-[#2f9b93]"
-                  style={{ height: selected.macro[pillar.key] / 3 }}
-                />
-                <div>{pillar.label.slice(0, 3)}</div>
-              </div>
-            ))}
           </div>
         </div>
 

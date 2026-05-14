@@ -8,13 +8,15 @@ V1 ships a local dashboard for exploring the vmesh antifragility atlas with mock
 
 1. Open `http://localhost:3000`.
 2. Spin the globe with the mouse, or let the idle globe gently rotate.
-3. Use the sun/moon control in the header to switch between dark and light globe modes.
-4. Search for coordinates such as `51.5072, -0.1276`, a built-in offline place, or a partial global place name. Autocomplete shows coordinate, built-in, and no-key OpenStreetMap/Nominatim matches when remote geocoding is enabled.
-5. When the camera is close enough, the viewer switches from `Orbit Globe` / `Decorative globe texture` to `OSS Map Output` / `Source-backed map output` so the open MapLibre/OSM map is easier to inspect.
-6. Turn mesh, macro, imagery, or source panels on only when you need analytical context.
-7. Select a cell to inspect its antifragility profile, local assets, risks, provenance, and confidence.
-8. Review macro pillars, micro summaries, user-added record counts, and bottom analytics.
-9. Add a draft local record in the user data panel. The record remains private-local and mock-only.
+3. Use the mouse wheel over the globe to zoom. Scrolling in transitions from orbit mode to source-backed MapLibre map output for local inspection.
+4. Use the sun/moon control in the header to switch between dark and light globe modes. Use the backdrop control beside it to cycle the stage background between blank, grid, and stars.
+5. Search for coordinates such as `51.5072, -0.1276`, a built-in offline place, or a partial global place name. Autocomplete shows coordinate, built-in, and no-key OpenStreetMap/Nominatim matches when remote geocoding is enabled.
+6. Coordinate and close-place search rotates the globe toward the target, then transitions into source-backed map output with satellite-style imagery enabled and an OpenStreetMap reference overlay for roads and streets.
+7. The far view uses a real Three.js Earth sphere with atmosphere, clouds, lighting, drag inertia, and dark/light globe modes. Search results rotate the globe toward the target, then transition into source-backed MapLibre map output when the camera reaches local inspection scale.
+8. Turn mesh, macro, imagery, or source panels on only when you need analytical context.
+9. Select a cell to inspect its data package, macro observations, local assets, provenance, and confidence.
+10. Review macro pillars, micro summaries, user-added record counts, and bottom analytics.
+11. Add a draft local record in the user data panel. The record remains private-local and mock-only.
 
 ## Terrain And Source Status
 
@@ -24,9 +26,11 @@ The footer also reports basemap, macro, and imagery status. Basemap selection is
 
 ## Visual Treatment And Data Modes
 
-The distant globe is an interactive atlas shell. Land tint, cloud treatment, rim lighting, and visual lattice cues are decorative context and are labeled `Decorative globe texture`.
+The distant globe is an interactive atlas shell. The Earth surface uses a locally bundled NASA Blue Marble raster with procedural fallback and visual lighting, while MapLibre remains the source-backed engine for close basemap, terrain, labels, imagery, and H3 overlays. Globe cloud treatment, rim lighting, and visual lattice cues are decorative context only.
 
-Source-backed output starts with the close MapLibre view, selected H3 summaries, terrain provider, explicit imagery layers, and package-backed macro summaries. The default macro data mode is `Fixture package`, which means the H3 summaries were generated deterministically for UI and pipeline validation. It is not live climate, hazard, solar, fire, flood, or emergency intelligence.
+Source-backed output starts with the close MapLibre view, selected H3 summaries, terrain provider, explicit imagery layers, and package-backed macro summaries. When imagery is enabled, vmesh can place a low-opacity OpenStreetMap raster reference overlay above the satellite-style layer so roads and streets remain legible. The default macro data mode is `Fixture package`, which means the H3 summaries were generated deterministically for UI and pipeline validation. It is not live climate, hazard, solar, fire, flood, or emergency intelligence.
+
+Antifragility scoring remains in the repo and data contracts for a later analysis phase, but it is not currently shown in the UI. The visible app is focused on aggregating, displaying, and explaining source-backed geospatial data.
 
 Open the Sources drawer to see the visual-treatment split, package id, package version, source mode, license, confidence, and limitations. Open Macro Layers to see which layers are live-capable, fixture-backed, mock fallback, or future-provider.
 
@@ -79,4 +83,4 @@ The Build A Hub panel lets you mark water, food, power, comms, access, shelter/t
 
 Footer telemetry shows terrain provider/status, contour status, mesh tier, visible hex count, and data freshness. Mapterhorn PMTiles is the primary terrain path, Mapzen/Joerd Terrarium is the no-token fallback, and contours require preprocessing before production vector tiles are available. Terrain remains switchable after search zooms, so a user can inspect a place as either source-backed basemap context or DEM/hillshade relief.
 
-Mapbox satellite is disabled unless a deployment configures `NEXT_PUBLIC_MAPBOX_TOKEN`. Super-resolution imagery is not legal, survey, emergency, or property-boundary evidence.
+Mapbox satellite is disabled unless a deployment configures a restricted public token or the server-side proxy. It can be used as an optional base globe or imagery comparison layer, never as the public no-token default. Super-resolution imagery is not legal, survey, emergency, or property-boundary evidence.

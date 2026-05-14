@@ -44,7 +44,7 @@ export function AppSidebar() {
 
   return (
     <aside className="absolute bottom-0 left-0 top-0 z-40 flex w-20 flex-col items-center border-r border-[#dfe8e6] bg-white/[0.96] px-3 py-4 shadow-[2px_0_18px_rgba(31,53,58,0.04)] backdrop-blur">
-      <Tooltip label="vmesh Atlas of Antifragility">
+      <Tooltip label="vmesh data atlas">
         <button
           className="flex h-12 w-12 items-center justify-center rounded-[10px] border border-[#bcded8] bg-[#f2fbf8] text-[#0f766e]"
           onClick={() => setActivePanel(null)}

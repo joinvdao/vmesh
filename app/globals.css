@@ -56,7 +56,7 @@ body {
 .vmesh-globe-shell {
   --vmesh-camera-x: 0px;
   --vmesh-camera-y: 0px;
-  --vmesh-map-opacity: 0.24;
+  --vmesh-map-opacity: 0.72;
   animation: vmesh-globe-hover 9s ease-in-out infinite;
   transform: translate3d(-50%, -50%, 0);
   transition:
@@ -69,11 +69,11 @@ body {
 }
 
 [data-globe-theme="dark"] .vmesh-globe-shell {
-  --vmesh-map-opacity: 0.24;
+  --vmesh-map-opacity: 0.72;
 }
 
 [data-globe-theme="light"] .vmesh-globe-shell {
-  --vmesh-map-opacity: 0.36;
+  --vmesh-map-opacity: 0.82;
 }
 
 .vmesh-globe-shell--map-output {
@@ -151,25 +151,59 @@ body {
 }
 
 [data-globe-theme="light"] .vmesh-earth-cloud-map {
-  opacity: 0.82;
+  opacity: 0.3;
   filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.4));
 }
 
 .vmesh-earth-atlas-drift {
+  opacity: 0.16;
   animation: vmesh-earth-atlas-drift 46s linear infinite;
   transform: translate3d(var(--vmesh-camera-x), var(--vmesh-camera-y), 0) rotate(-2deg) scale(1.02);
 }
 
 .vmesh-earth-cloud-map {
+  opacity: 0.24;
   animation: vmesh-earth-cloud-map 34s linear infinite;
   transform: translate3d(calc(var(--vmesh-camera-x) - 2%), var(--vmesh-camera-y), 0) rotate(1deg)
     scale(1.01);
 }
 
+.vmesh-earth-fallback {
+  opacity: 0.68;
+}
+
+.vmesh-three-earth-layer {
+  cursor: grab;
+  filter: drop-shadow(0 0 18px rgba(82, 187, 235, 0.22));
+}
+
+.vmesh-three-earth-layer:active {
+  cursor: grabbing;
+}
+
+.vmesh-three-earth-layer canvas {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.vmesh-globe-shell:not(.vmesh-globe-shell--map-output) .vmesh-earth-fallback {
+  opacity: 0.24;
+}
+
+.vmesh-globe-shell--map-output .vmesh-three-earth-layer {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vmesh-globe-shell .maplibregl-canvas {
+  border-radius: inherit;
+}
+
 .vmesh-globe-grid {
   background-image:
-    linear-gradient(rgba(166, 215, 236, 0.22) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(166, 215, 236, 0.22) 1px, transparent 1px);
+    linear-gradient(rgba(166, 215, 236, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(166, 215, 236, 0.12) 1px, transparent 1px);
   background-position: center;
   background-size:
     34px 34px,
@@ -187,8 +221,8 @@ body {
 
 .vmesh-globe-tiles {
   background-image:
-    repeating-linear-gradient(7deg, rgba(215, 238, 255, 0.18) 0 1px, transparent 1px 46px),
-    repeating-linear-gradient(97deg, rgba(215, 238, 255, 0.12) 0 1px, transparent 1px 46px);
+    repeating-linear-gradient(7deg, rgba(215, 238, 255, 0.1) 0 1px, transparent 1px 46px),
+    repeating-linear-gradient(97deg, rgba(215, 238, 255, 0.07) 0 1px, transparent 1px 46px);
   mask-image: radial-gradient(circle, #000 0 70%, transparent 76%);
 }
 
@@ -201,11 +235,11 @@ body {
 
 [data-globe-theme="light"] .vmesh-globe-lighting {
   background-image:
-    radial-gradient(circle at 33% 19%, rgba(255, 255, 255, 0.54), transparent 24%),
+    radial-gradient(circle at 32% 18%, rgba(255, 255, 255, 0.2), transparent 9%),
     radial-gradient(circle at 72% 70%, rgba(13, 56, 72, 0.32), transparent 42%),
     linear-gradient(
       112deg,
-      rgba(255, 255, 255, 0.12) 0%,
+      rgba(255, 255, 255, 0.06) 0%,
       rgba(165, 220, 217, 0.04) 34%,
       rgba(4, 42, 58, 0.28) 100%
     );
@@ -288,6 +322,29 @@ body {
   opacity: 0.82;
 }
 
+.vmesh-stage-grid {
+  animation: vmesh-star-drift 128s linear infinite;
+  background-image:
+    linear-gradient(rgba(108, 182, 207, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(108, 182, 207, 0.14) 1px, transparent 1px),
+    radial-gradient(circle at 50% 48%, rgba(67, 151, 221, 0.18), transparent 43%);
+  background-position: center, center, center;
+  background-size:
+    72px 72px,
+    72px 72px,
+    100% 100%;
+  mask-image: radial-gradient(circle at 50% 50%, #000 0 68%, transparent 88%);
+  opacity: 0.62;
+}
+
+[data-globe-theme="light"] .vmesh-stage-grid {
+  background-image:
+    linear-gradient(rgba(35, 122, 150, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(35, 122, 150, 0.12) 1px, transparent 1px),
+    radial-gradient(circle at 50% 48%, rgba(118, 199, 207, 0.18), transparent 43%);
+  opacity: 0.38;
+}
+
 @keyframes vmesh-globe-hover {
   0%,
   100% {
@@ -364,7 +421,8 @@ body {
   .vmesh-earth-atlas-drift,
   .vmesh-earth-cloud-map,
   .vmesh-atmosphere-drift,
-  .vmesh-starfield {
+  .vmesh-starfield,
+  .vmesh-stage-grid {
     animation: none;
   }
 }

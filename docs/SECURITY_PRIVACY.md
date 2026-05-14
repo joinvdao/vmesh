@@ -47,7 +47,7 @@ Current macro, food-network, property, hub-network, and local-LLM records are de
 
 Open-Meteo weather calls are allowed only as a no-secret prototype path. They may expose the selected H3 centroid to Open-Meteo, so privacy-sensitive deployments should use deterministic mock data, offline H3 summaries, or a local hub cache/gateway instead of direct browser fetches.
 
-Remote free-text geocoding/autocomplete is enabled by default through a no-key OpenStreetMap/Nominatim path so users can search partial names globally. Coordinate parsing and a small built-in place list still work offline. Free-text geocoding can reveal user intent and approximate area of interest, so privacy-sensitive or offline deployments should set `NEXT_PUBLIC_ENABLE_REMOTE_GEOCODING=false` and prefer a local geocoder, coarse geocoding, or a privacy-reviewed gateway.
+Remote free-text geocoding/autocomplete is enabled by default through the local `/api/geocode/search` route, which performs a bounded no-key OpenStreetMap/Nominatim lookup and returns normalized suggestions. Coordinate parsing and a small built-in place list still work offline. Free-text geocoding can reveal user intent and approximate area of interest to the upstream provider, so privacy-sensitive or offline deployments should set `NEXT_PUBLIC_ENABLE_REMOTE_GEOCODING=false` and prefer a local geocoder, coarse geocoding, or a privacy-reviewed gateway.
 
 Solar, wind, and sector-map providers follow the same selected-location privacy rule. Direct browser calls for irradiance, cloud cover, wind, or forecast data may expose the selected H3 centroid or AOI to a provider. Privacy-sensitive deployments should use local hub caches, precomputed H3 summaries, or offline package manifests.
 
@@ -95,6 +95,7 @@ This does not replace deployment-level protections. Public deployments still nee
 - Production promotion requires `macro:ready` with a production profile. Fixtures, mocks, future-provider placeholders, unreviewed terms, fixture cadence, and text that still reads as fixture/mock/prototype data must be blocked from production promotion.
 - UI labels must distinguish `Fixture package`, `Mock fallback`, `Live selected-cell`, `Cached package`, and `Future provider`.
 - Decorative globe textures, clouds, lighting, visual lattice, and basemap tiles must not be presented as source-backed macro data.
+- Three.js orbit-globe textures, including the bundled NASA Blue Marble raster, are visual context only. They may guide the atlas experience, but production claims must come from MapLibre/provider registries, package manifests, H3 summaries, and explicit provenance.
 
 ## Cross-App Sharing Rules
 
@@ -131,7 +132,8 @@ Contour records are derived products. Browser terrain uses `raster-dem`; product
 - SEN2SR processing must run offline/server-side. Do not run GPU-heavy model inference, COG processing, or whole-scene downloads in the browser.
 - The current upscaler reference is ESAOpenSR/SEN2SR. SEN2SRLite RGBN `x4` output targets `2.5 m` display pixels from `10 m` Sentinel-2 L2A source data, but remains imagery-inferred context.
 - AI-assisted super-resolution can introduce artifacts. Do not use it for legal boundaries, official surveys, emergency certification, or exact private infrastructure claims.
-- Mapbox satellite is optional and token-gated. Do not commit `NEXT_PUBLIC_MAPBOX_TOKEN`, screenshots with private tokens, or token-bearing tile URLs.
+- Mapbox satellite is optional and token-gated for both base-globe and imagery use. Secret-class Mapbox tokens must stay in server-only `MAPBOX_TOKEN` and be accessed through the local proxy route; only restricted public `pk.*` tokens may use `NEXT_PUBLIC_MAPBOX_TOKEN`. Do not commit screenshots with private tokens or token-bearing tile URLs.
+- Free-text search defaults to the local `/api/geocode/search` proxy so the browser does not call Nominatim directly. Remote geocoding can disclose typed places or coordinates to the provider; set `NEXT_PUBLIC_ENABLE_REMOTE_GEOCODING=false` for privacy-sensitive or offline deployments.
 - Do not commit downloaded Sentinel scenes, generated COGs, PMTiles archives, private AOIs, or local hub imagery caches.
 
 ## Annotation Privacy Rules
@@ -160,6 +162,6 @@ Not allowed by default:
 - Exact private addresses or exact user-provided coordinates.
 - Provider tokens, signed URLs, or local hub credentials.
 - Raw macro package payloads from private AOIs.
-- Full browser search strings when remote geocoding is enabled.
+- Full search strings when remote geocoding is enabled.
 
 Analytics should use coarse H3/tier metadata, source mode labels, and error classes rather than raw sensitive geometry or content.

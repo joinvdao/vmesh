@@ -25,7 +25,6 @@ export function createGlobeRuntime({
   setSelectedMarkerPosition: (position: SelectedMarkerPosition | null) => void;
 }): GlobeRuntime {
   let autoSpinTimer: number | undefined;
-  let userInteractingWithMap = false;
 
   const syncSelectedMarker = () => {
     if (getCancelled()) return;
@@ -59,33 +58,14 @@ export function createGlobeRuntime({
     }
   };
 
-  const shouldAutoSpin = () => {
-    const state = useVmeshStore.getState();
-    return state.activePanel === null && map.getZoom() <= 3.35 && !state.activeLayers.macro;
-  };
-
   const queueAutoSpin = () => {
-    userInteractingWithMap = false;
+    // The cinematic orbit is owned by ThreeEarthGlobe. MapLibre stays stable so
+    // the source-backed map, selected marker, and deck.gl layers do not appear
+    // to slide independently beneath the globe.
     clearAutoSpin();
-    if (!shouldAutoSpin()) return;
-
-    autoSpinTimer = window.setTimeout(() => {
-      if (getCancelled() || userInteractingWithMap || map.isMoving() || !shouldAutoSpin()) {
-        return;
-      }
-
-      const center = map.getCenter();
-      map.easeTo({
-        center: [center.lng + 24, center.lat],
-        duration: 22000,
-        easing: (time) => time,
-        essential: false
-      });
-    }, 1100);
   };
 
   const pauseAutoSpin = () => {
-    userInteractingWithMap = true;
     clearAutoSpin();
   };
 

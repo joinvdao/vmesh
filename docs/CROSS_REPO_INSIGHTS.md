@@ -72,6 +72,8 @@ vmesh should develop high-fidelity geospatial package contracts for terrain role
 
 Downstream apps should consume the resulting package manifests, app-ready tile URLs, and H3/source summaries without knowing whether the data came from Mapterhorn, Mapzen, OSM, Overture, Sentinel, a regional DTM, or a local cache.
 
+vmesh is both a standalone atlas and an async package service. The public contract should be generic: a downstream app sends an AOI/H3 request, vmesh returns a source plan and cache/job metadata, workers create or refresh package artifacts, and consumers read clean manifest URLs. The public vmesh repo should not identify private consumer repos, exact user locations, local paths, provider credentials, paid quotes, or unpublished roadmaps.
+
 Shared contracts to watch:
 
 - `GeospatialPackagePlan`
@@ -151,6 +153,15 @@ Shared contracts to watch:
 - `ClimateDataSourceConfig`
 - `GeospatialSourceCandidate`
 - `ProviderStatus`
+
+Provider notes imported from downstream package research should be normalized into public-safe categories:
+
+- terrain/global: Mapterhorn, Mapzen/Joerd, Copernicus DEM, NASADEM, AW3D30, SRTM, GEDTM30, FABDEM, EarthDEM, and coastal/topobathy candidates such as CUDEM, GEBCO, ETOPO, CoastalDEM, DeltaDTM, and DiluviumDEM;
+- terrain/regional: SRSP LiDAR, Environment Agency LiDAR DTM, OS Terrain 50/5, USGS 3DEP, NOAA Digital Coast, Canada HRDEM, LidarBC, Alberta lidar/elevation, Bavaria DGM1, Netherlands AHN, France IGN RGE ALTI, Spain CNIG MDT, swissALTI3D, Finland NLS, Norway Hoydedata, LINZ NZ, and Geoscience Australia ELVIS;
+- built environment: Overture, OSM, Microsoft Global ML Building Footprints, Google Open Buildings, Google Open Buildings 2.5D Temporal, GlobalBuildingAtlas, Roofer/CityGML/PLATEAU-style reconstruction, and commercial 3D/building products as gated upgrades;
+- landcover/hydrology/context: ESA WorldCover, Dynamic World, Hansen Global Forest Change, Annual NLCD, LANDFIRE, HydroSHEDS/HydroRIVERS/HydroLAKES, USGS 3DHP/NHD, SoilGrids, NASA Black Marble, Open Infrastructure Map, Amazon Location Service, AEMET-style national weather APIs, and user-authored field-capture workflows.
+
+The rule is unchanged: source registry inclusion is not production approval. Every source must preserve license, attribution, source vintage, confidence, limitations, privacy impact, and whether it is source truth, inferred context, visual context, or research only.
 
 ## Sentinel SR Sidecar Pattern
 

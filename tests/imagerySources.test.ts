@@ -13,6 +13,7 @@ import {
   toImageryRasterSource,
   validateImageryTileManifest
 } from "@/lib/imagerySources";
+import { MAPBOX_SATELLITE_PROXY_TILE_URL } from "@/lib/mapboxSatelliteProxy";
 
 describe("Sentinel imagery provider foundation", () => {
   it("builds an Earth Search STAC query for recent low-cloud Sentinel-2 L2A scenes", () => {
@@ -56,6 +57,22 @@ describe("Sentinel imagery provider foundation", () => {
       type: "raster",
       tiles: [expect.stringContaining("s2cloudless")]
     });
+  });
+
+  it("supports Mapbox satellite through the server-side proxy without exposing a token", () => {
+    const providers = getImageryProviderRegistry({
+      mapboxProxyUrl: MAPBOX_SATELLITE_PROXY_TILE_URL
+    });
+    const mapbox = providers.find((provider) => provider.id === MAPBOX_SATELLITE_PROVIDER_ID);
+
+    expect(mapbox?.status).toBe("available");
+    expect(mapbox?.sourceUrl).toBe(MAPBOX_SATELLITE_PROXY_TILE_URL);
+    expect(toImageryRasterSource(mapbox!)).toMatchObject({
+      type: "raster",
+      tiles: [MAPBOX_SATELLITE_PROXY_TILE_URL],
+      tileSize: 512
+    });
+    expect(mapbox?.sourceUrl).not.toContain("access_token");
   });
 
   it("validates manifest-backed Sentinel/SEN2SR output metadata", () => {
