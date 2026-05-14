@@ -2,6 +2,8 @@ export type MeshTier = "U3" | "U5" | "U8";
 
 export type GlobeTheme = "dark" | "light";
 
+export type GlobeBackdropMode = "blank" | "grid" | "stars";
+
 export interface ViewState {
   longitude: number;
   latitude: number;

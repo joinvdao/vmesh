@@ -25,9 +25,9 @@ For manual visual verification:
 npm run dev
 ```
 
-Then open `http://localhost:3000` and confirm the dashboard renders as a screenshot-like first viewport with no body scrolling, a visible globe, a selected-cell H3 affordance or enabled analytical mesh overlay, footer telemetry, local user record flow, terrain/source status, hover tooltip, click selection, and no uncaught console errors. Right selected-hex, bottom analytics, macro, source, terrain, imagery, and local-data panels may open on demand from the rail.
+Then open `http://localhost:3000` and confirm the dashboard renders as a screenshot-like first viewport with no body scrolling, a visible draggable/rotating Three.js globe, a selected-cell affordance or enabled analytical mesh overlay, footer telemetry, local user record flow, terrain/source status, hover tooltip, click selection, and no uncaught console errors. Right selected-hex, bottom analytics, macro, source, terrain, imagery, and local-data panels may open on demand from the rail.
 
-`npm run visual:check` performs the automated desktop smoke pass. It starts or reuses the local app, captures first-viewport and close-zoom screenshots in `.artifacts/visual/`, checks that the screenshot is not blank, opens Sources and Macro Layers, verifies the fixture package disclosure, searches London, and asserts the viewer has switched from `Decorative globe texture` to `Source-backed map output`.
+`npm run visual:check` performs the automated desktop smoke pass. It starts or reuses the local app, captures first-viewport and close-zoom screenshots in `.artifacts/visual/`, checks that the screenshot is not blank, opens Sources and Macro Layers, verifies the fixture package disclosure, searches London, and asserts the viewer is using the basemap-driven globe/search fly-to path without showing a blank map state.
 
 ## Test Layers
 

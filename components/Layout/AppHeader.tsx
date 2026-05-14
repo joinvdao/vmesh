@@ -5,12 +5,15 @@ import type { FormEvent, KeyboardEvent } from "react";
 import {
   Bell,
   ChevronDown,
+  Circle,
   CircleHelp,
   Filter,
   Globe2,
+  Grid2X2,
   Moon,
   Search,
   Settings,
+  Sparkles,
   SunMedium
 } from "lucide-react";
 
@@ -18,15 +21,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip } from "@/components/ui/tooltip";
 import {
-  buildNominatimSearchUrl,
+  buildLocationSearchApiUrl,
   dedupeSearchLocations,
   getOfflineLocation,
   getOfflineLocationExamples,
   getOfflineLocationSuggestions,
-  isRemoteGeocodingEnabled,
-  normalizeNominatimResults
+  isRemoteGeocodingEnabled
 } from "@/lib/searchLocations";
-import type { NominatimLocationResult, SearchLocationResult } from "@/lib/searchLocations";
+import type { SearchLocationResult } from "@/lib/searchLocations";
 import { useVmeshStore } from "@/store/useVmeshStore";
 
 export function AppHeader() {
@@ -43,9 +45,15 @@ export function AppHeader() {
   const autocompleteAbortRef = useRef<AbortController | null>(null);
   const suppressedAutocompleteQueryRef = useRef<string | null>(null);
   const globeTheme = useVmeshStore((state) => state.globeTheme);
+  const globeBackdropMode = useVmeshStore((state) => state.globeBackdropMode);
   const flyToLocation = useVmeshStore((state) => state.flyToLocation);
   const setMapStatus = useVmeshStore((state) => state.setMapStatus);
   const toggleGlobeTheme = useVmeshStore((state) => state.toggleGlobeTheme);
+  const cycleGlobeBackdropMode = useVmeshStore((state) => state.cycleGlobeBackdropMode);
+  const BackdropIcon =
+    globeBackdropMode === "stars" ? Sparkles : globeBackdropMode === "grid" ? Grid2X2 : Circle;
+  const backdropLabel =
+    globeBackdropMode === "stars" ? "Stars" : globeBackdropMode === "grid" ? "Grid" : "Blank";
   const trimmedQuery = query.trim();
   const offlineSuggestions = useMemo(
     () => getOfflineLocationSuggestions(trimmedQuery, 6),
@@ -87,11 +95,10 @@ export function AppHeader() {
     async (trimmedQuery: string, signal?: AbortSignal): Promise<SearchLocationResult[]> => {
       if (!isRemoteGeocodingEnabled() || trimmedQuery.length < 3) return [];
 
-      const response = await fetch(buildNominatimSearchUrl(trimmedQuery, 6), { signal });
+      const response = await fetch(buildLocationSearchApiUrl(trimmedQuery, 6), { signal });
       if (!response.ok) throw new Error("Location search failed");
 
-      const results = (await response.json()) as NominatimLocationResult[];
-      return normalizeNominatimResults(results);
+      return (await response.json()) as SearchLocationResult[];
     },
     []
   );
@@ -176,6 +183,12 @@ export function AppHeader() {
   };
 
   const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" && (!isSuggestionOpen || suggestions.length === 0)) {
+      event.preventDefault();
+      event.currentTarget.form?.requestSubmit();
+      return;
+    }
+
     if (!isSuggestionOpen || suggestions.length === 0) return;
 
     if (event.key === "ArrowDown") {
@@ -306,6 +319,16 @@ export function AppHeader() {
               ) : (
                 <Moon className="h-4 w-4" />
               )}
+            </Button>
+          </Tooltip>
+          <Tooltip label={`Backdrop: ${backdropLabel}`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={cycleGlobeBackdropMode}
+              aria-label={`Backdrop: ${backdropLabel}`}
+            >
+              <BackdropIcon className="h-4 w-4" />
             </Button>
           </Tooltip>
           <Tooltip label="Notifications">

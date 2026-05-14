@@ -6,11 +6,22 @@ vmesh is an atlas of antifragility: a spatial operating surface where every H3 h
 
 The product should help users see not just where a place is fragile, but where it has adaptive capacity, redundancy, local abundance, practical opportunity, and recoverability.
 
+vmesh is also a source-honest geospatial package broker. This is not a separate product from the atlas; it is the data backbone that lets the atlas explain where its earth intelligence came from, what the data can prove, what is inferred or visual only, what was rejected, and which package artifacts can be safely reused by other applications.
+
 ## Target User And Promise
 
 Primary users are geospatial analysts, climate resilience planners, land and property researchers, regenerative agriculture operators, infrastructure strategists, community organizers, and people trying to understand a place through both high-level systems data and ground-level assets.
 
 The core promise: select any hex and quickly understand its resilience profile, local opportunities, risks, property context, and human-scale assets. Newcomers should be able to enter through a guided agent that learns their interests, location, and skills, then assembles a personalized view of the mesh on their behalf.
+
+## Product Identity
+
+vmesh has one public identity with two tightly coupled jobs:
+
+- Atlas for antifragility: expose macro and micro intelligence about earth systems, local assets, risks, opportunities, and resilience capacity.
+- Source-honest package broker: plan, validate, package, cache, and explain place-based data without upgrading generated, inferred, fallback, or visual context into source truth.
+
+The atlas is the experience users understand. The broker is the discipline that keeps that experience trustworthy. Every high-value layer should preserve provenance, confidence, source role, license, freshness, limitations, privacy posture, and whether it is authoritative source data, inferred context, visual context, user observation, or research-only.
 
 ## Core Mesh Model
 
@@ -75,7 +86,7 @@ The source-broker pattern is now a generic package-service discipline. vmesh dis
 
 ## Geospatial Package Service
 
-vmesh should be useful to other apps as a reusable geospatial intelligence and packaging layer. It should answer:
+vmesh should stand alone as an atlas application while also serving other apps as a reusable asynchronous geospatial intelligence and packaging layer. It should answer:
 
 - What data sources cover this coordinate, H3 cell, or AOI?
 - Which sources are open, paid, cached, blocked, token-gated, license-gated, or missing?
@@ -84,6 +95,10 @@ vmesh should be useful to other apps as a reusable geospatial intelligence and p
 - Can downstream apps consume a clean package manifest without hard-coding provider logic?
 
 The first service boundary lives in `lib/geospatialPackage/` and the API routes under `/api/geospatial-package/*`. It is source-honest planning, not a heavy data worker. It plans packages, ranks providers, exposes source probes, emits artifact/cache contracts, and keeps raw downloads or generated caches outside Git.
+
+This service should never flatten vmesh into a generic tile utility. Its purpose is to make the antifragility atlas more truthful and more reusable: macro climate summaries, micro local assets, terrain, imagery, roads, buildings, parcels, hydrology, landcover, and user observations all become more valuable when the package manifest explains what is known, unknown, inferred, visual, private, or unsafe to overclaim.
+
+The production shape should be asynchronous: a consumer requests an AOI package, vmesh returns a package id, source plan, privacy disclosure, cache keys, and job/manifest URLs, and background workers generate or refresh PMTiles, COGs, GeoParquet extracts, H3 summaries, and provenance manifests. Cache hits should return clean package refs immediately. Cache misses should queue work without blocking the requesting app's own fallback experience. Public vmesh docs should describe this as a generic downstream-app contract and should not identify private consumer repos, exact AOIs, local folders, provider credentials, or unpublished planning context.
 
 ## Production Open Map Stack Direction
 
@@ -110,7 +125,7 @@ Important boundaries:
 - Do not run SEN2SR, PyTorch, COG processing, or whole-scene downloads in the browser.
 - Do not present AI-enhanced imagery as higher-truth imagery.
 - Do not use super-resolution imagery for legal boundaries, emergency certification, or exact infrastructure claims.
-- Mapbox satellite is optional and token-gated; it is not the public open-source default.
+- Mapbox satellite is optional and token/proxy-gated. It may be used as a base-globe or imagery comparison provider in reviewed deployments, but it is not the public open-source default.
 - NOAA CUDEM is coastal/topobathymetric terrain data, not global optical imagery.
 
 The current upscaler reference is ESAOpenSR/SEN2SR. vmesh should follow a sidecar package approach: Sentinel-2 L2A RGBN at `10 m`, SEN2SRLite RGBN `x4`, derived display output at `2.5 m`, cloud-qualified AOIs, and `truthStatus: imagery-inferred-context`. This improves the visual/material layer and H3-derived vegetation/water/bare-soil summaries only; it does not create measured 2.5 m orthophoto truth.
@@ -197,6 +212,8 @@ The UI should expose comms state clearly: offline, local bridge connected, Retic
 
 V1 uses a mock derived antifragility score built from macro pillar values. Future scoring should remain explainable and decomposable.
 
+Current product display rule: these score fields remain in the repo and data model only. The visible V1-next UI should not show antifragility indexes, score badges, score-driven rankings, or score-colored default mesh layers. vmesh is currently operating as a data aggregation and display atlas; analytical scoring returns in a later phase after provenance, calibration, and trust boundaries are stronger.
+
 Score inputs should include:
 
 - Climate and weather exposure.
@@ -214,6 +231,7 @@ Scores are decision-support signals, not official risk certification. Every scor
 
 - The mesh is the product spine. Panels, charts, and workflows should explain or enrich the selected hex.
 - The visible globe is center stage. The hex grid is optional analytical UI, not decorative wallpaper.
+- Distant globe mode should be a real 3D atlas object, not a flat map clipped into a circle. Source-backed inspection still belongs to MapLibre at close zoom.
 - Source transparency should be one click away, with a dedicated drawer explaining active providers, provenance, confidence, licensing, and limitations without crowding the globe.
 - The first screen should feel like a light geospatial cockpit, not a marketing landing page.
 - Macro, micro, parcel, and user-added signals must be visibly distinct.
@@ -250,7 +268,7 @@ Cross-app insights belong in `docs/CROSS_REPO_INSIGHTS.md`. Public-safe learning
 2. Typed mock H3 mesh model for macro, micro, parcel, and user-added records.
 3. Next.js shell with fixed dashboard layout.
 4. MapLibre globe, terrain source, and deck.gl H3 overlay.
-5. Selected hex panel showing antifragility, macro pillars, micro assets, user-added data, parcel context, and provenance.
+5. Selected hex panel showing the data package, macro observations, layer availability, micro assets, user-added data, parcel context, and provenance.
 6. User-added data draft flow with local/mock persistence only.
 7. Open parcel data research and model design for lawful parcel ingestion.
 8. Reticulum-first resilient comms design, with a Meshtastic bridge plan.

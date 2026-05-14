@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { buildCellFromCoordinate } from "@/lib/h3Mesh";
 import {
   buildNominatimSearchUrl,
+  buildLocationSearchApiUrl,
   dedupeSearchLocations,
   getOfflineLocation,
   getOfflineLocationExamples,
@@ -24,19 +25,24 @@ describe("typed search coordinates", () => {
     expect(parseCoordinateQuery("38.7223, -9.1393")).toMatchObject({
       latitude: 38.7223,
       longitude: -9.1393,
-      zoom: 12.4,
+      zoom: 15.7,
       source: "coordinate"
     });
     expect(parseCoordinateQuery("38.7223 N, 9.1393 W")).toMatchObject({
       latitude: 38.7223,
       longitude: -9.1393
     });
+    expect(parseCoordinateQuery("21.507755,12.128906,2")).toMatchObject({
+      latitude: 21.507755,
+      longitude: 12.128906,
+      zoom: 2
+    });
   });
 
   it("keeps known offline places available without remote geocoding", () => {
     expect(getOfflineLocation("Lisbon")).toMatchObject({
       label: "Lisbon, Portugal",
-      zoom: 10.5,
+      zoom: 13.8,
       source: "offline"
     });
     expect(getOfflineLocationSuggestions("lon")[0]).toMatchObject({
@@ -64,12 +70,35 @@ describe("typed search coordinates", () => {
     ]);
 
     expect(buildNominatimSearchUrl("Paris", 4)).toContain("limit=4");
+    expect(buildLocationSearchApiUrl("Paris", 4)).toBe("/api/geocode/search?q=Paris&limit=4");
     expect(suggestion).toMatchObject({
       label: "Paris, Ile-de-France, France",
       latitude: 48.8535,
       longitude: 2.3484,
       source: "remote"
     });
+
+    const [postcode] = normalizeNominatimResults([
+      {
+        display_name: "PH1 3TH, Perth and Kinross, Scotland, United Kingdom",
+        lat: "56.4515",
+        lon: "-3.60733",
+        class: "place",
+        type: "postcode"
+      }
+    ]);
+    expect(postcode?.zoom).toBeGreaterThanOrEqual(15);
+
+    const [address] = normalizeNominatimResults([
+      {
+        display_name:
+          "10 Downing Street, 10, Downing Street, Westminster, London, SW1A 2AA, United Kingdom",
+        lat: "51.5034878",
+        lon: "-0.1276965",
+        type: "government"
+      }
+    ]);
+    expect(address?.zoom).toBeGreaterThanOrEqual(16);
   });
 
   it("deduplicates autocomplete candidates by nearby coordinate and label", () => {

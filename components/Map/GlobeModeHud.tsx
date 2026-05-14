@@ -34,10 +34,10 @@ export function GlobeModeHud({ mode, zoom, basemapLabel, onBackToGlobe }: GlobeM
             {isMapOutput ? "OSS Map Output" : "Orbit Globe"}
           </div>
           <div className="mt-1 text-sm font-semibold text-[#15303f]">
-            {isMapOutput ? "MapLibre detail view" : "Interactive atlas globe"}
+            {isMapOutput ? "MapLibre detail view" : "Three.js atlas sphere"}
           </div>
           <div className="mt-1 text-[10px] font-medium uppercase tracking-[0.1em] text-[#6d7d88]">
-            {isMapOutput ? "Source-backed map output" : "Decorative globe texture"}
+            {isMapOutput ? "Source-backed map output" : "Visual orbit mode"}
           </div>
         </div>
         <div className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#cfe1de] bg-[#f3fbfa] text-[#0f766e]">

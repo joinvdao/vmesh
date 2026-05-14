@@ -21,6 +21,7 @@ import {
   selectImageryProvider,
   SENTINEL_COG_PREVIEW_PROVIDER_ID
 } from "@/lib/imagerySources";
+import { MAPBOX_SATELLITE_PROXY_TILE_URL } from "@/lib/mapboxSatelliteProxy";
 import { importMacroPackageSummaries } from "@/lib/macro-packages/macroPackageImport";
 import {
   macroPackageModeLabel,
@@ -58,6 +59,13 @@ const publicEnv = {
   imageryProvider:
     typeof process !== "undefined" ? process.env.NEXT_PUBLIC_IMAGERY_PROVIDER : undefined,
   mapboxToken: typeof process !== "undefined" ? process.env.NEXT_PUBLIC_MAPBOX_TOKEN : undefined,
+  mapboxProxyUrl:
+    typeof process !== "undefined"
+      ? process.env.NEXT_PUBLIC_MAPBOX_PROXY_URL ||
+        (process.env.NEXT_PUBLIC_MAPBOX_PROXY_ENABLED === "true"
+          ? MAPBOX_SATELLITE_PROXY_TILE_URL
+          : undefined)
+      : undefined,
   sentinelPreviewTileUrl:
     typeof process !== "undefined" ? process.env.NEXT_PUBLIC_SENTINEL_PREVIEW_TILE_URL : undefined,
   sen2srPmtilesUrl:
@@ -74,7 +82,9 @@ const imageryProviderPreference = publicEnv.imageryProvider;
 const basemapProviders = getBasemapProviderRegistry({
   preferredProviderId: basemapProviderPreference,
   customStyleUrl: publicEnv.basemapStyleUrl,
-  protomapsPmtilesUrl: publicEnv.basemapPmtilesUrl
+  protomapsPmtilesUrl: publicEnv.basemapPmtilesUrl,
+  mapboxToken: publicEnv.mapboxToken,
+  mapboxProxyUrl: publicEnv.mapboxProxyUrl
 });
 const selectedBasemapProvider = selectBasemapProvider(basemapProviders, basemapProviderPreference);
 
@@ -93,6 +103,7 @@ const selectedMacroProvider = selectMacroProvider(macroProviders, OPEN_METEO_PRO
 const imageryProviders = getImageryProviderRegistry({
   preferredProviderId: imageryProviderPreference,
   mapboxToken: publicEnv.mapboxToken,
+  mapboxProxyUrl: publicEnv.mapboxProxyUrl,
   sentinelPreviewTileUrl: publicEnv.sentinelPreviewTileUrl,
   sen2srPmtilesUrl: publicEnv.sen2srPmtilesUrl,
   sen2srXyzUrl: publicEnv.sen2srXyzUrl,
@@ -128,6 +139,7 @@ export const initialVmeshState: VmeshState = {
     bearing: -12
   },
   globeTheme: "dark",
+  globeBackdropMode: "stars",
   selectedHexId: initialSelected.h3Id,
   selectedTier: "U5",
   hoveredHexInfo: null,

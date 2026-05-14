@@ -1,16 +1,17 @@
 import type { GlobeViewerMode } from "@/lib/globeViewer";
-import type { GlobeTheme } from "@/lib/vmeshTypes";
+import type { GlobeBackdropMode, GlobeTheme } from "@/lib/vmeshTypes";
 
 export function GlobeStageBackdrop({
+  backdropMode,
   globeTheme,
   viewerMode
 }: {
+  backdropMode: GlobeBackdropMode;
   globeTheme: GlobeTheme;
   viewerMode: GlobeViewerMode;
 }) {
   return (
     <>
-      <div className="vmesh-starfield pointer-events-none absolute inset-0" />
       <div
         className={`pointer-events-none absolute inset-0 transition-colors duration-500 ${
           globeTheme === "dark"
@@ -18,6 +19,12 @@ export function GlobeStageBackdrop({
             : "bg-[radial-gradient(circle_at_50%_44%,rgba(135,217,226,0.34),transparent_29%),radial-gradient(circle_at_50%_54%,rgba(255,255,255,0.24)_0,rgba(234,246,245,0.72)_48%,rgba(221,237,238,0.96)_82%),linear-gradient(180deg,#fbfdfc_0%,#e8f3f2_78%)]"
         }`}
       />
+      {backdropMode === "stars" ? (
+        <div className="vmesh-starfield pointer-events-none absolute inset-0" />
+      ) : null}
+      {backdropMode === "grid" ? (
+        <div className="vmesh-stage-grid pointer-events-none absolute inset-0" />
+      ) : null}
       {viewerMode === "orbit-globe" ? (
         <div
           className={`vmesh-globe-shadow pointer-events-none absolute left-1/2 top-1/2 h-[72vmin] max-h-[780px] min-h-[430px] w-[72vmin] max-w-[780px] min-w-[430px] rounded-full ${

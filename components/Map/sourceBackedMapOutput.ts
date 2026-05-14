@@ -6,6 +6,9 @@ import type { BasemapProviderConfig } from "@/lib/vmeshTypes";
 
 export const SOURCE_BACKED_RASTER_SOURCE_ID = "osm-raster";
 export const SOURCE_BACKED_RASTER_LAYER_ID = "osm-raster";
+export const OSM_REFERENCE_SOURCE_ID = "vmesh-osm-reference-source";
+export const OSM_REFERENCE_OVERLAY_LAYER_ID = "vmesh-osm-reference-overlay";
+const IMAGERY_RASTER_LAYER_ID = "vmesh-imagery-layer";
 const MAP_BACKGROUND_LAYER_ID = "background";
 
 type ProjectionCapableMap = maplibregl.Map & {
@@ -28,16 +31,21 @@ interface SourceBackedMapOptions {
 }
 
 function getRasterTileSource(provider?: BasemapProviderConfig) {
-  if (provider?.kind === "maplibre-demo" && provider.sourceUrl) {
+  if (
+    provider?.sourceUrl &&
+    (provider.kind === "maplibre-demo" || provider.kind === "mapbox-satellite-raster")
+  ) {
     return {
       tiles: [provider.sourceUrl],
-      attribution: provider.attribution
+      attribution: provider.attribution,
+      tileSize: provider.kind === "mapbox-satellite-raster" ? 512 : 256
     };
   }
 
   return {
     tiles: [DEFAULT_OSM_RASTER_URL],
-    attribution: "OpenStreetMap contributors"
+    attribution: "OpenStreetMap contributors",
+    tileSize: 256
   };
 }
 
@@ -58,6 +66,39 @@ export function setSourceBackedMapBackground(map: maplibregl.Map, active: boolea
   map.setPaintProperty(MAP_BACKGROUND_LAYER_ID, "background-opacity", active ? 1 : 0);
 }
 
+export function removeOsmReferenceOverlay(map: maplibregl.Map) {
+  if (map.getLayer(OSM_REFERENCE_OVERLAY_LAYER_ID)) {
+    map.removeLayer(OSM_REFERENCE_OVERLAY_LAYER_ID);
+  }
+  if (map.getSource(OSM_REFERENCE_SOURCE_ID)) {
+    map.removeSource(OSM_REFERENCE_SOURCE_ID);
+  }
+}
+
+export function refreshOsmReferenceOverlay(map: maplibregl.Map) {
+  if (!map.getLayer(IMAGERY_RASTER_LAYER_ID)) return;
+
+  removeOsmReferenceOverlay(map);
+  map.addSource(OSM_REFERENCE_SOURCE_ID, {
+    type: "raster",
+    tiles: [DEFAULT_OSM_RASTER_URL],
+    tileSize: 256,
+    attribution: "OpenStreetMap contributors"
+  });
+  map.addLayer({
+    id: OSM_REFERENCE_OVERLAY_LAYER_ID,
+    type: "raster",
+    source: OSM_REFERENCE_SOURCE_ID,
+    paint: {
+      "raster-opacity": 0.36,
+      "raster-saturation": -0.78,
+      "raster-contrast": 0.2,
+      "raster-brightness-min": 0.04,
+      "raster-brightness-max": 1
+    }
+  });
+}
+
 function refreshSourceBackedRasterLayer(
   map: maplibregl.Map,
   basemapProvider: BasemapProviderConfig | undefined,
@@ -65,6 +106,7 @@ function refreshSourceBackedRasterLayer(
 ) {
   const source = getRasterTileSource(basemapProvider);
 
+  removeOsmReferenceOverlay(map);
   if (map.getLayer(SOURCE_BACKED_RASTER_LAYER_ID)) {
     map.removeLayer(SOURCE_BACKED_RASTER_LAYER_ID);
   }
@@ -75,7 +117,7 @@ function refreshSourceBackedRasterLayer(
   map.addSource(SOURCE_BACKED_RASTER_SOURCE_ID, {
     type: "raster",
     tiles: source.tiles,
-    tileSize: 256,
+    tileSize: source.tileSize,
     attribution: source.attribution
   });
   map.addLayer({
@@ -139,6 +181,7 @@ export function applySourceBackedMapOutput({
     } else {
       setSourceBackedRasterPaint(map, camera.zoom);
     }
+    refreshOsmReferenceOverlay(map);
   } catch {
     // Style can be transient during first load; the caller schedules another apply.
   }

@@ -143,15 +143,15 @@ export function SourceProvenancePanel() {
         <Section title="Visual treatment" icon={<Map className="h-3.5 w-3.5" />}>
           <div className="space-y-2 text-xs text-[#52616f]">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold text-[#41515f]">Decorative globe texture</span>
+              <span className="font-semibold text-[#41515f]">Source-backed globe surface</span>
               <span className="rounded-full bg-[#f3f7f6] px-2 py-1 text-[10px] font-semibold uppercase text-[#64727d]">
                 not data
               </span>
             </div>
             <div className="text-[#7b8893]">
-              Land tint, clouds, rim light, and lattice cues are visual staging only. Source-backed
-              output begins with the basemap, terrain provider, package-backed H3 summaries, and
-              explicit imagery layers below.
+              The active basemap provider draws the Earth surface. Land tint, clouds, rim light, and
+              lattice cues are visual staging only; source truth begins with provider metadata,
+              terrain, package-backed H3 summaries, and explicit imagery layers below.
             </div>
           </div>
         </Section>
@@ -309,7 +309,8 @@ export function SourceProvenancePanel() {
           <div className="space-y-2 text-xs text-[#52616f]">
             <div className="flex items-center gap-2">
               <Map className="h-3.5 w-3.5 text-[#0f766e]" />
-              No paid basemap, Mapbox, or provider token is required for the public demo.
+              No paid basemap or provider token is required for the public demo; Mapbox remains an
+              explicit optional deployment choice.
             </div>
             <div className="flex items-center gap-2">
               <Mountain className="h-3.5 w-3.5 text-[#0f766e]" />

@@ -65,10 +65,12 @@ describe("vmesh store", () => {
     expect(state.flyToRequest?.label).toBe("London");
     expect(state.selectedHexId).toBe(londonCell);
     expect(state.selectedHexDetails.placeName).toBe("London");
-    expect(state.activePanel).toBe("hex");
+    expect(state.activePanel).toBeNull();
     expect(state.viewState.longitude).toBeCloseTo(-0.1276);
     expect(state.viewState.latitude).toBeCloseTo(51.5072);
     expect(state.viewState.zoom).toBe(9);
+    expect(state.activeLayers.imagery).toBe(true);
+    expect(state.mapStatus.message).toContain("satellite-style imagery");
   });
 
   it("toggles dashboard panels without pinning them to the first viewport", () => {
@@ -88,6 +90,7 @@ describe("vmesh store", () => {
   it("toggles the globe visual theme without changing map providers", () => {
     const beforeProvider = useVmeshStore.getState().selectedTerrainProviderId;
     const beforeTheme = useVmeshStore.getState().globeTheme;
+    const beforeBackdrop = useVmeshStore.getState().globeBackdropMode;
 
     useVmeshStore.getState().toggleGlobeTheme();
     const afterToggle = useVmeshStore.getState();
@@ -97,6 +100,13 @@ describe("vmesh store", () => {
 
     useVmeshStore.getState().toggleGlobeTheme();
     expect(useVmeshStore.getState().globeTheme).toBe(beforeTheme);
+
+    useVmeshStore.getState().cycleGlobeBackdropMode();
+    expect(useVmeshStore.getState().globeBackdropMode).not.toBe(beforeBackdrop);
+    useVmeshStore.getState().setGlobeBackdropMode("blank");
+    expect(useVmeshStore.getState().globeBackdropMode).toBe("blank");
+    useVmeshStore.getState().setGlobeBackdropMode(beforeBackdrop);
+    expect(useVmeshStore.getState().globeBackdropMode).toBe(beforeBackdrop);
   });
 
   it("tracks terrain contour status and hub playbook actions in Zustand", () => {
@@ -147,6 +157,10 @@ describe("vmesh store", () => {
     expect(state.selectedImageryLayer).toBe("ndvi");
     expect(state.activeLayers.imagery).toBe(true);
     expect(state.imageryManifest.clearPixelRatioAoi).toBeGreaterThanOrEqual(0.95);
+
+    useVmeshStore.getState().setLayerEnabled("terrain", false);
+    useVmeshStore.getState().setSelectedMacroLayer("terrain-elevation");
+    expect(useVmeshStore.getState().activeLayers.terrain).toBe(true);
 
     useVmeshStore.getState().setLayerEnabled("macro", false);
     useVmeshStore.getState().setLayerEnabled("imagery", false);

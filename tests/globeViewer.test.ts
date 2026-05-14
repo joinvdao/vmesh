@@ -16,7 +16,9 @@ describe("globe viewer mode helpers", () => {
   });
 
   it("increases map visibility as the user flies closer", () => {
+    expect(getMapCanvasOpacity(2.3)).toBeLessThan(0.1);
     expect(getMapCanvasOpacity(2.3)).toBeLessThan(getMapCanvasOpacity(10));
+    expect(getMapCanvasOpacity(OSS_MAP_OUTPUT_ZOOM)).toBeGreaterThan(0.8);
     expect(getOssRasterOpacity(4)).toBeLessThan(getOssRasterOpacity(12));
   });
 

@@ -424,8 +424,8 @@ async function main() {
 
     await waitForBodyText(
       client,
-      ["Decorative globe texture", "Hex Count 1"],
-      "First viewport did not reach the expected decorative globe state."
+      ["Three.js atlas sphere", "Visual orbit mode", "Hex Count 1"],
+      "First viewport did not reach the expected orbit globe state."
     );
     const scroll = await evaluate(
       client,
@@ -465,11 +465,17 @@ async function main() {
 
     await evaluate(
       client,
-      "const input = document.querySelector('input[name=\"location-search\"]'); input.value = 'London'; input.dispatchEvent(new Event('input', { bubbles: true })); input.closest('form').requestSubmit();"
+      `(() => {
+        const input = document.querySelector('input[name="location-search"]');
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+        setter?.call(input, "London");
+        input.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: "London" }));
+        input.closest("form").requestSubmit();
+      })()`
     );
     await waitForBodyText(
       client,
-      ["OSS Map Output", "Source-backed map output", "SELECTED HEX"],
+      ["OSS Map Output", "Source-backed map output", "Hex Count 1"],
       "Close zoom did not switch to source-backed map output."
     );
     const closeMode = await evaluate(

@@ -23,6 +23,7 @@ export type ImageryProviderStatus = TerrainProviderStatus;
 export type BasemapProviderKind =
   | "protomaps-pmtiles"
   | "openfreemap-vector"
+  | "mapbox-satellite-raster"
   | "maplibre-demo"
   | "custom-style-json"
   | "offline-shell";

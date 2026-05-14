@@ -51,7 +51,18 @@ export function BottomAnalytics() {
   const terrainStatus = useVmeshStore((state) => state.mapStatus.terrain);
   const setActivePanel = useVmeshStore((state) => state.setActivePanel);
   const topRegions = [...initialHexDataByTier.U5]
-    .sort((a, b) => b.antifragilityScore - a.antifragilityScore)
+    .map((region) => ({
+      ...region,
+      dataCount:
+        region.provenance.sourceCount +
+        region.micro.properties +
+        region.micro.farmersMarkets +
+        region.micro.growers +
+        region.micro.communityAssets +
+        region.user.observations +
+        region.user.privateNotes
+    }))
+    .sort((a, b) => b.dataCount - a.dataCount)
     .slice(0, 4);
 
   return (
@@ -68,7 +79,7 @@ export function BottomAnalytics() {
       <div className="flex h-full gap-3 overflow-x-auto pb-1 vmesh-scrollbar">
         <AnalyticsCard>
           <CardHeader>
-            <CardTitle>Top Antifragile Regions</CardTitle>
+            <CardTitle>Regional Data Coverage</CardTitle>
             <CircleHelp className="h-3.5 w-3.5 text-[#8a98a5]" />
           </CardHeader>
           <CardContent>
@@ -80,18 +91,18 @@ export function BottomAnalytics() {
               {topRegions.map((region, index) => (
                 <div
                   key={region.h3Id}
-                  className="grid grid-cols-[20px_1fr_34px] items-center gap-2 text-xs"
+                  className="grid grid-cols-[20px_1fr_52px] items-center gap-2 text-xs"
                 >
                   <span className="text-[#7b8893]">{index + 1}</span>
                   <span className="truncate text-[#41515f]">{region.placeName}</span>
                   <span className="text-right font-semibold text-[#0f766e]">
-                    {region.antifragilityScore}
+                    {region.dataCount} src
                   </span>
                 </div>
               ))}
             </div>
             <Button variant="outline" size="sm" className="mt-4 w-full text-xs">
-              View all regions
+              Review source coverage
             </Button>
           </CardContent>
         </AnalyticsCard>

@@ -131,6 +131,7 @@ export function useTerrainGlobeRenderer({
         });
 
         mapRef.current = map;
+        map.scrollZoom.disable();
         if (process.env.NODE_ENV !== "production") {
           (
             window as Window & {
