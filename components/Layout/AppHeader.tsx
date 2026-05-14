@@ -200,7 +200,7 @@ export function AppHeader() {
   };
 
   return (
-    <header className="absolute left-20 right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-[#dfe8e6] bg-white/[0.88] px-5 shadow-[0_2px_18px_rgba(31,53,58,0.04)] backdrop-blur">
+    <header className="absolute left-20 right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-[#B6D9D1] bg-white/[0.88] px-5 shadow-[0_2px_18px_rgba(31,53,58,0.04)] backdrop-blur">
       <div className="relative">
         <form
           onSubmit={handleSubmit}
@@ -208,8 +208,8 @@ export function AppHeader() {
             searchState === "error"
               ? "border-[#d99575]"
               : searchState === "found"
-                ? "border-[#7acbc0]"
-                : "border-[#dfe8e6]"
+                ? "border-[#36DFAE]"
+                : "border-[#B6D9D1]"
           }`}
         >
           <Search className="h-4 w-4 text-[#6d7b87]" />
@@ -235,7 +235,7 @@ export function AppHeader() {
           />
           <button
             type="submit"
-            className="rounded-[4px] bg-[#f2f6f5] px-1.5 py-0.5 font-mono text-[10px] text-[#7b8893] transition hover:bg-[#e6f2ef] hover:text-[#0f766e]"
+            className="rounded-[4px] bg-[#F3FBF8] px-1.5 py-0.5 font-mono text-[10px] text-[#6F8589] transition hover:bg-[#e6f2ef] hover:text-[#2DBA91]"
           >
             {isSearching || isAutocompleteLoading ? "..." : "/"}
           </button>
@@ -244,7 +244,7 @@ export function AppHeader() {
           <div
             id="location-search-suggestions"
             role="listbox"
-            className="absolute left-0 top-12 z-50 w-[min(520px,calc(100vw-460px))] min-w-[320px] overflow-hidden rounded-[10px] border border-[#dfe8e6] bg-white shadow-[0_18px_42px_rgba(31,53,58,0.16)]"
+            className="absolute left-0 top-12 z-50 w-[min(520px,calc(100vw-460px))] min-w-[320px] overflow-hidden rounded-[10px] border border-[#B6D9D1] bg-white shadow-[0_18px_42px_rgba(31,53,58,0.16)]"
           >
             {suggestions.map((suggestion, index) => (
               <button
@@ -257,18 +257,18 @@ export function AppHeader() {
                   applyLocation(suggestion);
                 }}
                 className={`grid w-full grid-cols-[1fr_auto] gap-3 px-3 py-2.5 text-left transition ${
-                  index === activeSuggestionIndex ? "bg-[#e8f6f3]" : "bg-white hover:bg-[#f4faf8]"
+                  index === activeSuggestionIndex ? "bg-[#E7F8F2]" : "bg-white hover:bg-[#f4faf8]"
                 }`}
               >
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-[#41515f]">
+                  <span className="block truncate text-sm font-semibold text-[#2D545B]">
                     {suggestion.label.split(",")[0]}
                   </span>
-                  <span className="block truncate text-[11px] text-[#7b8893]">
+                  <span className="block truncate text-[11px] text-[#6F8589]">
                     {suggestion.label}
                   </span>
                 </span>
-                <span className="self-center rounded-full bg-[#f2f6f5] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#64727d]">
+                <span className="self-center rounded-full bg-[#F3FBF8] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6F8589]">
                   {suggestion.source === "remote" ? "OSM" : suggestion.category}
                 </span>
               </button>
@@ -293,7 +293,7 @@ export function AppHeader() {
           Filters
           <ChevronDown className="h-3.5 w-3.5" />
         </Button>
-        <div className="ml-4 flex items-center gap-1 border-l border-[#e6eeec] pl-4">
+        <div className="ml-4 flex items-center gap-1 border-l border-[#D7EAE5] pl-4">
           <Tooltip label={globeTheme === "dark" ? "Switch to light globe" : "Switch to dark globe"}>
             <Button
               variant="ghost"
@@ -324,9 +324,9 @@ export function AppHeader() {
             </Button>
           </Tooltip>
         </div>
-        <div className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#dfe8e6] bg-[#f6faf9] text-xs font-semibold text-[#52616f]">
+        <div className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#B6D9D1] bg-[#f6faf9] text-xs font-semibold text-[#5F777C]">
           AM
-          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-[#54b7a7]" />
+          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-[#36DFAE]" />
         </div>
       </div>
     </header>

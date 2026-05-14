@@ -45,13 +45,13 @@ export function ImageryPanel() {
   const setSelectedImageryLayer = useVmeshStore((state) => state.setSelectedImageryLayer);
 
   return (
-    <div className="absolute left-6 top-6 z-30 w-[360px] rounded-[12px] border border-[#dfe8e6] bg-white/[0.94] p-4 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
+    <div className="absolute left-6 top-6 z-30 w-[360px] rounded-[12px] border border-[#B6D9D1] bg-white/[0.94] p-4 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#52616f]">
+          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#5F777C]">
             Imagery
           </div>
-          <div className="mt-1 text-[11px] text-[#7b8893]">
+          <div className="mt-1 text-[11px] text-[#6F8589]">
             Sentinel and SEN2SR are optional raster layers, never the basemap.
           </div>
         </div>
@@ -66,11 +66,11 @@ export function ImageryPanel() {
         </Button>
       </div>
 
-      <div className="mb-3 flex items-center justify-between rounded-[8px] border border-[#e3ece9] bg-[#f7fbfa] px-3 py-2 text-xs">
-        <span className="font-medium text-[#41515f]">Raster layer</span>
+      <div className="mb-3 flex items-center justify-between rounded-[8px] border border-[#D7EAE5] bg-[#F3FBF8] px-3 py-2 text-xs">
+        <span className="font-medium text-[#2D545B]">Raster layer</span>
         <button
           className={`rounded-[7px] px-2 py-1 text-[10px] font-semibold uppercase ${
-            activeLayers.imagery ? "bg-[#0f766e] text-white" : "bg-[#eef5f3] text-[#52616f]"
+            activeLayers.imagery ? "bg-[#2DBA91] text-white" : "bg-[#eef5f3] text-[#5F777C]"
           }`}
           onClick={() => setLayerEnabled("imagery", !activeLayers.imagery)}
         >
@@ -86,8 +86,8 @@ export function ImageryPanel() {
               key={layer.id}
               className={`rounded-[8px] border p-3 text-left ${
                 isActive
-                  ? "border-[#78c8bd] bg-[#e8f6f3] text-[#0f766e]"
-                  : "border-[#e3ece9] bg-white text-[#52616f] hover:border-[#b7dcd5]"
+                  ? "border-[#36DFAE] bg-[#E7F8F2] text-[#2DBA91]"
+                  : "border-[#D7EAE5] bg-white text-[#5F777C] hover:border-[#B6D9D1]"
               }`}
               onClick={() => setSelectedImageryLayer(layer.id)}
             >
@@ -95,14 +95,14 @@ export function ImageryPanel() {
                 <layer.icon className="h-4 w-4" />
                 {layer.label}
               </div>
-              <div className="mt-1 text-[11px] leading-4 text-[#7b8893]">{layer.note}</div>
+              <div className="mt-1 text-[11px] leading-4 text-[#6F8589]">{layer.note}</div>
             </button>
           );
         })}
       </div>
 
       <div className="mt-4">
-        <div className="mb-2 flex justify-between text-[11px] text-[#6f7d88]">
+        <div className="mb-2 flex justify-between text-[11px] text-[#6F8589]">
           <span>Compare</span>
           <span>Imagery</span>
         </div>
@@ -113,7 +113,7 @@ export function ImageryPanel() {
           max={85}
           value={Math.round(imageryOpacity * 100)}
           onChange={(event) => setImageryOpacity(Number(event.target.value) / 100)}
-          className="w-full accent-[#2f9b93]"
+          className="w-full accent-[#2DBA91]"
         />
       </div>
 
@@ -123,38 +123,38 @@ export function ImageryPanel() {
             key={provider.id}
             className={`rounded-[8px] border px-2 py-2 text-left ${
               selectedImageryProviderId === provider.id
-                ? "border-[#78c8bd] bg-[#e8f6f3] text-[#0f766e]"
-                : "border-[#e3ece9] bg-white text-[#52616f]"
+                ? "border-[#36DFAE] bg-[#E7F8F2] text-[#2DBA91]"
+                : "border-[#D7EAE5] bg-white text-[#5F777C]"
             }`}
             onClick={() => setActiveImageryProvider(provider.id, `${provider.label} selected`)}
           >
             <div className="font-semibold">{provider.label}</div>
-            <div className="mt-1 text-[10px] uppercase text-[#7b8893]">{provider.status}</div>
+            <div className="mt-1 text-[10px] uppercase text-[#6F8589]">{provider.status}</div>
           </button>
         ))}
       </div>
 
-      <div className="mt-4 rounded-[8px] border border-[#e3ece9] bg-[#fbfdfc] p-3 text-xs text-[#52616f]">
+      <div className="mt-4 rounded-[8px] border border-[#D7EAE5] bg-[#FFFFFF] p-3 text-xs text-[#5F777C]">
         <div className="flex items-center justify-between">
-          <span className="font-semibold text-[#41515f]">Latest manifest</span>
-          <span className="rounded-full bg-[#e7f4f1] px-2 py-1 text-[10px] font-semibold uppercase text-[#0f766e]">
+          <span className="font-semibold text-[#2D545B]">Latest manifest</span>
+          <span className="rounded-full bg-[#E7F8F2] px-2 py-1 text-[10px] font-semibold uppercase text-[#2DBA91]">
             clear {Math.round(imageryManifest.clearPixelRatioAoi * 100)}%
           </span>
         </div>
         <div className="mt-2 leading-5">
           {imageryManifest.sourceSceneId} | {imageryManifest.acquiredAt.slice(0, 10)}
         </div>
-        <div className="mt-2 text-[#7b8893]">
+        <div className="mt-2 text-[#6F8589]">
           NDVI {imageryManifest.ndviMean.toFixed(2)} | NDWI {imageryManifest.ndwiMean.toFixed(2)} |
           cloud scene {imageryManifest.cloudCoverScene.toFixed(1)}%
         </div>
-        <div className="mt-2 text-[#7b8893]">
+        <div className="mt-2 text-[#6F8589]">
           AI-enhanced imagery is not authoritative survey, emergency, or legal-boundary imagery.
         </div>
       </div>
 
-      <div className="mt-3 text-[11px] text-[#7b8893]">
-        Imagery status: <span className="font-medium text-[#41515f]">{mapStatus.imagery}</span>
+      <div className="mt-3 text-[11px] text-[#6F8589]">
+        Imagery status: <span className="font-medium text-[#2D545B]">{mapStatus.imagery}</span>
       </div>
     </div>
   );

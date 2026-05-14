@@ -5,9 +5,13 @@
 @tailwind utilities;
 
 :root {
-  --background: #f7faf9;
-  --foreground: #24323f;
-  --border: #dfe8e6;
+  --background: #f3fbf8;
+  --foreground: #1d555c;
+  --muted-foreground: #5f777c;
+  --border: #b6d9d1;
+  --vdao-primary: #2dba91;
+  --vdao-primary-bright: #36dfae;
+  --vdao-surface: #ffffff;
 }
 
 * {
@@ -24,13 +28,21 @@ body {
 
 body {
   font-family:
-    Inter,
+    var(--font-satoshi),
     ui-sans-serif,
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+}
+
+h1,
+h2,
+h3,
+.vdao-display {
+  font-family: var(--font-clash-display), var(--font-satoshi), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0;
 }
 
 .maplibregl-ctrl-bottom-left,
@@ -40,7 +52,7 @@ body {
 
 .vmesh-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #b6cbc7 transparent;
+  scrollbar-color: #b6d9d1 transparent;
 }
 
 .vmesh-scrollbar::-webkit-scrollbar {
@@ -49,7 +61,7 @@ body {
 }
 
 .vmesh-scrollbar::-webkit-scrollbar-thumb {
-  background: #b6cbc7;
+  background: #b6d9d1;
   border-radius: 9999px;
 }
 

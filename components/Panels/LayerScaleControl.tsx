@@ -24,9 +24,9 @@ export function LayerScaleControl() {
   const setSelectedTier = useVmeshStore((state) => state.setSelectedTier);
 
   return (
-    <div className="absolute right-6 top-6 z-30 w-72 rounded-[12px] border border-[#dfe8e6] bg-white/[0.94] p-4 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
+    <div className="absolute right-6 top-6 z-30 w-72 rounded-[12px] border border-[#B6D9D1] bg-white/[0.94] p-4 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <div className="mb-4 flex items-center justify-between">
-        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#52616f]">
+        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#5F777C]">
           Layer Controls
         </div>
         <Button
@@ -40,7 +40,7 @@ export function LayerScaleControl() {
         </Button>
       </div>
 
-      <div className="mb-3 rounded-[10px] border border-[#e3ece9] bg-[#f7fbfa] p-3 text-[11px] leading-5 text-[#52616f]">
+      <div className="mb-3 rounded-[10px] border border-[#D7EAE5] bg-[#F3FBF8] p-3 text-[11px] leading-5 text-[#5F777C]">
         H3 is the private data index. The visible mesh stays off until you need an analytical
         overlay.
       </div>
@@ -50,7 +50,7 @@ export function LayerScaleControl() {
           <button
             key={layer.key}
             className={`rounded-[8px] px-2 py-2 text-[10px] font-semibold uppercase ${
-              activeLayers[layer.key] ? "bg-[#0f766e] text-white" : "bg-[#eef5f3] text-[#52616f]"
+              activeLayers[layer.key] ? "bg-[#2DBA91] text-white" : "bg-[#eef5f3] text-[#5F777C]"
             }`}
             onClick={() => setLayerEnabled(layer.key, !activeLayers[layer.key])}
           >
@@ -59,7 +59,7 @@ export function LayerScaleControl() {
         ))}
       </div>
 
-      <div className="mb-2 flex justify-between text-[11px] text-[#6f7d88]">
+      <div className="mb-2 flex justify-between text-[11px] text-[#6F8589]">
         <span>Macro</span>
         <span>Micro</span>
       </div>
@@ -70,7 +70,7 @@ export function LayerScaleControl() {
         max={100}
         value={layerScale}
         onChange={(event) => setLayerScale(Number(event.target.value))}
-        className="w-full accent-[#2f9b93]"
+        className="w-full accent-[#2DBA91]"
       />
 
       <div className="mt-4 grid grid-cols-3 gap-2">
@@ -78,7 +78,7 @@ export function LayerScaleControl() {
           <button
             key={tier}
             className={`rounded-[8px] px-2 py-2 text-[10px] font-semibold ${
-              selectedTier === tier ? "bg-[#0f766e] text-white" : "bg-[#eef5f3] text-[#52616f]"
+              selectedTier === tier ? "bg-[#2DBA91] text-white" : "bg-[#eef5f3] text-[#5F777C]"
             }`}
             onClick={() => setSelectedTier(tier)}
           >

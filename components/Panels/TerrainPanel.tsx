@@ -53,8 +53,8 @@ function ProviderCard({
     <button
       className={`rounded-[10px] border p-3 text-left transition ${
         isSelected
-          ? "border-[#72c7bc] bg-[#e8f6f3] shadow-[0_10px_24px_rgba(15,118,110,0.08)]"
-          : "border-[#e3ece9] bg-white hover:border-[#b7dcd5]"
+          ? "border-[#36DFAE] bg-[#E7F8F2] shadow-[0_10px_24px_rgba(15,118,110,0.08)]"
+          : "border-[#D7EAE5] bg-white hover:border-[#B6D9D1]"
       }`}
       onClick={onSelect}
       disabled={!isMapReady}
@@ -62,37 +62,37 @@ function ProviderCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#41515f]">
-            <Mountain className="h-4 w-4 shrink-0 text-[#0f766e]" />
+          <div className="flex items-center gap-2 text-sm font-semibold text-[#2D545B]">
+            <Mountain className="h-4 w-4 shrink-0 text-[#2DBA91]" />
             <span className="truncate">{provider.label}</span>
           </div>
-          <div className="mt-1 text-[11px] uppercase tracking-[0.08em] text-[#7b8893]">
+          <div className="mt-1 text-[11px] uppercase tracking-[0.08em] text-[#6F8589]">
             {provider.kind} | {provider.encoding}
           </div>
         </div>
         <span
           className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold uppercase ${
-            isSelected ? "bg-[#0f766e] text-white" : "bg-[#f3f7f6] text-[#64727d]"
+            isSelected ? "bg-[#2DBA91] text-white" : "bg-[#f3f7f6] text-[#6F8589]"
           }`}
         >
           {isSelected ? "Selected" : badge}
         </span>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-[#52616f]">
-        <div className="rounded-[7px] bg-[#f7fbfa] px-2 py-1">
+      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-[#5F777C]">
+        <div className="rounded-[7px] bg-[#F3FBF8] px-2 py-1">
           Max zoom <span className="font-semibold">{provider.maxzoom ?? "n/a"}</span>
         </div>
-        <div className="rounded-[7px] bg-[#f7fbfa] px-2 py-1">
+        <div className="rounded-[7px] bg-[#F3FBF8] px-2 py-1">
           Tile <span className="font-semibold">{provider.tileSize ?? "n/a"}</span>
         </div>
       </div>
 
-      <div className="mt-3 line-clamp-2 text-xs leading-5 text-[#64727d]">{provider.notes}</div>
-      <div className="mt-2 text-[11px] text-[#7b8893]">{provider.license}</div>
+      <div className="mt-3 line-clamp-2 text-xs leading-5 text-[#6F8589]">{provider.notes}</div>
+      <div className="mt-2 text-[11px] text-[#6F8589]">{provider.license}</div>
 
       {isSelected ? (
-        <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-[#0f766e]">
+        <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-[#2DBA91]">
           <Check className="h-3.5 w-3.5" />
           Feeds terrain and hillshade overlay
         </div>
@@ -117,13 +117,13 @@ export function TerrainPanel() {
   );
 
   return (
-    <div className="absolute left-6 top-6 z-30 flex max-h-[calc(100%-48px)] w-[380px] flex-col rounded-[12px] border border-[#dfe8e6] bg-white/[0.94] p-4 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
+    <div className="absolute left-6 top-6 z-30 flex max-h-[calc(100%-48px)] w-[380px] flex-col rounded-[12px] border border-[#B6D9D1] bg-white/[0.94] p-4 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#52616f]">
+          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#5F777C]">
             Terrain Overlay
           </div>
-          <div className="mt-1 text-[11px] leading-4 text-[#7b8893]">
+          <div className="mt-1 text-[11px] leading-4 text-[#6F8589]">
             Mapterhorn PMTiles first, Mapzen Joerd Terrarium as the no-token backup. Toggle this on
             over the searched place to move from flat basemap context into terrain relief.
           </div>
@@ -139,19 +139,19 @@ export function TerrainPanel() {
         </Button>
       </div>
 
-      <div className="mb-3 grid grid-cols-[1fr_auto] items-center gap-3 rounded-[10px] border border-[#e3ece9] bg-[#f7fbfa] p-3">
+      <div className="mb-3 grid grid-cols-[1fr_auto] items-center gap-3 rounded-[10px] border border-[#D7EAE5] bg-[#F3FBF8] p-3">
         <div>
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#41515f]">
-            <Layers3 className="h-4 w-4 text-[#0f766e]" />
+          <div className="flex items-center gap-2 text-sm font-semibold text-[#2D545B]">
+            <Layers3 className="h-4 w-4 text-[#2DBA91]" />
             DEM overlay
           </div>
-          <div className="mt-1 text-[11px] text-[#7b8893]">
+          <div className="mt-1 text-[11px] text-[#6F8589]">
             Applies MapLibre terrain plus hillshade, beneath the H3 data overlays.
           </div>
         </div>
         <button
           className={`rounded-[8px] px-3 py-2 text-[10px] font-semibold uppercase ${
-            activeLayers.terrain ? "bg-[#0f766e] text-white" : "bg-[#eef5f3] text-[#52616f]"
+            activeLayers.terrain ? "bg-[#2DBA91] text-white" : "bg-[#eef5f3] text-[#5F777C]"
           }`}
           onClick={() => setLayerEnabled("terrain", !activeLayers.terrain)}
           aria-pressed={activeLayers.terrain}
@@ -172,27 +172,27 @@ export function TerrainPanel() {
           ))}
         </section>
 
-        <section className="rounded-[10px] border border-[#e3ece9] bg-[#fbfdfc] p-3 text-xs text-[#52616f]">
+        <section className="rounded-[10px] border border-[#D7EAE5] bg-[#FFFFFF] p-3 text-xs text-[#5F777C]">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2 font-semibold text-[#41515f]">
-              <Database className="h-3.5 w-3.5 text-[#0f766e]" />
+            <span className="flex items-center gap-2 font-semibold text-[#2D545B]">
+              <Database className="h-3.5 w-3.5 text-[#2DBA91]" />
               Runtime status
             </span>
-            <span className="rounded-full bg-[#e7f4f1] px-2 py-1 text-[10px] font-semibold uppercase text-[#0f766e]">
+            <span className="rounded-full bg-[#E7F8F2] px-2 py-1 text-[10px] font-semibold uppercase text-[#2DBA91]">
               {mapStatus.terrain}
             </span>
           </div>
           <div className="leading-5">
             Active provider:{" "}
-            <span className="font-semibold text-[#41515f]">
+            <span className="font-semibold text-[#2D545B]">
               {selectedProvider?.label ?? mapStatus.providerId}
             </span>
           </div>
-          <div className="mt-1 text-[#7b8893]">{mapStatus.message}</div>
+          <div className="mt-1 text-[#6F8589]">{mapStatus.message}</div>
         </section>
 
-        <section className="rounded-[10px] border border-[#e3ece9] bg-white/[0.86] p-3">
-          <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#52616f]">
+        <section className="rounded-[10px] border border-[#D7EAE5] bg-white/[0.86] p-3">
+          <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#5F777C]">
             <ShieldCheck className="h-3.5 w-3.5" />
             Future terrain sources
           </div>
@@ -200,33 +200,33 @@ export function TerrainPanel() {
             {futureProviders.map((provider) => (
               <div
                 key={provider.id}
-                className="rounded-[8px] bg-[#f7fbfa] px-3 py-2 text-xs text-[#52616f]"
+                className="rounded-[8px] bg-[#F3FBF8] px-3 py-2 text-xs text-[#5F777C]"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="font-semibold text-[#41515f]">{provider.label}</span>
-                  <span className="rounded-full bg-[#eef5f3] px-2 py-1 text-[10px] font-semibold uppercase text-[#64727d]">
+                  <span className="font-semibold text-[#2D545B]">{provider.label}</span>
+                  <span className="rounded-full bg-[#eef5f3] px-2 py-1 text-[10px] font-semibold uppercase text-[#6F8589]">
                     {availabilityLabels[provider.status]}
                   </span>
                 </div>
-                <div className="mt-1 text-[#7b8893]">{provider.notes}</div>
+                <div className="mt-1 text-[#6F8589]">{provider.notes}</div>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="rounded-[10px] border border-[#e3ece9] bg-[#fbfdfc] p-3 text-xs text-[#52616f]">
-          <div className="flex items-center gap-2 font-semibold text-[#41515f]">
-            <Map className="h-3.5 w-3.5 text-[#0f766e]" />
+        <section className="rounded-[10px] border border-[#D7EAE5] bg-[#FFFFFF] p-3 text-xs text-[#5F777C]">
+          <div className="flex items-center gap-2 font-semibold text-[#2D545B]">
+            <Map className="h-3.5 w-3.5 text-[#2DBA91]" />
             Click-through behavior
           </div>
-          <div className="mt-2 leading-5 text-[#7b8893]">
+          <div className="mt-2 leading-5 text-[#6F8589]">
             This panel changes the DEM overlay source only. It remains available after search zooms,
             so the selected area can be inspected as either source-backed basemap context or
             Mapterhorn/Mapzen terrain relief. The selected-cell marker, macro layers, imagery, and
             future H3 knowledge graph remain interactive above it.
           </div>
           <a
-            className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#0f766e]"
+            className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#2DBA91]"
             href={selectedProvider?.sourceUrl}
             target="_blank"
             rel="noreferrer"

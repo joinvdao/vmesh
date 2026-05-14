@@ -19,19 +19,19 @@ export function MeshTooltip() {
 
   return (
     <div
-      className="pointer-events-none absolute z-30 w-56 rounded-[8px] border border-[#dfe8e6] bg-white/95 p-3 text-xs text-[#52616f] shadow-[0_18px_40px_rgba(31,53,58,0.18)] backdrop-blur"
+      className="pointer-events-none absolute z-30 w-56 rounded-[8px] border border-[#B6D9D1] bg-white/95 p-3 text-xs text-[#5F777C] shadow-[0_18px_40px_rgba(31,53,58,0.18)] backdrop-blur"
       style={{ left: hovered.x + 16, top: hovered.y + 16 }}
     >
-      <div className="font-mono text-[11px] text-[#24323f]">{record.h3Id}</div>
+      <div className="font-mono text-[11px] text-[#1D555C]">{record.h3Id}</div>
       <div className="mt-1">{record.placeName}</div>
       <div className="mt-2 flex items-center justify-between">
         <span>{record.tier} mesh</span>
-        <span className="font-semibold text-[#0f766e]">{record.antifragilityScore}/100</span>
+        <span className="font-semibold text-[#2DBA91]">{record.antifragilityScore}/100</span>
       </div>
       {macroValue !== null ? (
-        <div className="mt-2 flex items-center justify-between border-t border-[#e6eeec] pt-2">
+        <div className="mt-2 flex items-center justify-between border-t border-[#D7EAE5] pt-2">
           <span>{MACRO_LAYER_LABELS[selectedMacroLayer]}</span>
-          <span className="font-semibold text-[#0f766e]">{macroValue}/100</span>
+          <span className="font-semibold text-[#2DBA91]">{macroValue}/100</span>
         </div>
       ) : null}
     </div>

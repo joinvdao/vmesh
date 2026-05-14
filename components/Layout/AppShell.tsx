@@ -23,8 +23,8 @@ export function AppShell() {
   return (
     <div
       data-globe-theme={globeTheme}
-      className={`relative h-screen w-screen overflow-hidden text-[#24323f] transition-colors duration-500 ${
-        globeTheme === "dark" ? "bg-[#02050c]" : "bg-[#f7faf9]"
+      className={`relative h-screen w-screen overflow-hidden text-[#1D555C] transition-colors duration-500 ${
+        globeTheme === "dark" ? "bg-[#02050c]" : "bg-[#F3FBF8]"
       }`}
     >
       <AppSidebar />

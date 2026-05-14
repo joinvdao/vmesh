@@ -21,13 +21,13 @@ export function MapControls() {
   const terrainVisible = activeLayers.terrain;
 
   return (
-    <div className="absolute left-6 top-6 z-20 flex flex-col gap-2 rounded-[10px] border border-[#dfe8e6] bg-white/[0.82] p-2 shadow-[0_14px_35px_rgba(31,53,58,0.12)] backdrop-blur">
+    <div className="absolute left-6 top-6 z-20 flex flex-col gap-2 rounded-[10px] border border-[#B6D9D1] bg-white/[0.82] p-2 shadow-[0_14px_35px_rgba(31,53,58,0.12)] backdrop-blur">
       <Tooltip label={meshVisible ? "Hide mesh overlay" : "Show mesh overlay"}>
         <Button
           variant="ghost"
           size="icon"
           className={`h-10 w-10 bg-white ${
-            meshVisible ? "text-[#0f766e]" : "text-[#52616f] hover:text-[#0f766e]"
+            meshVisible ? "text-[#2DBA91]" : "text-[#5F777C] hover:text-[#2DBA91]"
           }`}
           onClick={() => setLayerEnabled("context", !meshVisible)}
           aria-pressed={meshVisible}
@@ -41,7 +41,7 @@ export function MapControls() {
           variant="ghost"
           size="icon"
           className={`h-10 w-10 bg-white ${
-            terrainVisible ? "text-[#0f766e]" : "text-[#52616f] hover:text-[#0f766e]"
+            terrainVisible ? "text-[#2DBA91]" : "text-[#5F777C] hover:text-[#2DBA91]"
           }`}
           onClick={() => setActivePanel("terrain")}
           aria-pressed={terrainVisible}
@@ -55,7 +55,7 @@ export function MapControls() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 bg-white text-[#52616f] hover:text-[#0f766e]"
+            className="h-10 w-10 bg-white text-[#5F777C] hover:text-[#2DBA91]"
             onClick={control.label === "Target hex" ? () => setActivePanel("hex") : undefined}
             aria-label={control.label}
           >

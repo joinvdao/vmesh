@@ -59,6 +59,7 @@ Copy `.env.example` to `.env.local` for local overrides. Do not commit real secr
 - `NEXT_PUBLIC_OFFLINE_RASTER_PMTILES_URL`: optional local hub imagery PMTiles URL.
 - `NEXT_PUBLIC_MAPBOX_TOKEN`: optional Mapbox satellite comparison token; never commit real tokens.
 - `NEXT_PUBLIC_ANALYTICS_ENDPOINT`: optional future analytics endpoint.
+- `BASE_PATH` / `NEXT_PUBLIC_BASE_PATH`: set both to `/vmesh` when deploying behind the main VDAO app proxy at `vdao.io/vmesh`.
 
 If no terrain env provider is configured, V1 selects a no-token demo raster-dem fallback. If terrain fails, the globe shell remains nonblank and the footer reports provider status.
 

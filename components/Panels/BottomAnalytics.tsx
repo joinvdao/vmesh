@@ -33,8 +33,8 @@ const climateTrend = [
 ];
 
 const landUse = [
-  { name: "Forest", value: 36, color: "#2f9b93" },
-  { name: "Agriculture", value: 28, color: "#9fd8c5" },
+  { name: "Forest", value: 36, color: "#2DBA91" },
+  { name: "Agriculture", value: 28, color: "#36DFAE" },
   { name: "Grassland", value: 17, color: "#f3cf79" },
   { name: "Urban", value: 11, color: "#95a3ad" },
   { name: "Other", value: 8, color: "#d9e1df" }
@@ -55,7 +55,7 @@ export function BottomAnalytics() {
     .slice(0, 4);
 
   return (
-    <section className="absolute bottom-4 left-6 right-6 z-30 h-72 rounded-[14px] border border-[#dfe8e6] bg-white/[0.94] p-3 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
+    <section className="absolute bottom-4 left-6 right-6 z-30 h-72 rounded-[14px] border border-[#B6D9D1] bg-white/[0.94] p-3 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <Button
         variant="ghost"
         size="icon"
@@ -82,9 +82,9 @@ export function BottomAnalytics() {
                   key={region.h3Id}
                   className="grid grid-cols-[20px_1fr_34px] items-center gap-2 text-xs"
                 >
-                  <span className="text-[#7b8893]">{index + 1}</span>
-                  <span className="truncate text-[#41515f]">{region.placeName}</span>
-                  <span className="text-right font-semibold text-[#0f766e]">
+                  <span className="text-[#6F8589]">{index + 1}</span>
+                  <span className="truncate text-[#2D545B]">{region.placeName}</span>
+                  <span className="text-right font-semibold text-[#2DBA91]">
                     {region.antifragilityScore}
                   </span>
                 </div>
@@ -102,8 +102,8 @@ export function BottomAnalytics() {
             <CircleHelp className="h-3.5 w-3.5 text-[#8a98a5]" />
           </CardHeader>
           <CardContent>
-            <div className="text-xs text-[#7b8893]">Temperature Anomaly (C)</div>
-            <div className="mt-1 text-2xl font-light text-[#24323f]">+0.6 C</div>
+            <div className="text-xs text-[#6F8589]">Temperature Anomaly (C)</div>
+            <div className="mt-1 text-2xl font-light text-[#1D555C]">+0.6 C</div>
             <div className="h-28 overflow-hidden">
               <LineChart width={220} height={112} data={climateTrend}>
                 <XAxis
@@ -117,13 +117,13 @@ export function BottomAnalytics() {
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke="#2f9b93"
+                  stroke="#2DBA91"
                   strokeWidth={2}
                   dot={false}
                 />
               </LineChart>
             </div>
-            <div className="mt-2 rounded-[8px] border border-[#e6eeec] px-3 py-2 text-xs text-[#52616f]">
+            <div className="mt-2 rounded-[8px] border border-[#D7EAE5] px-3 py-2 text-xs text-[#5F777C]">
               Rising | +0.18 C / decade
             </div>
           </CardContent>
@@ -136,24 +136,24 @@ export function BottomAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-5">
-              <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-[conic-gradient(#2f9b93_0_266deg,#dce9e7_266deg_360deg)]">
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-[conic-gradient(#2DBA91_0_266deg,#dce9e7_266deg_360deg)]">
                 <div className="flex h-16 w-16 flex-col items-center justify-center rounded-full bg-white">
-                  <span className="text-2xl font-semibold text-[#0f766e]">74%</span>
-                  <span className="text-[10px] text-[#52616f]">High</span>
+                  <span className="text-2xl font-semibold text-[#2DBA91]">74%</span>
+                  <span className="text-[10px] text-[#5F777C]">High</span>
                 </div>
               </div>
               <div className="flex h-24 flex-1 items-end gap-1">
                 {Array.from({ length: 12 }, (_, index) => (
                   <div
                     key={index}
-                    className="flex-1 rounded-t bg-[#2f9b93]"
+                    className="flex-1 rounded-t bg-[#2DBA91]"
                     style={{ height: `${22 + index * 5}%`, opacity: 0.55 + index * 0.035 }}
                   />
                 ))}
               </div>
             </div>
-            <div className="mt-4 rounded-[8px] border border-[#e6eeec] px-3 py-2 text-center text-xs text-[#52616f]">
-              <ArrowUp className="mr-1 inline h-3.5 w-3.5 text-[#0f766e]" /> 8% vs last year
+            <div className="mt-4 rounded-[8px] border border-[#D7EAE5] px-3 py-2 text-center text-xs text-[#5F777C]">
+              <ArrowUp className="mr-1 inline h-3.5 w-3.5 text-[#2DBA91]" /> 8% vs last year
             </div>
           </CardContent>
         </AnalyticsCard>
@@ -164,13 +164,13 @@ export function BottomAnalytics() {
             <CircleHelp className="h-3.5 w-3.5 text-[#8a98a5]" />
           </CardHeader>
           <CardContent>
-            <div className="text-xs text-[#7b8893]">Local Water Stress</div>
-            <div className="mt-2 text-4xl font-light text-[#24323f]">2.6</div>
-            <div className="text-sm text-[#52616f]">Medium</div>
-            <div className="mt-8 h-2 rounded-full bg-gradient-to-r from-[#2f9b93] via-[#f3cf79] to-[#ee8f55]">
+            <div className="text-xs text-[#6F8589]">Local Water Stress</div>
+            <div className="mt-2 text-4xl font-light text-[#1D555C]">2.6</div>
+            <div className="text-sm text-[#5F777C]">Medium</div>
+            <div className="mt-8 h-2 rounded-full bg-gradient-to-r from-[#2DBA91] via-[#f3cf79] to-[#ee8f55]">
               <div className="ml-[52%] h-5 w-5 -translate-y-1.5 rounded-full border-2 border-white bg-[#f6c96f] shadow" />
             </div>
-            <div className="mt-4 flex justify-between text-[10px] text-[#7b8893]">
+            <div className="mt-4 flex justify-between text-[10px] text-[#6F8589]">
               <span>Low</span>
               <span>Medium</span>
               <span>High</span>
@@ -204,14 +204,14 @@ export function BottomAnalytics() {
               <div className="flex-1 space-y-2">
                 {landUse.map((item) => (
                   <div key={item.name} className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-2 text-[#52616f]">
+                    <span className="flex items-center gap-2 text-[#5F777C]">
                       <span
                         className="h-2 w-2 rounded-full"
                         style={{ backgroundColor: item.color }}
                       />
                       {item.name}
                     </span>
-                    <span className="text-[#7b8893]">{item.value}%</span>
+                    <span className="text-[#6F8589]">{item.value}%</span>
                   </div>
                 ))}
               </div>
@@ -225,7 +225,7 @@ export function BottomAnalytics() {
           </CardHeader>
           <CardContent>
             <Badge variant="neutral">Local Mock</Badge>
-            <p className="mt-5 text-sm leading-6 text-[#6f7d88]">
+            <p className="mt-5 text-sm leading-6 text-[#6F8589]">
               Parcel and listing signals are typed but fictional until lawful sources are
               configured.
             </p>
@@ -235,10 +235,10 @@ export function BottomAnalytics() {
         <AnalyticsCard className="max-w-[260px]">
           <CardHeader>
             <CardTitle>vmesh Notes</CardTitle>
-            <MoreVertical className="h-4 w-4 text-[#7b8893]" />
+            <MoreVertical className="h-4 w-4 text-[#6F8589]" />
           </CardHeader>
           <CardContent>
-            <div className="rounded-[8px] bg-[#f5faf9] p-3 text-sm leading-5 text-[#52616f]">
+            <div className="rounded-[8px] bg-[#f5faf9] p-3 text-sm leading-5 text-[#5F777C]">
               Terrain source is {terrainStatus}. {userRecords.length} private/local records are
               attached to the mesh.
             </div>

@@ -21,10 +21,10 @@ export function AppFooter() {
   const macroDataModeLabel = useVmeshStore((state) => state.macroDataModeLabel);
 
   return (
-    <footer className="absolute bottom-0 left-20 right-0 z-40 flex h-10 items-center justify-between border-t border-[#dfe8e6] bg-white/90 px-5 text-[11px] text-[#6f7d88] backdrop-blur">
+    <footer className="absolute bottom-0 left-20 right-0 z-40 flex h-10 items-center justify-between border-t border-[#B6D9D1] bg-white/90 px-5 text-[11px] text-[#6F8589] backdrop-blur">
       <div className="flex items-center gap-5">
         <span className="flex items-center gap-2">
-          <Hexagon className="h-4 w-4 text-[#2f9b93]" />
+          <Hexagon className="h-4 w-4 text-[#2DBA91]" />
           {formatCoordinate(viewState.latitude, "N", "S")},{" "}
           {formatCoordinate(viewState.longitude, "E", "W")}
         </span>
@@ -42,7 +42,7 @@ export function AppFooter() {
       <div className="flex items-center gap-4">
         <span>Basemap {mapStatus.basemapProviderId}</span>
         <span className="flex items-center gap-2">
-          <MapPin className="h-3.5 w-3.5 text-[#2f9b93]" />
+          <MapPin className="h-3.5 w-3.5 text-[#2DBA91]" />
           Terrain {mapStatus.terrain}
         </span>
         <span>Contours {mapStatus.contours}</span>
@@ -54,11 +54,11 @@ export function AppFooter() {
         <span>{selectedMacroSummary.provenance.sourceType}</span>
         <span>v1.0.0</span>
         <span className="flex items-center gap-2">
-          <Lock className="h-3.5 w-3.5 text-[#39a995]" />
+          <Lock className="h-3.5 w-3.5 text-[#36DFAE]" />
           Local Secure
         </span>
         <span className="flex items-center gap-2">
-          <ShieldCheck className="h-3.5 w-3.5 text-[#39a995]" />
+          <ShieldCheck className="h-3.5 w-3.5 text-[#36DFAE]" />
           Mock Data
         </span>
       </div>

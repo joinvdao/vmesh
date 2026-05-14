@@ -27,7 +27,7 @@ export function GlobeModeHud({ mode, zoom, basemapLabel, onBackToGlobe }: GlobeM
   };
 
   return (
-    <div className="absolute bottom-6 left-6 z-20 w-60 rounded-[10px] border border-[#dce8e6] bg-white/[0.84] p-3 text-[#24323f] shadow-[0_18px_45px_rgba(0,0,0,0.18)] backdrop-blur">
+    <div className="absolute bottom-6 left-6 z-20 w-60 rounded-[10px] border border-[#dce8e6] bg-white/[0.84] p-3 text-[#1D555C] shadow-[0_18px_45px_rgba(0,0,0,0.18)] backdrop-blur">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#697985]">
@@ -40,7 +40,7 @@ export function GlobeModeHud({ mode, zoom, basemapLabel, onBackToGlobe }: GlobeM
             {isMapOutput ? "Source-backed map output" : "Decorative globe texture"}
           </div>
         </div>
-        <div className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#cfe1de] bg-[#f3fbfa] text-[#0f766e]">
+        <div className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#cfe1de] bg-[#f3fbfa] text-[#2DBA91]">
           <Map className="h-4 w-4" />
         </div>
       </div>
@@ -66,13 +66,13 @@ export function GlobeModeHud({ mode, zoom, basemapLabel, onBackToGlobe }: GlobeM
             onClick={onBackToGlobe}
             onMouseDown={handleMouseBackToGlobe}
             onPointerDown={handleBackToGlobe}
-            className="flex shrink-0 items-center gap-1 rounded-[6px] border border-[#c8ddda] bg-white px-2 py-1 font-semibold text-[#0f766e] transition hover:border-[#92c9c1] hover:bg-[#ecf8f6]"
+            className="flex shrink-0 items-center gap-1 rounded-[6px] border border-[#c8ddda] bg-white px-2 py-1 font-semibold text-[#2DBA91] transition hover:border-[#92c9c1] hover:bg-[#ecf8f6]"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             Globe
           </button>
         ) : (
-          <span className="font-medium text-[#0f766e]">Drag to spin</span>
+          <span className="font-medium text-[#2DBA91]">Drag to spin</span>
         )}
       </div>
     </div>

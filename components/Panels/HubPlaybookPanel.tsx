@@ -34,12 +34,12 @@ export function HubPlaybookPanel() {
   return (
     <Card className="absolute right-6 top-6 z-30 w-80 bg-white/[0.94] p-3 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#52616f]">
-          <ClipboardList className="h-4 w-4 text-[#0f766e]" />
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#5F777C]">
+          <ClipboardList className="h-4 w-4 text-[#2DBA91]" />
           Build A Hub
         </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-[6px] bg-[#eef8f6] px-2 py-1 text-xs font-semibold text-[#0f766e]">
+          <span className="rounded-[6px] bg-[#F3FBF8] px-2 py-1 text-xs font-semibold text-[#2DBA91]">
             {playbook.readinessScore}%
           </span>
           <Button
@@ -57,25 +57,25 @@ export function HubPlaybookPanel() {
         {playbook.tasks.slice(0, 6).map((task) => (
           <button
             key={task.id}
-            className="flex w-full items-center gap-2 rounded-[8px] border border-[#e6eeec] bg-[#fbfdfc] px-2 py-2 text-left text-xs text-[#52616f] transition hover:border-[#9fd8c5]"
+            className="flex w-full items-center gap-2 rounded-[8px] border border-[#D7EAE5] bg-[#FFFFFF] px-2 py-2 text-left text-xs text-[#5F777C] transition hover:border-[#36DFAE]"
             onClick={() => toggleTask(task.id)}
           >
             <span
               className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] border ${
                 task.complete
-                  ? "border-[#0f766e] bg-[#0f766e] text-white"
+                  ? "border-[#2DBA91] bg-[#2DBA91] text-white"
                   : "border-[#c8d7d4] bg-white text-transparent"
               }`}
             >
               <Check className="h-3 w-3" />
             </span>
             <span className="min-w-0 flex-1 truncate">{task.title}</span>
-            <span className="font-mono text-[10px] uppercase text-[#7b8893]">{task.phase}</span>
+            <span className="font-mono text-[10px] uppercase text-[#6F8589]">{task.phase}</span>
           </button>
         ))}
       </div>
       <textarea
-        className="mt-3 h-16 w-full resize-none rounded-[8px] border border-[#e6eeec] bg-white px-3 py-2 text-xs text-[#41515f] outline-none focus:border-[#9fd8c5]"
+        className="mt-3 h-16 w-full resize-none rounded-[8px] border border-[#D7EAE5] bg-white px-3 py-2 text-xs text-[#2D545B] outline-none focus:border-[#36DFAE]"
         placeholder="Hub notes for selected hex"
         value={primaryTask?.notes ?? ""}
         onChange={(event) => {

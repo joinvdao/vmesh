@@ -70,13 +70,13 @@ export function MacroLayersPanel() {
   }, [activeLayers.macro, loadSelectedMacroWeather, selectedHexId, selectedMacroLayer]);
 
   return (
-    <div className="absolute left-6 top-6 z-30 w-[340px] rounded-[12px] border border-[#dfe8e6] bg-white/[0.94] p-4 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
+    <div className="absolute left-6 top-6 z-30 w-[340px] rounded-[12px] border border-[#B6D9D1] bg-white/[0.94] p-4 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#52616f]">
+          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#5F777C]">
             Macro Layers
           </div>
-          <div className="mt-1 text-[11px] text-[#7b8893]">
+          <div className="mt-1 text-[11px] text-[#6F8589]">
             H3 heat only appears when a layer is enabled.
           </div>
         </div>
@@ -91,11 +91,11 @@ export function MacroLayersPanel() {
         </Button>
       </div>
 
-      <div className="mb-3 flex items-center justify-between rounded-[8px] border border-[#e3ece9] bg-[#f7fbfa] px-3 py-2 text-xs">
-        <span className="font-medium text-[#41515f]">Overlay</span>
+      <div className="mb-3 flex items-center justify-between rounded-[8px] border border-[#D7EAE5] bg-[#F3FBF8] px-3 py-2 text-xs">
+        <span className="font-medium text-[#2D545B]">Overlay</span>
         <button
           className={`rounded-[7px] px-2 py-1 text-[10px] font-semibold uppercase ${
-            activeLayers.macro ? "bg-[#0f766e] text-white" : "bg-[#eef5f3] text-[#52616f]"
+            activeLayers.macro ? "bg-[#2DBA91] text-white" : "bg-[#eef5f3] text-[#5F777C]"
           }`}
           onClick={() => setLayerEnabled("macro", !activeLayers.macro)}
         >
@@ -110,10 +110,10 @@ export function MacroLayersPanel() {
           return (
             <section
               key={category}
-              className="rounded-[10px] border border-[#e3ece9] bg-[#fbfdfc] p-2"
+              className="rounded-[10px] border border-[#D7EAE5] bg-[#FFFFFF] p-2"
             >
-              <div className="mb-2 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#52616f]">
-                <CategoryIcon className="h-3.5 w-3.5 text-[#0f766e]" />
+              <div className="mb-2 flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5F777C]">
+                <CategoryIcon className="h-3.5 w-3.5 text-[#2DBA91]" />
                 {categoryLabels[category]}
               </div>
               <div className="grid gap-2">
@@ -125,29 +125,29 @@ export function MacroLayersPanel() {
                       key={item.id}
                       className={`rounded-[8px] border p-3 text-left transition ${
                         isActive
-                          ? "border-[#78c8bd] bg-[#e8f6f3] text-[#0f766e]"
-                          : "border-[#e3ece9] bg-white text-[#52616f] hover:border-[#b7dcd5]"
+                          ? "border-[#36DFAE] bg-[#E7F8F2] text-[#2DBA91]"
+                          : "border-[#D7EAE5] bg-white text-[#5F777C] hover:border-[#B6D9D1]"
                       }`}
                       onClick={() => setSelectedMacroLayer(item.id)}
                     >
                       <div className="flex items-center justify-between gap-2 text-sm font-semibold">
                         <span>{MACRO_LAYER_LABELS[item.id]}</span>
-                        <span className="rounded-full bg-[#eef5f3] px-2 py-0.5 text-[9px] font-semibold uppercase text-[#64727d]">
+                        <span className="rounded-full bg-[#eef5f3] px-2 py-0.5 text-[9px] font-semibold uppercase text-[#6F8589]">
                           {item.sourceType}
                         </span>
                       </div>
-                      <div className="mt-1 text-[11px] leading-4 text-[#7b8893]">
+                      <div className="mt-1 text-[11px] leading-4 text-[#6F8589]">
                         {item.description}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1 text-[9px] font-semibold uppercase">
-                        <span className="rounded-full bg-[#f3f7f6] px-2 py-0.5 text-[#64727d]">
+                        <span className="rounded-full bg-[#f3f7f6] px-2 py-0.5 text-[#6F8589]">
                           {item.readiness}
                         </span>
-                        <span className="rounded-full bg-[#f3f7f6] px-2 py-0.5 text-[#64727d]">
+                        <span className="rounded-full bg-[#f3f7f6] px-2 py-0.5 text-[#6F8589]">
                           {item.visualizationType}
                         </span>
                         {rendersH3 ? (
-                          <span className="rounded-full bg-[#e7f4f1] px-2 py-0.5 text-[#0f766e]">
+                          <span className="rounded-full bg-[#E7F8F2] px-2 py-0.5 text-[#2DBA91]">
                             H3 overlay
                           </span>
                         ) : null}
@@ -162,7 +162,7 @@ export function MacroLayersPanel() {
       </div>
 
       <div className="mt-4">
-        <div className="mb-2 flex justify-between text-[11px] text-[#6f7d88]">
+        <div className="mb-2 flex justify-between text-[11px] text-[#6F8589]">
           <span>Subtle</span>
           <span>Strong</span>
         </div>
@@ -173,23 +173,23 @@ export function MacroLayersPanel() {
           max={86}
           value={Math.round(macroLayerOpacity * 100)}
           onChange={(event) => setMacroLayerOpacity(Number(event.target.value) / 100)}
-          className="w-full accent-[#2f9b93]"
+          className="w-full accent-[#2DBA91]"
         />
       </div>
 
-      <div className="mt-4 rounded-[8px] border border-[#e3ece9] bg-[#fbfdfc] p-3 text-xs text-[#52616f]">
+      <div className="mt-4 rounded-[8px] border border-[#D7EAE5] bg-[#FFFFFF] p-3 text-xs text-[#5F777C]">
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-2 font-semibold text-[#41515f]">
-            <Database className="h-3.5 w-3.5 text-[#0f766e]" />
+          <span className="flex items-center gap-2 font-semibold text-[#2D545B]">
+            <Database className="h-3.5 w-3.5 text-[#2DBA91]" />
             Source
           </span>
-          <span className="rounded-full bg-[#e7f4f1] px-2 py-1 text-[10px] font-semibold uppercase text-[#0f766e]">
+          <span className="rounded-full bg-[#E7F8F2] px-2 py-1 text-[10px] font-semibold uppercase text-[#2DBA91]">
             {selectedMacroSummary.provenance.sourceType}
           </span>
         </div>
-        <div className="mt-2 rounded-[8px] bg-[#f7fbfa] p-2">
-          <div className="font-semibold text-[#41515f]">{macroDataModeLabel}</div>
-          <div className="mt-1 text-[#7b8893]">
+        <div className="mt-2 rounded-[8px] bg-[#F3FBF8] p-2">
+          <div className="font-semibold text-[#2D545B]">{macroDataModeLabel}</div>
+          <div className="mt-1 text-[#6F8589]">
             {macroPackageManifest.packageId} | {macroPackageManifest.summaryStats.cellCount} H3
             cells | {macroPackageManifest.mode}
           </div>
@@ -199,7 +199,7 @@ export function MacroLayersPanel() {
           {selectedMacroSummary.provenance.freshnessLabel} | confidence{" "}
           {selectedMacroSummary.provenance.confidence}%
         </div>
-        <div className="mt-2 text-[#7b8893]">{selectedMacroSummary.provenance.limitations}</div>
+        <div className="mt-2 text-[#6F8589]">{selectedMacroSummary.provenance.limitations}</div>
         <Button
           variant="outline"
           size="sm"
@@ -211,8 +211,8 @@ export function MacroLayersPanel() {
         </Button>
       </div>
 
-      <div className="mt-3 text-[11px] text-[#7b8893]">
-        Macro provider status: <span className="font-medium text-[#41515f]">{mapStatus.macro}</span>
+      <div className="mt-3 text-[11px] text-[#6F8589]">
+        Macro provider status: <span className="font-medium text-[#2D545B]">{mapStatus.macro}</span>
       </div>
     </div>
   );

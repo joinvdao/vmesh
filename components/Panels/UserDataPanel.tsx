@@ -25,13 +25,13 @@ export function UserDataPanel() {
   const setActivePanel = useVmeshStore((state) => state.setActivePanel);
 
   return (
-    <div className="absolute right-6 top-6 z-30 w-80 rounded-[12px] border border-[#dfe8e6] bg-white/[0.94] p-3 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
+    <div className="absolute right-6 top-6 z-30 w-80 rounded-[12px] border border-[#B6D9D1] bg-white/[0.94] p-3 shadow-[0_24px_80px_rgba(31,53,58,0.18)] backdrop-blur-md">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#52616f]">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5F777C]">
             Add Local Data
           </div>
-          <div className="mt-1 max-w-[200px] truncate font-mono text-[10px] text-[#7b8893]">
+          <div className="mt-1 max-w-[200px] truncate font-mono text-[10px] text-[#6F8589]">
             {selected.h3Id}
           </div>
         </div>
@@ -54,8 +54,8 @@ export function UserDataPanel() {
             key={category.value}
             className={`rounded-[6px] border px-2 py-1 text-[10px] ${
               draft.category === category.value
-                ? "border-[#76c9bf] bg-[#eef9f6] text-[#0f766e]"
-                : "border-[#dfe8e6] bg-white text-[#6f7d88]"
+                ? "border-[#36DFAE] bg-[#eef9f6] text-[#2DBA91]"
+                : "border-[#B6D9D1] bg-white text-[#6F8589]"
             }`}
             onClick={() => updateDraft({ category: category.value })}
           >

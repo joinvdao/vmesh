@@ -30,7 +30,7 @@ function TabsTrigger({ value, activeValue, className, ...props }: TabsTriggerPro
     <button
       className={cn(
         "rounded-[6px] px-3 py-1.5 text-xs font-medium transition-colors",
-        active ? "bg-white text-[#0f766e] shadow-sm" : "text-[#6a7885] hover:text-[#0f766e]",
+        active ? "bg-white text-[#2DBA91] shadow-sm" : "text-[#6a7885] hover:text-[#2DBA91]",
         className
       )}
       {...props}

@@ -19,7 +19,7 @@ function Tooltip({ label, children }: TooltipProps) {
   return (
     <span className="group relative inline-flex">
       {children}
-      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-[6px] border border-[#dfe8e6] bg-white px-2 py-1 text-[11px] text-[#52616f] shadow-lg group-hover:block">
+      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-[6px] border border-[#B6D9D1] bg-white px-2 py-1 text-[11px] text-[#5F777C] shadow-lg group-hover:block">
         {label}
       </span>
     </span>
