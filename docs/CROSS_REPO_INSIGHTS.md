@@ -74,6 +74,37 @@ Downstream apps should consume the resulting package manifests, app-ready tile U
 
 vmesh is both a standalone atlas and an async package service. The public contract should be generic: a downstream app sends an AOI/H3 request, vmesh returns a source plan and cache/job metadata, workers create or refresh package artifacts, and consumers read clean manifest URLs. The public vmesh repo should not identify private consumer repos, exact user locations, local paths, provider credentials, paid quotes, or unpublished roadmaps.
 
+The current cross-app target is a boundary-first property treatment package:
+
+```text
+selected H3 / AOI / property boundary
+  -> vmesh source plan
+  -> CPU/GPU package workers
+  -> PMTiles / COG / GeoParquet / H3 summaries / map plates / manifests
+  -> downstream app import
+```
+
+Standard packages use open data such as Sentinel-2 L2A, SCL cloud masks,
+SEN2SRLite, open terrain, OSM/Overture, Open-Meteo, and NASA POWER. Premium
+packages use licensed orthophoto/satellite, DEM/DTM/DSM, parcel/title/survey,
+and richer weather/climate feeds only when terms permit storage, processing,
+export, and downstream use.
+
+Semantic scene annotations should travel as data, not only burned-in overlay
+text. A downstream app may create labels for visible features such as trees,
+rocks, rooflines, streets, field edges, water edges, posts, cars, and material
+cues. vmesh can store these as `scene-annotations.json`, H3-attached
+`visual-observation` records, or GeoJSON/PMTiles overlays when georegistration is
+available. These annotations help prompt preparation, report notes, generated
+world recognisability, and QA, but they do not become measured geometry or legal
+truth without reviewed geospatial anchoring.
+
+Public cached PMTiles are a good delivery primitive for open/generalized layers.
+Private property packages, paid provider outputs, exact user boundaries, report
+assets, and generated downstream outputs require signed URLs, authenticated tile
+proxies, owner-private object refs, or local hub storage. Auth must protect the
+data URL itself, not only the browser UI.
+
 Shared contracts to watch:
 
 - `GeospatialPackagePlan`
@@ -83,6 +114,9 @@ Shared contracts to watch:
 - `DataPackageManifest`
 - `SourceProvenance`
 - `H3CoverageSummary`
+- `PropertyTreatmentPackageManifest`
+- `WeatherLedger`
+- `SceneAnnotation`
 
 ## Solar, Wind, And Sector Loop
 
@@ -168,11 +202,14 @@ The rule is unchanged: source registry inclusion is not production approval. Eve
 The useful Sentinel/SEN2SR pattern is a sidecar package workflow:
 
 - Run Sentinel discovery, cloud screening, SEN2SRLite, COG writing, and tile production outside the browser.
+- Consider openEO as an optional worker-side orchestration layer for compatible EO backends: STAC can discover candidate scenes, while openEO process graphs can express clipping, cloud masks, band math/composites, and export jobs. Keep it behind the package broker and never treat openEO execution as source truth.
 - Use ESAOpenSR/SEN2SR as the upscaler reference, starting with SEN2SRLite RGBN `x4`: `10 m` Sentinel-2 L2A source bands to about `2.5 m` derived display pixels.
 - Emit a manifest with scene id, acquisition time, scene/AOI cloud metrics, source resolution, derived resolution, model id, runtime, cache key, warnings, and land-understanding summaries such as NDVI/NDWI.
 - Keep `truthStatus: imagery-inferred-context`; the output may improve visual/material context and H3 summaries but must not upgrade terrain, parcels, roads, buildings, legal boundaries, or emergency authority.
 
 vmesh should adopt this as an offline/local-hub pipeline contract and only display resulting tiles/manifests on the globe.
+
+Implementation note: vmesh now exposes this as `/api/geospatial-package/sentinel-sr` for public planning and `/api/geospatial-package/sentinel-sr/complete` for authenticated worker completion. The public route emits worker-ready STAC input, planned output refs, cloud QA policy, an `ImageryTileManifest`, and a downstream-render texture handoff. Only the worker route can attach trusted HTTPS tile refs and worker-derived cloud metrics, and those refs must pass the artifact host allowlist plus SSRF checks. Downstream apps must treat `planned` and `validation-required` as pre-render states; only `ready` with worker completion evidence means the tile ref and SCL cloud metrics are both acceptable. `blocked-cloud-gate` should trigger a clearer scene search or clean composite generation.
 
 ## Macro Atlas Source Broker Pattern
 

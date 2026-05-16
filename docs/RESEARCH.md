@@ -208,6 +208,37 @@ Implementation boundary:
 - Keep MapTiler, Mapbox, or other token-bearing services optional and env-gated.
 - Prefer open PMTiles and no-token styles for public demos.
 
+### Clearfork Wells
+
+Clearfork Wells is a useful benchmark for a polished vertical geospatial
+product. A local HAR review and public asset inspection indicated an R
+Shiny/Shiny Server app shell, Firebase Auth, MapLibre GL JS, OpenFreeMap /
+OpenMapTiles / OSM basemap components, MapTiler satellite reference tiles,
+H3/tile helper code, Turf-style geometry utilities, ECharts, Tabulator, and XYZ
+MVT well tiles from a dedicated tile host.
+
+Potential vmesh relevance:
+
+- Strong reference for productizing a narrow geospatial workflow: map, layer
+  controls, queryable vector data, tables, charts, and source-specific status.
+- Shows that a conventional web app can feel like a serious GIS product without
+  embedding QGIS or ArcGIS in the browser.
+- Reinforces the value of MapLibre-first rendering, optional commercial
+  satellite reference layers, and map-ready vector tiles.
+- Provides a cautionary security pattern: Firebase/login can gate the UI while
+  tile endpoints may still be public and cacheable. That is fine for open data,
+  but not for private/premium vmesh packages.
+
+Implementation boundary:
+
+- Do not copy R Shiny as a vmesh architecture target. vmesh remains
+  Next.js/React/MapLibre/PostGIS/PMTiles-first.
+- Do not expose private user AOIs or premium tiles through unauthenticated MVT,
+  PMTiles, COG, or XYZ URLs.
+- Treat MapTiler/Mapbox/Esri satellite layers as reference/display unless
+  storage, processing, export, and downstream use rights are explicit.
+- HAR files can contain provider keys and request traces; do not commit them.
+
 ### CLSS Slovenia / Flycom LIFT
 
 The CLSS Slovenia portal is a useful example of national-scale LiDAR and derived raster products on the web. Public inspection shows the site embedding a Flycom LIFT viewer. The viewer uses an OpenLayers-style 2D map, GeoServer WMS overlays, XYZ PNG raster tile pyramids for products such as orthophoto and state overview maps, and Potree/EPT for 3D point-cloud inspection. The app operates in Slovenian national CRS EPSG:3794 / SI-D96/TM.
@@ -279,6 +310,26 @@ Implementation boundary:
 - Do not hotlink ArcGIS point-cloud services or redistribute Saitama downloads without preserving CC BY attribution, terms, CRS, and source metadata.
 - Keep raw point clouds as sidecar inspection/download products; derive DEM/DSM, contours, bridge/road/river corridor context, or H3 summaries through worker pipelines when needed.
 - Large files require package planning, resumable downloads, tiling/indexing, cache budgets, and user warnings before local hub/offline use.
+
+### openEO API OGC Community Standard
+
+Reference: `https://www.ogc.org/announcement/openeo-api-ogc-community-standard/`
+
+OGC has published openEO API as a Community Standard for cloud-based Earth-observation processing. It is relevant to vmesh as a provider-neutral way to submit process graphs for AOI clipping, cloud masking, band math/indices, compositing, and possibly backend-hosted ML preprocessing where supported.
+
+Potential vmesh relevance:
+
+- Standard interface between the vmesh package broker and compatible EO backends.
+- Avoids hard-coding every Sentinel/Copernicus provider API into downstream apps.
+- Complements STAC: STAC discovers assets; openEO can execute processing against a backend.
+- Good fit for local-hub/server workers producing COG, PMTiles, H3 summaries, or package manifests.
+
+Implementation boundary:
+
+- Do not call openEO from the browser/client.
+- Each backend still has its own data catalog, auth, quotas, costs, process availability, export formats, and source licenses.
+- Preserve backend id, process graph, input collections, asset ids, dates, cloud filters, CRS, resolution, and license/attribution.
+- openEO output is processed EO evidence, not parcel/legal/terrain/building truth by default.
 
 ## Climate Models And Digital Twins
 
@@ -624,6 +675,23 @@ Implementation boundary:
 
 ## Earth Observation Imagery And Super Resolution
 
+### NASA MODIS Low-Zoom Globe Context
+
+NASA MODIS is useful for vmesh only at low zoom. It provides broad, open, frequently observed global Earth imagery and environmental products, but its native spatial resolution is coarse: commonly 250 m, 500 m, or 1 km depending on band and product. That makes it suitable for a coherent global/continental globe backdrop and broad environmental context, not local site intelligence.
+
+Potential vmesh relevance:
+
+- Open low-zoom globe texture for z0-z8 style views.
+- Broad regional environmental context where a coarse product is honest.
+- Fallback visual continuity before Sentinel or premium imagery packages are available.
+
+Implementation boundary:
+
+- Fetch direct NASA/Earthdata/Blue Marble-style sources; do not copy, cache, or process Mapbox Satellite tiles.
+- Preserve NASA attribution, product id, processing/composite method, temporal window, resolution, and citation metadata.
+- Label as `visual-context` or `not-authoritative`.
+- Do not use MODIS for property treatment, parcel boundaries, roads, buildings, hydrology, infrastructure, renderer conditioning at property detail, or any claim requiring property-scale imagery.
+
 ### Sentinel-2 L2A Through STAC
 
 Sentinel-2 L2A Cloud Optimized GeoTIFFs are relevant as the first open optical imagery path for vmesh. Earth Search / Element84 STAC can be used to discover recent scenes around a selected H3 cell or local hub AOI.
@@ -810,6 +878,27 @@ Implementation boundary:
 - If Mapbox-derived results are used in a private deployment, store provider ID, request timestamp, terms note, and whether coordinates were sent to Mapbox.
 
 ## Research Add-Ons For Later
+
+### GeoAgent Geospatial Agent Layer
+
+Reference: `https://github.com/opengeos/GeoAgent`
+
+Fork: optional downstream research fork; not required for vmesh.
+
+GeoAgent is an MIT-licensed geospatial AI agent layer for Python geospatial packages, live map widgets, browser MapLibre examples, STAC/NASA Earthdata tooling, and QGIS plugins. It is built around structured geospatial tools, runtime context binding, provider configuration, and confirmation hooks before expensive, destructive, or irreversible operations.
+
+Potential vmesh relevance:
+
+- Reference pattern for an operator workbench agent that can inspect map state, catalog results, source plans, and package manifests.
+- Useful examples for browser MapLibre agent integration, QGIS/desktop workflows, STAC search, NASA Earthdata/OPERA exploration, and live map context binding.
+- Good confirmation-gate pattern for future tasks such as queueing package jobs, loading remote COGs, exporting project files, calling provider APIs, or changing persistent source records.
+- Possible local-hub/admin companion for vmesh package operations, while the public app stays renderer-first and deterministic.
+
+Implementation boundary:
+
+- Do not treat GeoAgent as a Sentinel/SEN2SR renderer, tile generator, source package worker, or geospatial truth source.
+- Keep agent tool calls behind explicit confirmation, cost controls, provenance logging, and source-role limits.
+- Generated scripts or catalog actions remain operator workflow aids until a typed vmesh package contract validates their outputs.
 
 ### City2Graph Geospatial Graph Engine
 

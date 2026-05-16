@@ -276,12 +276,29 @@ Pipeline stages:
 1. Query Earth Search / Element84 STAC for `sentinel-2-l2a` by AOI/date.
 2. Filter by `eo:cloud_cover <= 10`.
 3. Clip only the selected AOI window.
-4. Validate AOI cloud-free ratio with SCL classes, default `>= 0.95`.
+4. Validate AOI cloud-free ratio with SCL classes. The generic worker threshold can remain `>= 0.95`; the downstream-render-facing Sentinel SR route defaults to a stricter `>= 0.98` gate.
 5. Run SEN2SRLite on RGB+NIR bands where local/server hardware supports it.
 6. Write source COG, cloud mask COG, SEN2SR COG, preview PNG, manifest JSON, and optional PMTiles/XYZ tiles.
 7. Serve only the manifest and tile URL to the Next.js UI.
 
 The default upscaler path is ESAOpenSR/SEN2SRLite RGBN `x4`: source Sentinel-2 L2A `10 m`, target display output `2.5 m`, model id `SEN2SRLite/NonReference_RGBN_x4`, and `truthStatus: imagery-inferred-context`.
+
+`POST /api/geospatial-package/sentinel-sr` is the public API boundary for downstream apps that need this imagery before prompt preparation or renderer submission. It is plan-only: it returns worker inputs and planned cache refs, but it does not accept tile output refs, caller-supplied cloud metrics, or caller-loosened cloud thresholds.
+
+`POST /api/geospatial-package/sentinel-sr/complete` is the worker completion boundary. It is disabled unless `VMESH_SENTINEL_SR_WORKER_TOKEN` is configured and the request supplies that token. Only this authenticated route can attach generated tile refs, scene cloud cover, AOI SCL clear-pixel ratio, worker job id, and completion time.
+
+Route states:
+
+- `planned`: no ready tile ref exists. Run the Sentinel SR worker with the inline STAC payload.
+- `validation-required`: worker completion evidence or trusted artifact refs are incomplete. Do not use it for the renderer yet.
+- `ready`: authenticated worker completion exists, a trusted tile ref passed URL policy, and both scene-level cloud cover and AOI clear-pixel ratio passed.
+- `blocked-cloud-gate`: worker-derived cloud metrics failed. Search a clearer scene or generate a cloud-free composite.
+
+The route includes a `renderHandoff` object for downstream-app prompt preparation. Its input role is `texture`, not terrain, parcel, road, building, or legal truth. The downstream app should render a source-pack image from the tile product before sending it to the renderer when the renderer cannot consume PMTiles directly, and it should hold renderer submission unless `renderHandoff.availability === "ready"`.
+
+Ready artifact refs must be HTTPS URLs on `VMESH_SENTINEL_SR_ARTIFACT_HOST_ALLOWLIST`. The URL policy rejects custom schemes, embedded credentials, secret-like query params, localhost, private IP ranges, link-local addresses, and metadata-service IPs such as `169.254.169.254`. `vmesh-cache://` refs are planned internal placeholders only and must not be treated as ready renderer inputs.
+
+The EOX/Sentinel cloudless preview URL is useful for map inspection only. Do not upscale that JPEG tile product. SEN2SR must use Sentinel-2 L2A source bands (`B04`, `B03`, `B02`, `B08`) plus SCL cloud QA.
 
 Optional imagery env vars:
 
@@ -294,6 +311,8 @@ Optional imagery env vars:
 - `NEXT_PUBLIC_MAPBOX_PROXY_ENABLED`
 - `NEXT_PUBLIC_MAPBOX_PROXY_URL`
 - `NEXT_PUBLIC_MAPBOX_TOKEN`
+- `VMESH_SENTINEL_SR_WORKER_TOKEN`
+- `VMESH_SENTINEL_SR_ARTIFACT_HOST_ALLOWLIST`
 
 Mapbox satellite remains optional for both the base globe and comparison imagery. Use server-only `MAPBOX_TOKEN` plus the public proxy flag/url for secret-class tokens; use `NEXT_PUBLIC_MAPBOX_TOKEN` only for restricted public `pk.*` tokens. Do not commit generated imagery, downloaded scenes, private AOIs, token-bearing tile URLs, or large tile archives.
 

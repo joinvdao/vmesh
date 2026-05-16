@@ -71,6 +71,22 @@ The geospatial package service may expose source plans, source probes, package m
 
 Package plans are metadata only. Heavy package generation must run in a local/server worker that preserves source license, attribution, CRS, vertical datum, acquisition/processing time, confidence, and limitations before any artifact becomes app-ready.
 
+Property treatment packages add a stricter delivery boundary:
+
+- Public PMTiles/COG/GeoParquet artifacts may contain only open or intentionally
+  public generalized data.
+- Private project boundaries, private AOIs, user-uploaded surveys, paid parcel
+  records, premium imagery, private report assets, and downstream generated
+  outputs require signed URLs, an authenticated tile proxy, or owner-private
+  object refs.
+- Login-gating the app shell is not enough. Tile URLs, PMTiles archives, vector
+  tile endpoints, and COG URLs must enforce the same access policy as the
+  package manifest.
+- Cache promotion from requested package to public package is allowed only after
+  source license, privacy class, attribution, and coordinate-disclosure review.
+- Provider keys and token-bearing tile URLs must not appear in HAR files,
+  screenshots, public docs, package manifests, or client-readable refs.
+
 Current package-plan API hardening:
 
 - JSON-only POST requests.
@@ -134,6 +150,10 @@ Contour records are derived products. Browser terrain uses `raster-dem`; product
 - AI-assisted super-resolution can introduce artifacts. Do not use it for legal boundaries, official surveys, emergency certification, or exact private infrastructure claims.
 - Mapbox satellite is optional and token-gated for both base-globe and imagery use. Secret-class Mapbox tokens must stay in server-only `MAPBOX_TOKEN` and be accessed through the local proxy route; only restricted public `pk.*` tokens may use `NEXT_PUBLIC_MAPBOX_TOKEN`. Do not commit screenshots with private tokens or token-bearing tile URLs.
 - Free-text search defaults to the local `/api/geocode/search` proxy so the browser does not call Nominatim directly. Remote geocoding can disclose typed places or coordinates to the provider; set `NEXT_PUBLIC_ENABLE_REMOTE_GEOCODING=false` for privacy-sensitive or offline deployments.
+- Mapbox, MapTiler, Esri, and similar satellite basemaps are display/reference
+  layers by default. Do not download, upscale, cache, export, redistribute, or
+  use their tiles as downstream AI/render-conditioning inputs unless the active
+  provider agreement explicitly permits that exact use.
 - Do not commit downloaded Sentinel scenes, generated COGs, PMTiles archives, private AOIs, or local hub imagery caches.
 
 ## Annotation Privacy Rules

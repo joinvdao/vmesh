@@ -94,7 +94,7 @@ FABDEM is marked as license-gated/non-commercial unless separately licensed. CUD
 
 Solar and wind are climate/topography products. Future solar access layers should combine sun path, slope/aspect, terrain-horizon shading, optional source-backed obstruction shading, and cloud/irradiance context. Wind roses and permaculture-style climate sector maps should preserve period, source, confidence, and limitations.
 
-`lib/imagerySources.ts` models Sentinel-2 preview imagery, offline/server-generated SEN2SR PMTiles or XYZ tiles, optional Mapbox satellite comparison, and offline raster PMTiles. SEN2SR processing belongs in `pipelines/sentinel_sr/`; the browser only displays generated tiles and manifest metadata.
+`lib/imagerySources.ts` models Sentinel-2 preview imagery, offline/server-generated SEN2SR PMTiles or XYZ tiles, optional Mapbox satellite comparison, and offline raster PMTiles. Low-zoom global texture should use direct NASA MODIS/Blue Marble-style sources only as coarse visual context, not as property intelligence. SEN2SR processing belongs in `pipelines/sentinel_sr/`; the browser only displays generated tiles and manifest metadata.
 
 ## Documentation Map
 
