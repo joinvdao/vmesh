@@ -100,6 +100,24 @@ This service should never flatten vmesh into a generic tile utility. Its purpose
 
 The production shape should be asynchronous: a consumer requests an AOI package, vmesh returns a package id, source plan, privacy disclosure, cache keys, and job/manifest URLs, and background workers generate or refresh PMTiles, COGs, GeoParquet extracts, H3 summaries, and provenance manifests. Cache hits should return clean package refs immediately. Cache misses should queue work without blocking the requesting app's own fallback experience. Public vmesh docs should describe this as a generic downstream-app contract and should not identify private consumer repos, exact AOIs, local folders, provider credentials, or unpublished planning context.
 
+The next package milestone is a boundary-first property treatment package, not
+only a globe layer. A user should be able to select a cell, draw/import a
+project boundary, choose a standard open-data tier or a premium licensed-data
+tier, and receive a manifest-backed package of imagery, terrain derivatives,
+vector overlays, weather/climate context, map plates, and downstream handoff
+refs. This is GIS-style worker output. The browser should inspect and render
+the resulting PMTiles/COG/GeoParquet/H3 summaries; it should not perform
+Sentinel downloads, SEN2SR inference, hydrology processing, contour extraction,
+or premium imagery handling directly.
+
+The property treatment package architecture is tracked in
+`docs/PROPERTY_PACKAGE_TILE_ARCHITECTURE.md`.
+
+The experimental community `1 m` Sentinel upscaling product track is tracked in
+`docs/UPSCALED_SENTINEL_DATA_AI_RUN.md`. This is separate from the standard
+SEN2SR `2.5 m` package and must remain labelled as AI-inferred visual context,
+not measured orthophoto truth.
+
 ## Production Open Map Stack Direction
 
 A strong production deployment pattern for vmesh is an open MapLibre stack with PMTiles delivery through a CDN or object store such as Cloudflare R2, using open base data from the OSM, OpenFreeMap, Protomaps, Nextzen-style, Natural Earth, and Overture ecosystems where licensing permits.
@@ -118,17 +136,33 @@ The React-inside-Vue/Nuxt pattern seen in some geospatial products is not a targ
 
 Satellite imagery is a raster product that can enrich macro understanding, while H3 stores derived summaries and provenance. vmesh should support Sentinel-2 L2A discovery through STAC, cloud-free scene filtering, and offline/server-side SEN2SR super-resolution processing as a future pipeline.
 
+MODIS should be available only as a low-zoom globe context source. Direct NASA MODIS or Blue Marble style composites can provide a coherent global backdrop for continent, country, and ocean-scale views, but the layer must be labeled as coarse visual context, usually hundreds of meters to one kilometer class depending on product. It must not feed property treatment, parcel analysis, roads, buildings, hydrology, local infrastructure, or property-detail render imagery. Do not reuse Mapbox Satellite tiles for this role; if vmesh needs MODIS, fetch and attribute the open NASA source directly.
+
+Recommended imagery pyramid:
+
+- `z0-z8`: NASA MODIS / Blue Marble style global composite for low-zoom visual context.
+- `z8-z12`: Sentinel-2, Landsat, or reviewed public national imagery for regional context.
+- `z12-z16`: Cloud-qualified Sentinel-2 plus SEN2SR-derived `2.5 m` visual/material context where a worker-produced package exists.
+- `z16+`: Licensed premium satellite or aerial orthophoto only where terms permit storage, processing, report export, and downstream use.
+
 V1 UI work may display a manifest-backed Sentinel preview layer, acquisition date, cloud-free confidence, and derived H3 summaries such as NDVI, NDWI, NBR, vegetation cover proxy, bare soil proxy, and water presence proxy.
 
 Important boundaries:
 
+- MODIS is for low-zoom globe texture and broad environmental context only.
 - Do not run SEN2SR, PyTorch, COG processing, or whole-scene downloads in the browser.
 - Do not present AI-enhanced imagery as higher-truth imagery.
 - Do not use super-resolution imagery for legal boundaries, emergency certification, or exact infrastructure claims.
 - Mapbox satellite is optional and token/proxy-gated. It may be used as a base-globe or imagery comparison provider in reviewed deployments, but it is not the public open-source default.
+- Mapbox satellite is optional and token/proxy-gated. It may be used as a base-globe or imagery comparison provider in reviewed deployments, but it is not the public open-source default.
+- Mapbox, MapTiler, Esri, and similar satellite basemaps are reference/display
+  layers unless a deployment has explicit terms for storage, processing,
+  export, redistribution, and downstream AI/render conditioning.
 - NOAA CUDEM is coastal/topobathymetric terrain data, not global optical imagery.
 
 The current upscaler reference is ESAOpenSR/SEN2SR. vmesh should follow a sidecar package approach: Sentinel-2 L2A RGBN at `10 m`, SEN2SRLite RGBN `x4`, derived display output at `2.5 m`, cloud-qualified AOIs, and `truthStatus: imagery-inferred-context`. This improves the visual/material layer and H3-derived vegetation/water/bare-soil summaries only; it does not create measured 2.5 m orthophoto truth.
+
+The Sentinel/SEN2SR downstream flow lives behind `/api/geospatial-package/sentinel-sr` for public planning and `/api/geospatial-package/sentinel-sr/complete` for authenticated worker completion. It prepares the worker call, records cloud-gate requirements, produces planned refs, and emits a downstream render prompt-preparation handoff. That handoff is a texture/reference input only and must stay blocked until a generated 2.5 m tile product has trusted artifact refs plus worker-derived passing scene and AOI cloud metrics.
 
 Fields of The World adds a field-boundary direction to this layer: Sentinel-derived agricultural field predictions can become optional map and H3 summary context when the source, model version, year, confidence, geometry processing, and license are preserved. These predicted polygons should not be treated as cadastral parcels, legal property boundaries, or proof of ownership.
 
