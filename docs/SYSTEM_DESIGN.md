@@ -116,6 +116,8 @@ Resilient communications should enter through a local bridge, not directly throu
 - `ClimateSectorMap`: permaculture-style directional sector model for sun, wind, cold/frost, water flow, fire, flood, access/noise/pollution, wildlife, and user-observed forces.
 - `ImageryProviderConfig`: provider metadata for Sentinel-2 preview, SEN2SR PMTiles/XYZ, optional Mapbox satellite, and offline raster PMTiles.
 - `ImageryTileManifest`: source scene, acquisition/processing timestamps, bands, SEN2SR model, cloud gates, bounds, H3 coverage, derived index proxies, tile URL, and provenance.
+- `SentinelSrWorkflow`: cloud-gated Sentinel-2 L2A discovery and SEN2SR `2.5 m` package plan with worker inputs, output refs, cloud QA status, H3 coverage, cache keys, and tile manifest.
+- `SentinelSrRenderHandoff`: downstream prompt-preparation contract that exposes the SEN2SR output as a render texture/reference input only after tile output and cloud QA are ready.
 - `VmeshHexRecord`: H3 ID, tier, resolution, place, antifragility score, macro pillars, micro summary, user summary, provenance, confidence, and trend series.
 - `UserRecord`: category, title, attached H3 ID, private-local visibility, provenance, confidence, and timestamps.
 - `ResilientCommsProvider`: transport abstraction for Reticulum, Meshtastic bridge, and mock disaster-comms providers.
@@ -228,12 +230,49 @@ Terrain trust is role-capped. A generic DEM can drive the globe surface but cann
 - source probes that disclose open, paid, cached, blocked, missing, token-gated, license-gated, and preprocessing-required states;
 - a planner that ranks open/cacheable/package-ready sources without selecting paid, token-gated, license-gated, or API-key-required providers by default, even when a downstream request prefers one;
 - artifact contracts for PMTiles, vector tiles, raster tiles, COG, Zarr, GeoParquet, H3 summaries, manifests, and bounded APIs;
-- API routes at `/api/geospatial-package/sources` and `/api/geospatial-package/plan`;
-- a future MCP-style tool namespace, `vmesh.geospatial_package`, for source listing, package planning, and manifest retrieval.
+- API routes at `/api/geospatial-package/sources`, `/api/geospatial-package/plan`, and `/api/geospatial-package/sentinel-sr`;
+- a future MCP-style tool namespace, `vmesh.geospatial_package`, for source listing, package planning, Sentinel/SEN2SR planning, and manifest retrieval.
 
 The package service is not a data worker yet. It returns source-honest plans and clean manifests; local/server workers are responsible for downloading, clipping, tiling, caching, and validating heavy artifacts.
 
 Production hardening for the first package-service API includes request size caps, JSON-only POST handling, strict AOI/H3 validation, source preference sanitization, label sanitization, credential/secret-bearing URL redaction, no-store responses, and explicit coordinate-disclosure metadata. Coordinate disclosure records the user-requested precision (`h3-cell`, `bounds`, `exact-centroid`, or `fallback-sample`) separately from the normalized centroid used for H3 math. These protect the planner surface while preserving the larger rule that artifact generation belongs in authenticated local/server workers.
+
+The next worker contract is a property treatment package. It should use the same
+planner/source-broker discipline, but produce concrete app-ready artifacts for a
+selected H3 cell, AOI, or property/project boundary:
+
+```text
+package request
+  -> source plan and privacy class
+  -> CPU GIS worker for clip/reproject/terrain derivatives/vector overlays/map plates
+  -> optional GPU worker for SEN2SR and high-quality render-conditioning outputs
+  -> COG/PMTiles/GeoParquet/PNG/SVG/H3 summary artifacts
+  -> manifest with provenance, license, cache policy, and public/private delivery refs
+```
+
+CPU geospatial work owns DEM/DTM normalization, contours, hillshade,
+slope/aspect, water/flow/wetness hints, roads/buildings/water/landcover/vector
+overlays, deterministic map plates, and manifest assembly. GPU work owns only
+the parts where acceleration is material: SEN2SR inference, optional
+terrain/material render passes, and optional downstream source views. The app
+server should orchestrate, authorize, and show status; it should not run the
+heavy GIS or ML steps in the request path.
+
+Public cached PMTiles are appropriate for open/generalized layers. Private AOIs,
+premium imagery, paid parcels, user-uploaded boundaries, report assets, and
+downstream generated outputs require signed URLs, an authenticated tile proxy,
+or private object refs. Authentication must protect the data URL or tile proxy,
+not merely the UI surface.
+
+`docs/PROPERTY_PACKAGE_TILE_ARCHITECTURE.md` is the detailed architecture note
+for this package/tile split.
+
+Semantic annotations are an optional package artifact. They describe visible
+scene features such as trees, rocks, rooflines, road edges, water/field edges,
+cars, posts, street lights, rooftop equipment, and material cues. When they are
+only image-anchored, they support prompt conditioning, report notes, and visual
+QA. When camera pose or georegistration is available, they can be emitted as
+GeoJSON/PMTiles and attached to H3 cells as `visual-observation` records.
 
 `lib/macro-packages/macroPackages.ts`, `lib/macro-packages/macroPackageValidation.ts`, `lib/macro-packages/macroProductionReadiness.ts`, and `lib/macro-packages/macroPackageImport.ts` are the concrete macro package boundary. The committed Western Europe fixture package proves the path for H3 summary JSON, provider run metadata, source variables, confidence statistics, privacy gates, and UI disclosure. Production packages should be generated by local-hub or server workers, then imported as manifests plus artifacts; they should not trigger broad viewport climate queries from the browser.
 
@@ -309,6 +348,14 @@ The renderer should consume map-ready styles or raster/vector tiles. The product
 
 The rule is simple: browser calls may sample selected H3 centroids only when a provider is no-secret and rate-limited. Gridded forecast files, reanalysis archives, active-fire products, and model pipelines should be transformed into H3 summaries outside the browser, with source variables, model run time, forecast horizon, uncertainty, license, and limitations attached to every record.
 
+Weather and climate should also feed future gameplay and downstream simulations
+through a normalized `weather-ledger` package rather than through direct live
+client calls. Live/current API values are useful for ambience and near-term
+events, but plant growth, water balance, frost, drought stress, and seasonal
+rules should consume source-labelled daily/hourly accumulations, climate normals,
+and last-known fallback records. This lets provider downtime degrade gracefully
+instead of blocking the game or report workflow.
+
 ## Solar, Wind, And Climate Sector Models
 
 Solar potential belongs at the intersection of climate and topography. The browser can calculate lightweight sun-path context for the selected cell, but trusted solar access and shading should be package-backed:
@@ -371,6 +418,7 @@ V1 imagery kinds:
 
 | Kind                        | V1 behavior                                                              |
 | --------------------------- | ------------------------------------------------------------------------ |
+| `modis-low-zoom-context`    | Future direct NASA MODIS/Blue Marble low-zoom globe backdrop only.       |
 | `sentinel2-cog-preview`     | No-token preview raster for UI verification and manifest-backed display. |
 | `sentinel2-sen2sr-pmtiles`  | Future offline/server generated SEN2SR raster PMTiles.                   |
 | `sentinel2-sen2sr-xyz`      | Future offline/server generated XYZ tiles.                               |
@@ -379,9 +427,25 @@ V1 imagery kinds:
 The same server-side Mapbox proxy contract can power `mapbox-satellite-basemap` for deployments that explicitly choose a Mapbox-backed base globe. The renderer still uses MapLibre GL JS, keeps Mapbox token use out of public defaults, and falls back to open OSM/OpenFreeMap/PMTiles paths when Mapbox is not configured.
 | `offline-raster-pmtiles` | Future local hub/offline imagery bundle. |
 
+The imagery pyramid should separate globe-scale aesthetics from local intelligence. `modis-low-zoom-context` is a direct NASA/open-data source candidate for z0-z8 global texture, not a property source. It may help the globe feel complete before Sentinel or premium packages exist, but it must carry `visual-context`/`not-authoritative` provenance, coarse resolution metadata, NASA attribution, and a limitation that it cannot support parcel, building, road, hydrology, infrastructure, or property-analysis claims.
+
+Standard and premium local imagery should remain separate. The standard local lane is cloud-qualified Sentinel-2 L2A plus SEN2SR-derived `2.5 m` visual/material context, labeled `imagery-inferred-context`. The premium lane is licensed orthophoto/satellite imagery with explicit storage, processing, export, AI/render-conditioning, attribution, and downstream-use rights. Mapbox Satellite remains optional comparison/display only unless an active commercial agreement permits the specific workflow.
+
 The browser displays tiles and summaries only. Sentinel-2 STAC search, SCL cloud-mask validation, SEN2SRLite inference, COG writing, and tile generation belong in `pipelines/sentinel_sr/` as server/local-hub processing. H3 stores derived summaries such as NDVI, NDWI, NBR, vegetation cover proxy, bare soil proxy, water presence proxy, and cloud-free confidence.
 
 The Sentinel/SEN2SR plan follows the same sidecar package discipline: source Sentinel-2 L2A RGBN is `10 m`, SEN2SRLite RGBN `x4` targets `2.5 m`, output is `imagery-inferred-context`, and cache keys include cell, scene/acquisition window, cloud thresholds, model id, and target resolution. This can improve imagery display and advisory material/vegetation context, but it must not improve terrain confidence, legal boundaries, roads, buildings, parcels, or emergency authority.
+
+`/api/geospatial-package/sentinel-sr` is the downstream-facing planning flow for this product. It emits:
+
+- an inline Earth Search STAC request for the worker;
+- the cloudless preview tile template for inspection only;
+- planned COG, PMTiles, XYZ, preview, manifest, and H3-summary refs;
+- a `SentinelSrWorkflow.status` of `planned`, `validation-required`, `ready`, or `blocked-cloud-gate`;
+- a downstream render handoff that uses role `texture` and remains unavailable until authenticated worker completion proves a generated tile ref and SCL cloud metrics both pass.
+
+`/api/geospatial-package/sentinel-sr/complete` is the authenticated worker completion route. It requires `VMESH_SENTINEL_SR_WORKER_TOKEN`, accepts only worker-owned cloud metrics and generated artifact refs, validates those refs against `VMESH_SENTINEL_SR_ARTIFACT_HOST_ALLOWLIST`, and rejects localhost/private/link-local/metadata-service URLs, non-HTTPS schemes, credentials, and secret-like query params. Public callers cannot mark a workflow ready or loosen cloud thresholds.
+
+The route does not upscale preview JPEGs. The worker must fetch Sentinel-2 L2A RGBN bands and SCL assets, fail closed on cloudy AOIs, run SEN2SRLite outside Next.js, publish the tile artifact to a trusted host, and then attach passing cloud metrics before downstream render prompt preparation can use it.
 
 ## Persistence Model
 

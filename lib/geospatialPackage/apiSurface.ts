@@ -55,6 +55,37 @@ export const VMESH_GEOSPATIAL_PACKAGE_MCP_TOOLS: GeospatialMcpToolDescriptor[] =
     }
   },
   {
+    name: "vmesh.geospatial_package.plan_sentinel_sr",
+    description:
+      "Plan a cloud-gated Sentinel-2 L2A to SEN2SR 2.5 m imagery package and emit a downstream render texture handoff contract.",
+    inputSchema: {
+      type: "object",
+      required: ["aoi"],
+      properties: {
+        aoi: {
+          type: "object",
+          description: "AOI with h3Id, centroid, bounds, or a combination."
+        },
+        consumerAppId: {
+          type: "string",
+          description: "Downstream app identifier, for example downstream-app."
+        },
+        sceneCloudCover: {
+          type: "number",
+          description: "Optional scene-level cloud percentage from Sentinel metadata."
+        },
+        clearPixelRatioAoi: {
+          type: "number",
+          description: "Optional AOI clear-pixel ratio after SCL mask validation."
+        },
+        sen2srPmtilesUrl: {
+          type: "string",
+          description: "Optional generated PMTiles URL after worker output is published."
+        }
+      }
+    }
+  },
+  {
     name: "vmesh.geospatial_package.get_manifest",
     description:
       "Return a clean manifest reference for a planned package so downstream apps can consume URLs and provenance without provider branching.",
