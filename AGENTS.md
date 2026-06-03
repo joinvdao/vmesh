@@ -60,3 +60,17 @@ Use `npm run dev` only after app entrypoints are implemented. The expected local
 - Keep private planning systems, local ticket folders, personal notes, and unpublished operational context outside Git.
 - Do not commit private planning exports, personal task systems, local ticket folders, or local vault metadata.
 - Use public GitHub issues for public roadmap items and implementation work that is safe to disclose.
+
+## DAO Recursive Learning Contract
+
+VMesh is one of the core VDAO pillars. Its role is geospatial and ecosystem data aggregation for end users, BA, and downstream products.
+
+Every meaningful VMesh run should improve the next run across the VDAO suite.
+
+- Observe: coordinate requests, source discovery runs, STAC/package quality, data gaps, BA worker needs, ecosystem data needs, and repeated source failures.
+- Emit: data packages, source manifests, STAC-like catalogs, provenance records, gap reports, eval-site evidence, and reviewed source categories.
+- Learn: which source categories, data products, aggregation strategies, and package shapes make ecosystem intelligence faster and more complete.
+- Feed back: convert repeated findings into source registries, tests, evals, prompts, docs, tickets, or VAgents runbooks.
+- Share: durable skills and explanations go to VWiki; access/member constraints go to VPass; agent workflow gaps go to VAgents; coding workflow improvements go to VBuild.
+
+Use `docs/RECURSIVE_LEARNING.md` as the source of truth for cross-pillar learning handoffs.
