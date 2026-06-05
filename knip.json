@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": [
+    "next.config.mjs",
+    "tailwind.config.ts",
+    "postcss.config.mjs",
+    "eslint.config.mjs",
+    "vitest.config.ts",
+    "scripts/*.mjs",
+    "tools/**/*.mjs"
+  ],
+  "project": ["**/*.{ts,tsx,js,mjs}"],
+  "ignore": ["agent-bootstrap-prompt/**", ".next/**", "coverage/**"]
+}

@@ -1,0 +1,46 @@
+name: Engineering Task
+description: Define a scoped implementation, cleanup, research, or verification task.
+title: "[task] "
+labels:
+  - task
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be true when this task is complete?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Files, modules, docs, or workflows likely involved.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      placeholder: |
+        - ...
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation Plan
+      placeholder: |
+        - npm run lint
+        - npm test
+        - npm run build
+  - type: checkboxes
+    id: agent_ready
+    attributes:
+      label: Agent-Ready Checklist
+      options:
+        - label: The task is public-safe and contains no private planning context.
+          required: true
+        - label: The scope is narrow enough for an agent or contributor to execute.
+          required: true

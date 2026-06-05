@@ -1,0 +1,133 @@
+# Design Direction
+
+## Reference
+
+The attached dashboard reference defines the first visual target for `vmesh`.
+
+This is not a request to copy labels or product identity directly. It establishes layout density, interaction hierarchy, panel treatment, and the geospatial cockpit feel.
+
+## Overall Feel
+
+vmesh should feel like a precise, calm atlas for place-based decision-making:
+
+- Light operational cockpit.
+- Globe-first geospatial canvas.
+- Thin borders and restrained shadows.
+- Frosted white panels over the map.
+- Teal, mint, mineral blue, soft sand, and careful amber/orange accents.
+- Dense but legible data cards.
+- No decorative gradient blobs or marketing hero composition.
+
+## Core Layout
+
+The implementation should preserve this information architecture:
+
+- Slim left rail with brand/orbit control and icon-first navigation. Secondary dashboard surfaces open as modal panels, not permanent first-viewport columns.
+- Top header with central search, scope selector, filters, notifications, help, settings, and account controls.
+- Main map canvas occupying the central workspace.
+- Floating map tools stacked on the left side of the map.
+- A source-scale vertical layer slider near the right side of the map.
+- A source/provenance drawer that opens from the rail and explains active providers, mock/live/future status, licenses, and limitations.
+- Right selected-hex panel with source package summary, layer availability, local records, composition details, and actions. It opens on selection or explicit rail action.
+- Bottom data overview strip with horizontally arranged cards. It opens on demand rather than occupying the default globe view.
+- Footer with coordinate, elevation, H3 resolution, visible hex count, freshness, security/version, and status readouts.
+
+Current UI rule: vmesh does not show or store app-generated ranking outputs in V1. The V1-next surface is a data aggregation and display atlas first.
+
+## vmesh-Specific Adaptation
+
+Use `vmesh` as the product identity. The product phrase is:
+
+```text
+Source Atlas
+```
+
+The H3 mesh is the product data spine, but it is not default decoration. The default viewport should show a clean hovering globe with selected-place affordances. Hex grids and source overlays appear only when the user enables a source layer, selects a cell, or asks to inspect the mesh.
+
+Every visible hex should have a reason to be visible and should imply that it can hold source context and local data.
+
+Use U3/U5/U8 as the product-facing mesh zoom language:
+
+- U3: global/continental source context.
+- U5: regional operating view and V1 default.
+- U8: local/detail view for micro and user-added records inside a selected area.
+
+Use these visible layer families:
+
+- Imagery: Sentinel-2 clear-scene preview, SEN2SR enhanced products, NDVI, water index, soil/vegetation proxies.
+- Source: terrain, vegetation, open-map context, water, buildings, roads, parcels, and land use.
+- Local: property signals, farmers markets, growers, food systems, local producers, community assets, repair capacity, user-added observations.
+- User Added: notes, corrections, custom records, local assessments, links, and private observations.
+
+Climate, hazard, solar, wind, and other analysis layer families are deferred from the visible workflow.
+
+## Selected Hex Panel
+
+The selected hex card should include:
+
+- H3 ID and place label.
+- Data package summary with tier, source count, local record count, and freshness.
+- Source layer availability.
+- Micro asset summary.
+- User-added record count.
+- Source evidence and provenance summary.
+- Small action icons for focus, bookmark, and more actions.
+
+## Bottom Data Overview
+
+The first dashboard strip should include:
+
+- Regional data coverage.
+- Selected-cell source summary.
+- Active provider status.
+- Local record counts.
+- Land use.
+- Property or parcel layer status.
+- vmesh advisor or notes panel.
+
+The advisor panel should not imply live AI or provider calls unless that feature is explicitly implemented and cost-controlled.
+
+## Map Treatment
+
+The central map should prioritize:
+
+- A globe-first object that feels round, gently rotating, hoverable, and mouse-draggable like a Google Earth-style atlas.
+- A darker civic-atlas-style stage around the globe, with sparse starfield depth, atmospheric rim lighting, subtle tiled-sphere lattice cues, land/cloud texture synchronized to the MapLibre camera, and the globe treated as the primary object.
+- A light globe mode inspired by clean environmental-intelligence map demos: brighter ocean/land texture, subtler starfield, softer atmospheric rim, and enough basemap opacity to inspect place context without losing the floating atlas-object feel.
+- A dark globe mode for dense source inspection: subdued roads, glowing selected markers, teal/green data accents, and low-glare contrast for source overlays.
+- An atlas-globe-style mode transition: distant views stay in `Orbit Globe`, while close search/zoom views become `OSS Map Output` with a clearer open MapLibre basemap.
+- Terrain-aware basemap.
+- Optional imagery raster layer that never replaces the operational basemap.
+- Optional H3 mesh overlay draped and camera-synchronized with MapLibre through deck.gl.
+- A direct mesh on/off control. The H3 mesh remains analytical UI, while the globe can still use a subtle aesthetic tiled-sphere treatment.
+- A direct dark/light globe toggle. This is a visual atlas mode only; it must not change provider selection, data provenance, mesh tier, or terrain source behavior.
+- A direct stage backdrop control with three visual modes: blank, grid, and stars. This changes only the black/background stage treatment and must not change basemap, terrain, imagery, source data, or mesh state.
+- A real 3D orbit globe for distant views: sphere geometry, Earth texture, bump/normal-style relief cues, cloud shell, atmosphere rim, sun lighting, drag inertia, and idle rotation. This replaces CSS-masked map tricks for the hero atlas object.
+- A clear handoff from the cinematic Three.js globe to MapLibre source-backed map output when the user searches or zooms close enough to inspect a place.
+- Teal-to-mint source highlight scale.
+- Clear selected-place/cell affordance without requiring a global grid.
+- Tooltip with H3 ID, place label, mesh tier, and active data-layer value when a layer is enabled.
+- Legend for active data-layer interpretation.
+- Source transparency should live in a modal drawer, not as permanent dashboard clutter.
+
+## Interaction Notes
+
+- The search bar supports coordinates, place names, and partial-name autocomplete, then flies the camera into the selected location with enough zoom for local inspection.
+- Search/zoom close enough should make the open-source map output legible rather than leaving the user inside a decorative globe shell. Coordinate search should land in close inspection mode with satellite-style imagery enabled and an OpenStreetMap reference overlay for streets/roads.
+- Mouse-wheel zoom should work in orbit mode. Scrolling in on the Three.js globe transitions into source-backed MapLibre map output; scrolling back out preserves the orbit globe experience.
+- Clicking a hex updates the selected panel and flies the camera to that region.
+- Hovering a hex updates a tooltip without changing selection.
+- Layer controls must be reflected in Zustand state.
+- Body scrolling must remain disabled; only contained strips or panels may scroll.
+
+## Visual Constraints
+
+- Use exact Tailwind arbitrary values for colors and spacing where needed.
+- Keep text sizes appropriate for a dashboard, not a marketing page.
+- Use lucide-react icons where available.
+- Keep panel radii at 8px or below unless a shadcn primitive requires otherwise.
+- Avoid dark, blurred, or stock-like map presentation; the user must be able to inspect the actual mesh and map state.
+
+## Reference Notes
+
+The Civic Atlas reference uses a full-viewport Mapbox GL canvas with absolute DOM overlays. vmesh should borrow the globe staging, dark map atmosphere, and sparse overlay discipline, while keeping the implementation on MapLibre/open terrain foundations.

@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm test
+      - run: npm run agent-ready:check
+      - run: npm run public-workflow:check
+      - run: npm run privacy:check
+      - name: Build when app entrypoints exist
+        run: |
+          if [ -f app/page.tsx ] && [ -f app/layout.tsx ]; then
+            npm run build
+          else
+            echo "Skipping build: product app entrypoints are intentionally not implemented yet."
+          fi

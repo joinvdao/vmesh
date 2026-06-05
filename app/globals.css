@@ -1,0 +1,428 @@
+@import "maplibre-gl/dist/maplibre-gl.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f7faf9;
+  --foreground: #24323f;
+  --border: #dfe8e6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+body {
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+.maplibregl-ctrl-bottom-left,
+.maplibregl-ctrl-bottom-right {
+  display: none;
+}
+
+.vmesh-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #b6cbc7 transparent;
+}
+
+.vmesh-scrollbar::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.vmesh-scrollbar::-webkit-scrollbar-thumb {
+  background: #b6cbc7;
+  border-radius: 9999px;
+}
+
+.vmesh-globe-shell {
+  --vmesh-camera-x: 0px;
+  --vmesh-camera-y: 0px;
+  --vmesh-map-opacity: 0.72;
+  animation: vmesh-globe-hover 9s ease-in-out infinite;
+  transform: translate3d(-50%, -50%, 0);
+  transition:
+    inset 760ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    width 760ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    height 760ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    border-radius 620ms ease,
+    box-shadow 620ms ease,
+    transform 760ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+[data-globe-theme="dark"] .vmesh-globe-shell {
+  --vmesh-map-opacity: 0.72;
+}
+
+[data-globe-theme="light"] .vmesh-globe-shell {
+  --vmesh-map-opacity: 0.82;
+}
+
+.vmesh-globe-shell--map-output {
+  animation: none;
+  inset: 5.25rem clamp(24rem, 28vw, 30rem) 4.4rem clamp(5.75rem, 8vw, 9rem) !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  transform: none !important;
+  border-radius: 18px !important;
+  box-shadow:
+    0 0 18px rgba(127, 188, 232, 0.22),
+    0 28px 92px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 1120px) {
+  .vmesh-globe-shell--map-output {
+    inset: 5rem 1rem 4.25rem 5.5rem !important;
+  }
+}
+
+.vmesh-globe-shadow {
+  animation: vmesh-globe-shadow-hover 9s ease-in-out infinite;
+  filter: blur(26px);
+  opacity: 0.9;
+  transform: translate3d(-50%, -43%, 0) scale(1.04);
+  box-shadow:
+    0 0 72px rgba(67, 151, 221, 0.34),
+    0 0 150px rgba(38, 110, 186, 0.24),
+    0 72px 120px rgba(0, 0, 0, 0.82);
+}
+
+[data-globe-theme="light"] .vmesh-globe-shadow {
+  filter: blur(30px);
+  opacity: 0.68;
+  box-shadow:
+    0 0 72px rgba(99, 184, 197, 0.28),
+    0 0 150px rgba(140, 207, 215, 0.24),
+    0 64px 110px rgba(93, 126, 132, 0.38);
+}
+
+.vmesh-earth-ocean {
+  background-color: #12658c;
+  background-image:
+    radial-gradient(circle at 36% 28%, rgba(79, 188, 212, 0.55) 0 10%, transparent 24%),
+    radial-gradient(circle at 68% 62%, rgba(16, 87, 113, 0.65) 0 14%, transparent 35%),
+    linear-gradient(135deg, #2487ad 0%, #0f678f 38%, #0a3f5d 64%, #061827 100%);
+  background-position: center;
+  background-size: 100% 100%;
+}
+
+[data-globe-theme="light"] .vmesh-earth-ocean {
+  background-color: #7dc8d9;
+  background-image:
+    radial-gradient(circle at 31% 22%, rgba(205, 246, 244, 0.64) 0 9%, transparent 24%),
+    radial-gradient(circle at 67% 62%, rgba(80, 164, 183, 0.42) 0 13%, transparent 34%),
+    linear-gradient(135deg, #b7e1e5 0%, #7cc8d9 36%, #4ea9c4 62%, #2b6f8d 100%);
+}
+
+.vmesh-earth-ocean,
+.vmesh-earth-atlas-drift,
+.vmesh-earth-cloud-map,
+.vmesh-globe-grid,
+.vmesh-globe-tiles,
+.vmesh-globe-lighting,
+.vmesh-atmosphere-drift {
+  transition: opacity 700ms ease;
+}
+
+[data-globe-theme="light"] .vmesh-earth-atlas-drift {
+  filter: saturate(1.12) brightness(1.08);
+}
+
+[data-globe-theme="light"] .vmesh-earth-cloud-map {
+  opacity: 0.3;
+  filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.4));
+}
+
+.vmesh-earth-atlas-drift {
+  opacity: 0.16;
+  animation: vmesh-earth-atlas-drift 46s linear infinite;
+  transform: translate3d(var(--vmesh-camera-x), var(--vmesh-camera-y), 0) rotate(-2deg) scale(1.02);
+}
+
+.vmesh-earth-cloud-map {
+  opacity: 0.24;
+  animation: vmesh-earth-cloud-map 34s linear infinite;
+  transform: translate3d(calc(var(--vmesh-camera-x) - 2%), var(--vmesh-camera-y), 0) rotate(1deg)
+    scale(1.01);
+}
+
+.vmesh-earth-fallback {
+  opacity: 0.68;
+}
+
+.vmesh-three-earth-layer {
+  cursor: grab;
+  filter: drop-shadow(0 0 18px rgba(82, 187, 235, 0.22));
+}
+
+.vmesh-three-earth-layer:active {
+  cursor: grabbing;
+}
+
+.vmesh-three-earth-layer canvas {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.vmesh-globe-shell:not(.vmesh-globe-shell--map-output) .vmesh-earth-fallback {
+  opacity: 0.24;
+}
+
+.vmesh-globe-shell--map-output .vmesh-three-earth-layer {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vmesh-globe-shell .maplibregl-canvas {
+  border-radius: inherit;
+}
+
+.vmesh-globe-grid {
+  background-image:
+    linear-gradient(rgba(166, 215, 236, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(166, 215, 236, 0.12) 1px, transparent 1px);
+  background-position: center;
+  background-size:
+    34px 34px,
+    34px 34px;
+  mask-image: radial-gradient(circle, #000 0 67%, transparent 74%);
+}
+
+[data-globe-theme="light"] .vmesh-globe-grid {
+  background-image:
+    linear-gradient(rgba(31, 104, 123, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 104, 123, 0.18) 1px, transparent 1px);
+  opacity: 0.42;
+  mix-blend-mode: multiply;
+}
+
+.vmesh-globe-tiles {
+  background-image:
+    repeating-linear-gradient(7deg, rgba(215, 238, 255, 0.1) 0 1px, transparent 1px 46px),
+    repeating-linear-gradient(97deg, rgba(215, 238, 255, 0.07) 0 1px, transparent 1px 46px);
+  mask-image: radial-gradient(circle, #000 0 70%, transparent 76%);
+}
+
+[data-globe-theme="light"] .vmesh-globe-tiles {
+  background-image:
+    repeating-linear-gradient(7deg, rgba(19, 105, 127, 0.14) 0 1px, transparent 1px 46px),
+    repeating-linear-gradient(97deg, rgba(19, 105, 127, 0.1) 0 1px, transparent 1px 46px);
+  mix-blend-mode: multiply;
+}
+
+[data-globe-theme="light"] .vmesh-globe-lighting {
+  background-image:
+    radial-gradient(circle at 32% 18%, rgba(255, 255, 255, 0.2), transparent 9%),
+    radial-gradient(circle at 72% 70%, rgba(13, 56, 72, 0.32), transparent 42%),
+    linear-gradient(
+      112deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(165, 220, 217, 0.04) 34%,
+      rgba(4, 42, 58, 0.28) 100%
+    );
+}
+
+[data-globe-theme="light"] .vmesh-atmosphere-drift {
+  border-color: rgba(72, 157, 180, 0.38);
+  box-shadow:
+    inset 18px 16px 48px rgba(255, 255, 255, 0.28),
+    0 0 32px rgba(80, 176, 199, 0.34);
+}
+
+[data-globe-theme="light"] .vmesh-globe-inner-ring {
+  border-color: rgba(43, 124, 148, 0.24);
+}
+
+[data-globe-theme="light"] .vmesh-globe-outer-rim {
+  border-color: rgba(25, 80, 100, 0.28);
+}
+
+[data-globe-theme="light"] .vmesh-starfield {
+  opacity: 0.18;
+}
+
+.vmesh-globe-shell--map-output .vmesh-earth-ocean {
+  opacity: 0;
+}
+
+.vmesh-globe-shell--map-output .vmesh-earth-fallback {
+  opacity: 0;
+}
+
+.vmesh-globe-shell--map-output .vmesh-earth-atlas-drift,
+.vmesh-globe-shell--map-output .vmesh-earth-cloud-map {
+  opacity: 0;
+}
+
+.vmesh-globe-shell--map-output .vmesh-globe-grid,
+.vmesh-globe-shell--map-output .vmesh-globe-tiles {
+  opacity: 0;
+}
+
+.vmesh-globe-shell--map-output .vmesh-globe-inner-ring {
+  opacity: 0;
+}
+
+.vmesh-globe-shell--map-output .vmesh-globe-outer-rim {
+  border-radius: 18px;
+  opacity: 0.28;
+}
+
+.vmesh-globe-shell--map-output .vmesh-globe-lighting {
+  border-radius: 28px;
+  opacity: 0;
+}
+
+.vmesh-globe-shell--map-output .vmesh-atmosphere-drift {
+  border-radius: 28px;
+  opacity: 0;
+}
+
+.vmesh-atmosphere-drift {
+  animation: vmesh-atmosphere-drift 28s linear infinite;
+}
+
+.vmesh-starfield {
+  animation: vmesh-star-drift 96s linear infinite;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.72) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(191, 226, 255, 0.42) 0 1px, transparent 1.4px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.5) 0 0.7px, transparent 1.2px);
+  background-position:
+    0 0,
+    38px 64px,
+    112px 28px;
+  background-size:
+    220px 220px,
+    340px 340px,
+    170px 170px;
+  opacity: 0.82;
+}
+
+.vmesh-stage-grid {
+  animation: vmesh-star-drift 128s linear infinite;
+  background-image:
+    linear-gradient(rgba(108, 182, 207, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(108, 182, 207, 0.14) 1px, transparent 1px),
+    radial-gradient(circle at 50% 48%, rgba(67, 151, 221, 0.18), transparent 43%);
+  background-position: center, center, center;
+  background-size:
+    72px 72px,
+    72px 72px,
+    100% 100%;
+  mask-image: radial-gradient(circle at 50% 50%, #000 0 68%, transparent 88%);
+  opacity: 0.62;
+}
+
+[data-globe-theme="light"] .vmesh-stage-grid {
+  background-image:
+    linear-gradient(rgba(35, 122, 150, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(35, 122, 150, 0.12) 1px, transparent 1px),
+    radial-gradient(circle at 50% 48%, rgba(118, 199, 207, 0.18), transparent 43%);
+  opacity: 0.38;
+}
+
+@keyframes vmesh-globe-hover {
+  0%,
+  100% {
+    transform: translate3d(-50%, -50%, 0) translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(-50%, -50%, 0) translateY(-14px) scale(1.008);
+  }
+}
+
+@keyframes vmesh-globe-shadow-hover {
+  0%,
+  100% {
+    transform: translate3d(-50%, -43%, 0) translateY(18px) scale(1.04);
+  }
+
+  50% {
+    transform: translate3d(-50%, -43%, 0) translateY(4px) scale(1.06);
+  }
+}
+
+@keyframes vmesh-earth-atlas-drift {
+  0% {
+    transform: translate3d(var(--vmesh-camera-x), var(--vmesh-camera-y), 0) rotate(-2deg)
+      scale(1.02);
+  }
+
+  100% {
+    transform: translate3d(calc(var(--vmesh-camera-x) - 50%), var(--vmesh-camera-y), 0)
+      rotate(-2deg) scale(1.02);
+  }
+}
+
+@keyframes vmesh-earth-cloud-map {
+  0% {
+    transform: translate3d(calc(var(--vmesh-camera-x) - 2%), var(--vmesh-camera-y), 0) rotate(1deg)
+      scale(1.01);
+  }
+
+  100% {
+    transform: translate3d(calc(var(--vmesh-camera-x) - 48%), var(--vmesh-camera-y), 0) rotate(1deg)
+      scale(1.01);
+  }
+}
+
+@keyframes vmesh-atmosphere-drift {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+
+  50% {
+    transform: rotate(4deg) scale(1.01);
+  }
+
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes vmesh-star-drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(-220px, 110px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vmesh-globe-shell,
+  .vmesh-globe-shadow,
+  .vmesh-earth-atlas-drift,
+  .vmesh-earth-cloud-map,
+  .vmesh-atmosphere-drift,
+  .vmesh-starfield,
+  .vmesh-stage-grid {
+    animation: none;
+  }
+}

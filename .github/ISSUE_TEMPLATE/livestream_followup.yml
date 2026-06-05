@@ -1,0 +1,35 @@
+name: Livestream Follow-Up
+description: Capture public work or notes from the weekly vmesh livestream.
+title: "[livestream] "
+labels:
+  - livestream
+body:
+  - type: input
+    id: stream_date
+    attributes:
+      label: Livestream Date
+      description: Use YYYY-MM-DD.
+      placeholder: "2026-04-30"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Public Notes
+      description: Summarize what was built, discussed, or decided.
+    validations:
+      required: true
+  - type: textarea
+    id: followups
+    attributes:
+      label: Follow-Up Work
+      placeholder: |
+        - ...
+        - ...
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy Check
+      options:
+        - label: These notes are safe for the public repo and contain no private planning context.
+          required: true
