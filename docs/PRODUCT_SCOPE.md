@@ -10,6 +10,24 @@ The product should help users inspect what source data exists for a place, what 
 
 For downstream products, vmesh is also a source-honest ecosystem source broker and data provider. This is not a separate product from the atlas; it is the data backbone that lets the atlas explain where its earth, ecological, infrastructure, climate, hydrology, soils, food-system, and local-context intelligence came from, what the data can prove, what is inferred or visual only, what was rejected, and which provider-native refs can be safely piped by other applications.
 
+vmesh owns the slow source-discovery job for each municipality, region, and
+coordinate request. It should learn which municipal open-data portals, ArcGIS
+services, STAC/OGC catalogs, public object stores, climate services, ecology
+registries, soil surveys, hazard sources, planning layers, infrastructure
+datasets, and local-context records exist, then package that knowledge as
+source ladders and gap reports. Downstream GIS workers should process selected
+refs; they should not have to scrape the web from scratch for every site.
+
+Source discovery should happen as a ladder of source-location runs, not as
+immediate data ingestion. VMesh first finds where sources live: national/federal
+catalogs, province/state/region catalogs, municipal/county portals, private
+provider catalogs, charity/local-agency records, open-source/community
+registries, and academic/research repositories. The result is a registry of
+STAC/DCAT/OGC/API/ArcGIS/catalog/report/source refs, access posture, coverage
+posture, pack coverage, and next actions. Raw files are fetched later only by a
+GIS worker, downstream product, explicit cache mode, or authorized paid-provider
+run.
+
 ## Target User And Promise
 
 Primary users are geospatial analysts, land and property researchers, regenerative agriculture operators, infrastructure strategists, community organizers, and people trying to understand a place through both high-level source data and ground-level assets.
@@ -91,6 +109,13 @@ The first service boundary lives in `lib/geospatialPackage/` and the API routes 
 This service should never flatten vmesh into a generic tile utility or GIS-only registry. Its purpose is to make the source atlas more truthful and more reusable: terrain, imagery, roads, buildings, parcels, hydrology, soils, climate, biodiversity, landcover, infrastructure, local assets, and user observations all become more valuable when the STAC/source manifest or typed ecosystem record explains what is known, unknown, inferred, visual, private, or unsafe to overclaim.
 
 The production shape should be broker-first: a consumer requests source availability for a coordinate, H3 cell, AOI, or place context; vmesh returns STAC Items/Collections for spatial assets plus typed ecosystem records with provenance, query metadata, coverage confidence, license posture, and provider-native asset refs. Downstream apps such as BA should use those refs to fetch, process, or store data in their own worker/runtime. vmesh may support explicit cache or derivative modes later, but those are opt-in deployment features, not the default contract. Public vmesh docs should describe this as a generic downstream-app ecosystem source-broker contract and should not identify private consumer repos, exact AOIs, local folders, provider credentials, or unpublished planning context.
+
+The broker should fill a stable world-building pack checklist for every site:
+physical geospatial, climate, ecology, soils/geology, planning constraints,
+infrastructure/access, hazard/risk, and provenance/confidence. These are
+source-discovery packs first. Derived rasters, masks, terrain meshes, hydrology
+products, and runtime artifacts belong to downstream workers or explicit VMesh
+cache/worker modes.
 
 The next downstream milestone is a boundary-first source-broker response, not
 only a globe layer. A user or downstream app should be able to select a cell,

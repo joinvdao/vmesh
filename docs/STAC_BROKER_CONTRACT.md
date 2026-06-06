@@ -22,6 +22,103 @@ vmesh is an ecosystem source aggregator by default. It should discover, rank, no
 
 vmesh should not store heavy GIS or ecosystem payloads by default. Downstream apps own fetching, processing, caching, storage, rendering, simulation, and product-specific workflows unless an explicit vmesh deployment enables a cache or derivative-worker mode.
 
+VMesh is therefore responsible for the slow municipal/source-discovery work.
+For each municipality or region, it should learn which open-data portals,
+ArcGIS/FeatureServer services, STAC catalogs, OGC endpoints, object stores,
+climate services, ecology datasets, soil surveys, hazard sources, utility/
+infrastructure layers, and local-context records exist, which are usable, and
+which are blocked or missing. The GIS worker should not have to rediscover
+those sources for every downstream run.
+
+The standard pack checklist is:
+
+- physical geospatial;
+- climate;
+- ecology;
+- soils/geology;
+- planning constraints;
+- infrastructure/access;
+- hazard/risk;
+- provenance/confidence.
+
+VMesh fills the source ladder, coverage state, licence posture, freshness,
+confidence cap, and gap report for each pack. GIS workers process selected refs
+into derived outputs only after VMesh or an operator has established which
+sources are candidates for that AOI.
+
+## Source-Location Discovery Ladder
+
+VMesh should run source-location discovery before file ingestion. The output is
+the STAC/DCAT/OGC/API/portal/source registry showing where data can be pulled
+from, not the raw data itself.
+
+Run order:
+
+1. `country_federal_run`: national portals and agencies. Find federal
+   geoportals, DCAT catalogs, STAC catalogs, DEM/LiDAR indexes, hydrology,
+   soils, climate/weather, hazard, agriculture, biodiversity, census/statistical
+   geography, and protected-area sources. For Canada this includes federal
+   source families such as Open Government Canada, Natural Resources Canada,
+   Environment and Climate Change Canada, Statistics Canada, Agriculture and
+   Agri-Food Canada, and national STAC/OGC/DCAT endpoints where available.
+2. `province_state_region_run`: state/provincial/regional catalogs. Find
+   terrain, LiDAR, orthophoto, hydrology, forest/vegetation, wildfire, soils,
+   planning, transport, parcels/cadastre, and hazard data from regional source
+   owners.
+3. `municipal_county_run`: municipal, county, district, and local-authority
+   catalogs. Find ArcGIS FeatureServer services, Open Data portals, Socrata/
+   CKAN/DCAT catalogs, orthophoto grids, LiDAR tiles, tree inventories,
+   stormwater/drainage, zoning, parcels, roads, buildings, parks, water,
+   utilities, and local climate/hazard studies.
+4. `private_sector_run`: commercial provider catalogs and coverage metadata.
+   Find availability, product IDs, footprints, access approval posture, license
+   posture, indicative cost class, resolution, vintage, and ordering route for
+   providers such as satellite, aerial, LiDAR, weather, parcel, building,
+   mobility, infrastructure, and climate-risk vendors. Do not fetch paid files
+   until a downstream product or operator explicitly authorizes it.
+5. `charity_local_agency_run`: conservation authorities, watershed councils,
+   land trusts, local food networks, emergency/community organizations,
+   agricultural extension groups, and local NGOs. Capture public datasets,
+   reports, service areas, monitoring programs, and contactable source owners.
+6. `open_source_community_run`: OSM, Overture, OpenAerialMap, Wikidata,
+   OpenStreetMap-derived extracts, Open Infrastructure Map, GitHub datasets,
+   community PMTiles/GeoParquet packages, and other public collaborative source
+   registries. Preserve licence and community-source caveats.
+7. `academic_research_run`: universities, government research labs, Zenodo,
+   Dataverse, Figshare, institutional repositories, paper supplements, field
+   campaigns, ecological observatories, and domain-specific research datasets.
+   Mark research datasets with citation, licence, method, and operational
+   readiness caveats.
+
+Each run should emit source-location records:
+
+- `sourceLocationId`;
+- `discoveryRunType`;
+- `packCoverage`: which standard packs the source may fill;
+- `providerName`;
+- `jurisdiction`;
+- `catalogType`: STAC, DCAT, CKAN, Socrata, ArcGIS, OGC, object-store index,
+  API, report/document, repository, provider marketplace, or manual source;
+- `landingPage`;
+- `apiEndpoint` or catalog ref where public-safe;
+- `coverageHint`: country, province/state, municipality, H3, bbox, named area,
+  or unknown;
+- `dataRoles`;
+- `accessPosture`: open, token-gated, licence-review, paid, approval-required,
+  contact-required, blocked, or unknown;
+- `probeStatus`: unprobed, reachable, coverage-proven, no-coverage,
+  blocked, stale, or failed;
+- `freshness`;
+- `licence`;
+- `confidence`;
+- `nextAction`;
+- `gaps`;
+- `createdAt`.
+
+Only after source-location discovery should VMesh or a downstream worker run
+AOI-specific coverage probes, file fetches, clipping, tiling, or derivative
+processing.
+
 ## Primary Output
 
 The primary downstream output is a STAC `FeatureCollection`, STAC Catalog, or STAC API search response for spatial assets, plus typed ecosystem source records for datasets that are tabular, API-backed, H3-indexed, graph-like, or otherwise not naturally represented as raster/vector GIS files.
@@ -73,6 +170,7 @@ Those assets must be labelled as derived/cache outputs and must not replace the 
 ```text
 coordinate / H3 / AOI request
   -> vmesh source adapters query provider registries/APIs
+  -> vmesh fills standard pack source ladders and gap reports
   -> vmesh normalizes spatial results into STAC Items
   -> vmesh normalizes non-spatial ecosystem results into typed source records
   -> BA receives source refs, provenance, and rejected-source reasons
@@ -84,6 +182,13 @@ For a LidarBC coordinate, vmesh should hide ArcGIS layer quirks from the consume
 ## Intel Tools Processing Layer
 
 Intel Tools close discovery gaps by scraping, searching, and lightly probing source candidates. vmesh processes those outputs into a learning source registry. The processing output is a public-safe source broker package, not raw GIS data and not a copy of the sidecar SQLite databases.
+
+This is especially important for municipal discovery. Intel Tools can run
+category-specific searches such as "municipal LiDAR", "open orthophoto",
+"stormwater/drainage GIS", "tree inventory", "parks/natural assets",
+"planning/zoning GIS", "soil/agriculture", "wildfire/flood hazard", and
+"climate/weather station sources". VMesh then promotes only reviewed candidates
+into pack source ladders.
 
 The exporter is:
 
