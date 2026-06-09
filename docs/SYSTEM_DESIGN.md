@@ -142,23 +142,6 @@ vmesh should share contracts before it shares code. Each downstream app may have
 
 The ownership boundary is deliberate: vmesh owns source selection, provenance, STAC/source manifests, typed ecosystem manifests, provider-native refs, and H3/source summaries. Downstream apps own fetching, processing, storage, final rendering, simulations, material systems, agent workflows, and domain-specific user experience. Building Abundance-style products should consume vmesh source-broker responses rather than duplicating provider registries or treating their render/GIS/ecosystem workers as source authority.
 
-For world-building, VMesh owns source discovery for the standard packs:
-physical geospatial, climate, ecology, soils/geology, planning constraints,
-infrastructure/access, hazard/risk, and provenance/confidence. That includes
-municipal source searches, provider coverage probes, licence/access posture,
-candidate source ladders, rejected-source reasons, freshness/update policy, and
-gap reports. GIS workers own the later processing step for selected refs:
-normalization, clipping, reprojection, terrain/hydrology derivation, material
-masks, QA outputs, and app-ready artifacts.
-
-The source-discovery layer should run in tiers: country/federal, province/state/
-region, municipal/county, private-sector, charity/local-agency, open-source/
-community, and academic/research. These runs find source locations and access
-routes first: STAC catalogs, DCAT/CKAN/Socrata portals, ArcGIS FeatureServers,
-OGC services, object-store indexes, provider marketplace records, reports,
-repositories, and contact-required source owners. They do not imply raw file
-download or data storage.
-
 Recommended ownership:
 
 | Contract area                                          | Owning layer | Consumers       |
@@ -166,8 +149,6 @@ Recommended ownership:
 | H3 macro/micro summaries                               | vmesh        | Downstream apps |
 | Basemap, terrain, imagery, and provider metadata       | vmesh        | Downstream apps |
 | STAC/source manifests, ecosystem records, and provider-native asset refs | vmesh | Downstream apps |
-| Standard world-building pack source ladders and gap reports | vmesh | Downstream apps / GIS workers |
-| Source-location registry and discovery run evidence | vmesh | Downstream apps / GIS workers / agents |
 | Optional package/cache artifact contracts              | vmesh/deployment | Downstream apps |
 | Property intelligence and parcel provenance patterns   | vmesh        | Downstream apps |
 | Hub playbook cards and local status checklists         | vmesh        | Downstream apps |
@@ -335,6 +316,8 @@ coverage audit proves otherwise.
 - STAC/source manifest contracts and typed ecosystem records for provider-native refs, plus optional artifact contracts for PMTiles, vector tiles, raster tiles, COG, Zarr, GeoParquet, H3 summaries, tabular ledgers, manifests, and bounded APIs;
 - API routes at `/api/geospatial-package/sources`, `/api/geospatial-package/plan`, and `/api/geospatial-package/sentinel-sr`;
 - a future MCP-style tool namespace for source listing, STAC/source planning, Sentinel/SEN2SR planning, and manifest retrieval.
+
+The source registry should become a durable DB, not just in-memory code and sidecar snapshots. It must track source authorities, endpoints, collections, coverage evidence, and discovery runs across country, state/province, municipal, private-sector, charity/local agency, open-community, and academic source levels. The schema target and the seed Canada/USA source ladders are specified in `docs/SOURCE_REGISTRY_DB.md`. This DB stores source metadata, provider-native refs, promotion state, evidence refs, and rejected-source reasons; it does not store heavy GIS/ecosystem payloads by default.
 
 The broker is not a general data worker and should not store heavy GIS or ecosystem payloads by default. It returns source-honest plans, STAC/source manifests, typed ecosystem source records, and provider-native refs; downstream apps or explicitly configured local/server workers are responsible for downloading, clipping, tiling, caching, storing, and validating heavy artifacts.
 

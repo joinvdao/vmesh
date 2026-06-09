@@ -30,6 +30,8 @@ Useful official references:
 - USGS 3DEP products and services: `https://www.usgs.gov/3d-elevation-program/about-3dep-products-services`
 - USGS 3DEP spatial metadata: `https://www.usgs.gov/3d-elevation-program/3dep-spatial-metadata`
 - Canada HRDEM open data: `https://open.canada.ca/data/en/dataset/957782bf-847c-4644-a757-e383c0057995`
+- Canada Geo.ca Datacube STAC root: `https://datacube.services.geo.ca/stac/api/`
+- Canada HRDEM STAC collections: `hrdem-mosaic-1m`, `hrdem-mosaic-2m`, `hrdem-lidar`
 - Canada HRDEM product specification: `https://download-telecharger.services.geo.ca/pub/elevation/dem_mne/highresolution_hauteresolution/HRDEM_Product_Specification.pdf`
 - LidarBC: `https://www2.gov.bc.ca/gov/content/data/geographic-data-services/topographic-data/lidarbc`
 

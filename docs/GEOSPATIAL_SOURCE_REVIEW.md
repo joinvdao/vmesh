@@ -14,6 +14,8 @@ The rest of the geospatial layer is mostly `ready_source_ref` or `configured_onl
 
 The Intel Tools sidecar package is useful for gap discovery, dedupe, and candidate intelligence, but most candidates remain noisy, unprobed, research-only, or license-review pending. It should not be treated as a BA-ready source registry without promotion.
 
+Update note, 2026-06-06: VMesh needs a durable source-registry DB to avoid repeating source discovery and to distinguish country, state/province, municipal, private-sector, charity/local agency, open-community, and academic source levels. The target schema and initial Canada/USA source ladders are now documented in [SOURCE_REGISTRY_DB.md](SOURCE_REGISTRY_DB.md).
+
 ## Bucket Readiness Matrix
 
 | Bucket                   | Known sidecar candidates | Sidecar BA-ready count | Registry/source state                                                                                               | BA default status                                                   |
@@ -118,6 +120,14 @@ Retained terrain artifacts prove:
 - BC DTM/DSM source paths: LidarBC selected and rendered for a public-safe Vancouver AOI.
 - Fail-closed behavior: a BC interior strict 1m gap reports blocked/no-valid-pixel reasons instead of silently falling back.
 
+Additional Canada source trace:
+
+- Official upstream Canadian STAC root: `https://datacube.services.geo.ca/stac/api/`.
+- Key Canadian terrain collections: `hrdem-mosaic-1m`, `hrdem-mosaic-2m`, and `hrdem-lidar`.
+- Mapterhorn source-family clue: `cahrdem2`, Natural Resources Canada, listed by Mapterhorn as partial 2 m Canada DTM. This is not enough to claim Canada-wide 1 m terrain.
+- Rose already has a strong operator-local source pack. The Mapterhorn/Canadian STAC work was a fallback and provenance test, not the original discovery of Rose source data.
+- A redacted Rose fallback/provenance probe matched public source item families `2_4-mosaic-1m`, `2_4-mosaic-2m`, and `BC-Riverine_Floodplain_UTM10_2019-1m`. Promote this to repo-level `live_proof` only after a retained redacted evidence artifact is added without exact private coordinates or local paths.
+
 Retained artifacts:
 
 - `.artifacts/terrain-source-preview/source-preview-coordinate-probe-live-proof-latest.json`
@@ -131,15 +141,22 @@ No retained live-proof exists yet for the non-terrain geospatial buckets.
 
 ## Kamloops / Rose Gap Assessment
 
-The repo has public-safe Kamloops/BC-interior evidence and an expected-gap coordinate proof, but exact Kamloops/Rose golden-site coordinates are not committed. The current review can only say:
+The repo has public-safe Kamloops/BC-interior evidence and an expected-gap coordinate proof, but exact Kamloops/Rose golden-site coordinates are not committed. Rose itself already has a strong operator-local source pack. A later Mapterhorn/Canadian STAC fallback test traced direct NRCan/Geo.ca source item families for the redacted Rose AOI, including HRDEM 1 m, HRDEM 2 m, and a LiDAR-derived 1 m project. Until a redacted retained artifact is added, the public repo can only say:
 
 - BC/LidarBC and HRDEM terrain paths are strong candidates for Kamloops/Rose.
 - The public-safe BC interior sample shows strict 1m can fail closed when no valid pixels exist.
-- Golden-site coverage needs an operator-local coordinate run before BA can receive `live_proof_ready` for that exact site.
+- Operator-local evidence indicates Rose has good source-pack data and should also be covered by direct NRCan/Geo.ca HRDEM/LiDAR-derived DTM/DSM fallback/provenance source families, but BA should receive repo-level `live_proof_ready` for that exact site only after redacted retained evidence is attached.
+- The source search must distinguish raw public point-cloud availability from processed LiDAR-derived DTM/DSM COG availability.
 
 Setup gap:
 
-- `kamloops_rose_private_coordinate_required_for_live_proof`
+- `kamloops_rose_redacted_retained_evidence_required_for_repo_live_proof`
+
+Discovery-method correction:
+
+- Do not conclude "no LiDAR" for an AOI until the national STAC/elevation catalog, provincial/state portal, and municipal/local portal have all been checked.
+- National catalogs may expose processed LiDAR-derived DTM/DSM even when raw LAS/LAZ point clouds are not obvious from a municipal search.
+- Municipal and regional portals still matter because they may hold higher-resolution orthophotos, local tree inventories, road layers, drainage, planning overlays, or raw point-cloud indexes not exposed through national source-family search.
 
 ## Alberta Gap Assessment
 

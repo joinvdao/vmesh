@@ -6,33 +6,9 @@ For end users, it is a source-honest atlas for finding and inspecting macro and 
 
 For downstream products, it is a source-honest ecosystem source broker and data provider. That means vmesh should help other apps understand which earth, ecological, infrastructure, climate, hydrology, soils, landcover, biodiversity, food-system, and local-context sources exist for a place, what each source can and cannot prove, what was selected or rejected, and which provider-native assets are ready to pipe without pretending inferred, generated, fallback, or visual layers are authoritative truth. The default downstream contract is STAC-style discovery plus typed ecosystem provenance, not vmesh-owned storage of heavy GIS or ecosystem payloads.
 
-vmesh is a [VDAO.io](https://vdao.io) community project.
+vmesh is a [VDAO.io](https://vdao.io) community project. It is being built in public as part of a weekly livestream on X every Thursday at 5pm UTC: [@joinvdao](https://x.com/joinvdao).
 
-## Repository Disclosure Condition
-
-This repository is private/internal-first. Do not treat this repo as public
-open-source release material.
-
-This private working repo may contain private product strategy, BA-facing
-source-broker contracts, source-discovery logic, worker orchestration,
-eval-site labels, provider review notes, and private implementation context.
-Those assets should stay private until a deliberate release review separates
-the public substrate from the private operating engine.
-
-Public release requires an explicit owner-approved split:
-
-- public-safe app shell, schemas, contracts, fixtures, adapter interfaces, and
-  generic provenance docs may move into a public VMesh OSS surface;
-- live source discovery, Intel Tools integration, paid/provider strategy,
-  private eval-site context, promotion heuristics, worker orchestration, cache
-  topology, BA-specific package compiler behavior, and private run outputs stay
-  in private VDAO/VMesh/VAagents infrastructure;
-- exact private coordinates, private AOIs, signed URLs, provider order/quote
-  details, secrets, VPS topology, and raw sidecar outputs must never be
-  committed to public release artifacts.
-
-License status is intentionally deferred while this repository remains private.
-Add or confirm a license only as part of the public-release split.
+vmesh is released under the MIT License.
 
 V1 now ships a polished Next.js dashboard shell with a real Three.js orbit globe, MapLibre source-backed map output, deck.gl H3 mesh overlay plumbing, Zustand state, mock U3/U5/U8 records, local/private user records, source/data overview panels, provider-agnostic basemap and open-terrain foundations, source-layer controls, and a Sentinel/SEN2SR imagery pipeline boundary.
 
@@ -140,6 +116,7 @@ Climate/weather provider scaffolding is retained only as future-provider plumbin
 - `docs/DESIGN_DIRECTION.md`: visual target and dashboard composition notes.
 - `docs/SYSTEM_DESIGN.md`: architecture and implementation contracts.
 - `docs/STAC_BROKER_CONTRACT.md`: default downstream ecosystem source-broker contract.
+- `docs/SOURCE_REGISTRY_DB.md`: durable source-registry DB target for country, state/province, municipal, private, community, and academic data sources.
 - `docs/TESTING.md`: verification strategy and required commands.
 - `docs/SECURITY_PRIVACY.md`: data, provider, user-content, and telemetry safety rules.
 - `docs/OPERATIONS.md`: local runbook, deployment expectations, ingestion notes, and incident notes.

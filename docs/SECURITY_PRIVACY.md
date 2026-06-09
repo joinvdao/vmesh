@@ -1,32 +1,5 @@
 # Security And Privacy
 
-## Current Repository Disclosure Condition
-
-VMesh private is internal-first. This repository is not public-release material
-and must not be mirrored, published, or treated as an open-source distribution
-until an owner-approved release split is complete.
-
-The private repo may hold source-broker strategy, BA-facing package contracts,
-source-discovery processing, Intel Tools integration, worker orchestration,
-provider review notes, evaluation-site labels, and private implementation
-context. These are useful operating assets, but they are not all appropriate
-for a public repository.
-
-A future public VMesh surface may include sanitized app code, public schemas,
-source/package contracts, adapter interfaces, fixtures, and generic provenance
-rules. Keep the following private unless explicitly cleared:
-
-- live source discovery and recursive learning machinery;
-- Intel Tools sidecar outputs, SQLite databases, run exports, and promotion
-  heuristics;
-- paid/provider strategy, order/quote details, and cost-review notes;
-- exact private coordinates, private AOIs, private addresses, and eval-site
-  details that can identify sensitive locations;
-- VPS topology, local paths, worker deployment details, cache locations, and
-  signed object refs;
-- BA-specific package compiler behavior that represents private product
-  advantage rather than a generic open standard.
-
 ## Data Classification
 
 | Data                              | Classification               | Rule                                                                |

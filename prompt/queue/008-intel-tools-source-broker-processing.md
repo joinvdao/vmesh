@@ -55,21 +55,47 @@ Known gaps:
 Existing VMesh sources to avoid duplicating:
 {{EXISTING_SOURCE_SUMMARY}}
 
+Coordinate/local discovery rule:
+- For every coordinate-led or AOI-led geospatial run, identify the local
+  municipality/city and the next local public bodies first: county, regional
+  district, watershed/conservation authority, utility/public works body, tribal
+  or Indigenous public data authority where applicable, and local planning/GIS
+  offices.
+- A negative provincial, state, territorial, national, or global catalogue result
+  is not a real gap until the municipal/local-government pass is completed and
+  recorded.
+- If a municipal ArcGIS app, webmap, Experience Builder app, Hub site, or grid
+  index exposes one useful product, inspect the app/webmap JSON and popup
+  expressions for sibling product templates. Do not harvest only orthophoto or
+  imagery links if the same grid also exposes DEM, DSM, LiDAR, contours, or
+  other source products.
+- Inspect ArcGIS `/sharing/rest/content/items/{id}/data`, webmap operational
+  layers, MapServer/FeatureServer/ImageServer metadata, popup Arcade
+  expressions, field aliases, `CELLNAME`/tile/grid identifiers, and direct static
+  open-data URL patterns.
+- Record both negative evidence and positive municipal evidence. Example failure
+  mode to avoid: a provincial LiDAR index can be negative while a city download
+  app exposes municipal LiDAR/DEM for the same area.
+
 Discovery priorities:
 1. Official government, academic, standards-body, NGO, utility, or direct provider sources.
-2. Machine-readable endpoints first: STAC, ArcGIS REST, CKAN, OGC WMS/WFS/WCS/WMTS, public APIs, cloud buckets, direct downloads.
-3. Metadata-rich catalog pages second.
-4. PDFs/research papers only when they provide provenance, constants, or source leads.
-5. Generic HTML, social pages, press releases, and blogs should be marked low-confidence unless they point to a real data endpoint.
+2. Municipal/local-government sources before broader catalogues for coordinate-led runs.
+3. Machine-readable endpoints first: STAC, ArcGIS REST, CKAN, OGC WMS/WFS/WCS/WMTS, public APIs, cloud buckets, direct downloads.
+4. Metadata-rich catalog pages second.
+5. PDFs/research papers only when they provide provenance, constants, or source leads.
+6. Generic HTML, social pages, press releases, and blogs should be marked low-confidence unless they point to a real data endpoint.
 
 For every candidate, capture:
 - canonical source name
 - provider/operator
 - country, region, jurisdiction
+- jurisdiction level: municipal, regional, provincial/state, national, global, provider, research
 - source domain/layer
 - official URL
 - endpoint URL if present
 - endpoint type
+- parent app/catalog/webmap URL if the endpoint was discovered through an app
+- sibling products discovered from the same app/grid/catalog
 - data format
 - coverage area or claimed geography
 - bbox if discoverable
@@ -83,6 +109,8 @@ For every candidate, capture:
 - evidence references
 - reason this closes a known gap
 - limitations, uncertainty, or blocked access
+- municipal/local search status for coordinate-led runs
+- negative-evidence dependencies, such as "provincial index negative but municipal pass incomplete"
 
 Do not download large GIS payloads. Do not scrape private data. Do not retain secrets, exact private addresses, private coordinates, tokens, or signed URLs.
 
@@ -94,6 +122,7 @@ Perform only cheap probes where safe:
 - STAC collections/search availability
 - CKAN package/resource metadata
 - OGC GetCapabilities
+- ArcGIS app/webmap popup-expression extraction for direct download templates
 
 Return structured output with these sections:
 1. source_candidates
@@ -104,6 +133,9 @@ Return structured output with these sections:
 6. remaining_gaps
 7. recommended_next_probes
 8. run_manifest
+9. municipal_local_search_log
+10. app_grid_product_template_matrix
+11. negative_evidence_register
 
 Mark every candidate with one of:
 - likely_ready_source
@@ -112,6 +144,7 @@ Mark every candidate with one of:
 - research_only
 - noisy_candidate
 - blocked
+- negative_requires_municipal_search
 ```
 
 ## Prompt 2: VMesh Processing Run
@@ -145,6 +178,16 @@ Processing rules:
 - Promote only source references, endpoint recipes, metadata, provenance, and confidence states.
 - Do not promote raw scraped pages, prompts, logs, private coordinates, secrets, signed URLs, or bulky payloads.
 - Prefer official/machine-readable/provider-native endpoints.
+- For coordinate-led geospatial runs, do not treat a terrain, imagery, LiDAR,
+  DEM/DTM/DSM, hydrology, or vector bucket as truly missing unless the Intel run
+  includes a municipal/local-government search log.
+- If an Intel run found a municipal grid/app for one product, require evidence
+  that sibling product templates were checked before closing adjacent buckets.
+  For example, an orthophoto grid discovery should trigger DEM/LiDAR/DSM URL
+  template checks in the same app or webmap.
+- Preserve negative evidence separately from real gaps. "Provincial index
+  returned zero features" is useful evidence, but it is not proof that municipal
+  or local data is absent.
 - Keep research papers and PDFs as provenance or constants evidence, not operational data feeds unless they expose a usable endpoint.
 - Collapse duplicate URLs into one canonical source with multiple endpoints.
 - Preserve all useful evidence and review decisions so VMesh gets smarter over time.
@@ -155,8 +198,13 @@ For each candidate, assign:
   candidate, needs_probe, needs_review, ready_source_ref, adapter_ready, research_only, blocked, deprecated
 - endpoint type:
   stac, arcgis_feature_server, arcgis_image_server, ckan, ogc, api_json, static_download, html_catalog, pdf, unknown
+- jurisdiction level:
+  municipal, regional, provincial_state, national, global, provider, research
 - domain tags
 - coverage metadata
+- municipal/local search status
+- sibling product/template discovery status
+- negative evidence links
 - source priority score
 - confidence score
 - license/access status
@@ -184,6 +232,8 @@ Return:
 9. rejected_or_blocked_sources
 10. remaining_gap_register
 11. broker_response_examples
+12. municipal_local_discovery_gaps
+13. negative_evidence_not_yet_a_gap
 
 The BA-facing output should be a fast source package, not raw GIS data:
 - STAC-style spatial source refs where applicable
@@ -220,10 +270,12 @@ Use a promotion funnel:
 2. Normalize names, providers, URLs, geography, endpoint types, and domains.
 3. Dedupe aggressively into canonical sources and endpoint aliases.
 4. Auto-downgrade obvious noise.
-5. Prioritize active BA geographies, especially Kamloops/Rose and Alberta.
-6. Probe only high-value, likely machine-readable endpoints first.
-7. Promote only usable source references and fetch recipes.
-8. Preserve rejected, blocked, and research-only decisions so future Intel runs do not repeat work.
+5. For coordinate-led geospatial sources, check whether municipal/local search
+   evidence exists before accepting a gap conclusion.
+6. Prioritize active BA geographies, especially Kamloops/Rose and Alberta.
+7. Probe only high-value, likely machine-readable endpoints first.
+8. Promote only usable source references and fetch recipes.
+9. Preserve rejected, blocked, and research-only decisions so future Intel runs do not repeat work.
 
 ## Implementation Targets
 

@@ -66,6 +66,8 @@ For each bucket, answer:
 8. Which sources are missing for Kamloops/Rose and Alberta?
 9. Which endpoints are machine-readable enough for a fast BA pipe?
 10. Which sources should remain hidden from default UI but available to advanced/API mode?
+11. For coordinate-led gaps, did the Intel Tools run complete a municipal/local-government search before accepting the gap?
+12. If a municipal app/grid/catalog exposed one product, were sibling products checked from the same app, webmap, popup expressions, or grid?
 
 ## Source Status Definitions
 
@@ -87,6 +89,15 @@ Use these exact statuses:
 - Do not call a source BA-ready from docs, mocks, static tests, or local build alone.
 - Do not upgrade MapLibre/Mapzen/Mapterhorn/demo/fallback renderers into source truth.
 - DTM cannot satisfy DSM. DSM cannot satisfy bare-earth DTM.
+- Do not call LiDAR, DEM, DTM, DSM, orthophoto, hydrology, roads, buildings, or
+  other coordinate-led geospatial data missing from provincial/national/global
+  negative evidence alone. Require a municipal/local-government discovery pass,
+  or classify the bucket as `needs_probe`.
+- If an app/grid/catalog was used to prove one municipal product, review whether
+  the same app exposes sibling product templates. Missing that check is a review
+  blocker, not a valid data gap.
+- Preserve negative evidence as negative evidence. A zero-feature provincial
+  index result can coexist with a positive municipal source.
 - Research papers and PDFs may explain or cite sources; they are not operational feeds unless they expose a usable endpoint.
 - Do not expose secrets, tokens, signed URLs, private coordinates, exact private addresses, raw PII, or local machine paths.
 - Do not commit heavy GIS payloads or raw scrape pages.
@@ -109,6 +120,8 @@ The report must include:
 10. `rejected_or_quarantined_sources`
 11. `recommended_ba_contract_changes`
 12. `next_implementation_prompt`
+13. `municipal_local_search_audit`
+14. `negative_evidence_not_yet_a_gap`
 
 Include counts by bucket and status. Include source IDs and provider refs, but redact any private or sensitive details.
 
