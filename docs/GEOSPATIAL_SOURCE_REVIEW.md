@@ -30,6 +30,37 @@ Update note, 2026-06-06: VMesh needs a durable source-registry DB to avoid repea
 
 The sidecar import summary reports 3,353 canonical source candidates and 3,907 quarantined candidates across imported runs. Status distribution is dominated by `noisy_candidate`, `needs_probe`, `research_only`, and `needs_license_review`.
 
+## Source Cooperative (cholmes) — cloud-native open host [candidate authority, added 2026-06-18]
+
+[Source Cooperative / cholmes](https://source.coop/cholmes) (Chris Holmes — Cloud-Native Geospatial / STAC / Radiant Earth) republishes major open datasets as **cloud-native, no-key** GeoParquet / PMTiles / COG. This fits the vmesh broker model unusually well: bbox/point queries can run **directly against remote GeoParquet** (HTTP range reads via DuckDB / hyparquet) with **no API key and no rate limit** — i.e. a new `geoparquet-bbox` fetch-recipe adapter family. Treat Source Cooperative as an **open-community authority** in the jurisdiction ladder. The datasets below are **candidates** — they still need a per-AOI coverage probe + per-dataset license verification (the listing page shows license as unspecified).
+
+| Dataset | vmesh bucket | Coverage | Format | License (verify) |
+| --- | --- | --- | --- | --- |
+| **Open Administrative Boundaries** (Overture divisions, Jan 2025; `countries.parquet`, **ADM0/country only**) | jurisdiction index / `knowledge_context` | Global | GeoParquet | Overture (CDLA-Permissive / ODbL) |
+| **Cloud Native MGRS** (1 km grid + admin boundaries) | reference grid / jurisdiction | Global | GeoParquet | grid public-domain; admin per-Overture |
+| **Overture Open Buildings** | `access_infrastructure` | Global | GeoParquet, PMTiles | ODbL / CDLA |
+| **Google Open Buildings** | `access_infrastructure` | Africa, S & SE Asia | GeoParquet, PMTiles | CC BY 4.0 |
+| **National Hydrography Dataset (NHD)** | `water_hydrology` | USA | GeoParquet | US public domain |
+| **EuroCrops** | `food_system_local_assets` / `soils_landcover` | EU | GeoParquet, FlatGeobuf, PMTiles | per-country (research) |
+| **Fields of the World / fiboa** | `food_system_local_assets` / `land_property_planning` | standard + samples | GeoParquet | per-dataset |
+| **STAC-GeoParquet (Sentinel-2, Landsat)** | `imagery_observation` (STAC index) | Global | GeoParquet | open metadata |
+| **Sentinel-2 Grid** | `imagery_observation` (reference) | Global | GeoParquet | open |
+| **Ordnance Survey Open Data** (cloud-native) | multi (terrain/roads/places) | United Kingdom | GeoParquet, PMTiles | OGL |
+
+**Why it matters for vmesh:**
+- **Admin boundaries — mind the level.** `cholmes/admin-boundaries` is **ADM0/country only** today (`countries.parquet`), which vmesh already has via geoBoundaries CGAZ ADM0 — so it does **not** close the ADM1/ADM2 gap; treat it only as a fast country-code tagger / cross-check. The real ADM1/2 deepening in `JURISDICTION_INDEX.md` still comes from geoBoundaries gbOpen ADM1/2 (CC BY 4.0) or the **full** Overture `divisions` theme (region/county/locality), not this country-filtered file.
+- **No-key global candidates** for buildings (`access_infrastructure`), hydrography (`water_hydrology`), the imagery STAC index (`imagery_observation`), and food/field boundaries (`food_system_local_assets`).
+- **Cloud-native format = cheap recipes** — GeoParquet bbox reads need no provider account, so these are strong `ready_source_ref` candidates once per-AOI coverage + license are confirmed.
+
+**Promotion path:** probe one dataset per bucket against the Kamloops/Rose + Alberta eval AOIs, confirm per-dataset license, then register as `source_collections` with a `geoparquet-bbox` recipe and promote per `INTEL_VMESH_SOURCE_HANDOFF_CONTRACT.md`.
+
+## Cloud-native geo tooling [added 2026-06-18]
+
+Open tools that make the `geoparquet-bbox` adapter + the H3 jurisdiction index cheap to build:
+
+- **[geoparquet-io](https://github.com/geoparquet/geoparquet-io)** (Python lib + CLI, Apache-2.0; docs at geoparquet.io) — fast GeoParquet I/O + transform: convert / sort / partition, **spatial indexing (H3, S2, A5, quadkey, KD-tree)**, auto bbox column, Hilbert sort, ZSTD, GeoParquet 1.1/2.0. Built on **DuckDB + PyArrow + GDAL + Obstore** with native S3 / GCS / Azure / HTTPS reads. This is the implementation tool for (a) the `geoparquet-bbox` fetch adapter that reads Source Cooperative datasets by bbox/point with no key, and (b) the H3 polyfill in `JURISDICTION_INDEX.md` — its built-in H3 indexing emits the `cell → jurisdiction_id` table directly.
+- **[GeoLibre](https://github.com/opengeos/GeoLibre)** (opengeos / Qiusheng Wu, MIT) — cloud-native GIS platform: **MapLibre GL JS + DuckDB-WASM Spatial + deck.gl** front end, FastAPI Python sidecar, runs desktop / web / Android / Jupyter. Loads remote GeoParquet/GeoJSON/Shapefile and runs spatial SQL **client-side in the browser via DuckDB-WASM** — i.e. a working reference architecture for vmesh's map/H3 UI and for executing `geoparquet-bbox` queries with no server. Integrates Planetary Computer / Earth Engine. Treat as a UI/serving-layer reference (see `SYSTEM_DESIGN.md`), not a data source.
+
 ## Sources Ready For BA
 
 ### `live_proof_ready`
