@@ -34,25 +34,52 @@ The sidecar import summary reports 3,353 canonical source candidates and 3,907 q
 
 [Source Cooperative / cholmes](https://source.coop/cholmes) (Chris Holmes — Cloud-Native Geospatial / STAC / Radiant Earth) republishes major open datasets as **cloud-native, no-key** GeoParquet / PMTiles / COG. This fits the vmesh broker model unusually well: bbox/point queries can run **directly against remote GeoParquet** (HTTP range reads via DuckDB / hyparquet) with **no API key and no rate limit** — i.e. a new `geoparquet-bbox` fetch-recipe adapter family. Treat Source Cooperative as an **open-community authority** in the jurisdiction ladder. The datasets below are **candidates** — they still need a per-AOI coverage probe + per-dataset license verification (the listing page shows license as unspecified).
 
-| Dataset | vmesh bucket | Coverage | Format | License (verify) |
-| --- | --- | --- | --- | --- |
-| **Open Administrative Boundaries** (Overture divisions, Jan 2025; `countries.parquet`, **ADM0/country only**) | jurisdiction index / `knowledge_context` | Global | GeoParquet | Overture (CDLA-Permissive / ODbL) |
-| **Cloud Native MGRS** (1 km grid + admin boundaries) | reference grid / jurisdiction | Global | GeoParquet | grid public-domain; admin per-Overture |
-| **Overture Open Buildings** | `access_infrastructure` | Global | GeoParquet, PMTiles | ODbL / CDLA |
-| **Google Open Buildings** | `access_infrastructure` | Africa, S & SE Asia | GeoParquet, PMTiles | CC BY 4.0 |
-| **National Hydrography Dataset (NHD)** | `water_hydrology` | USA | GeoParquet | US public domain |
-| **EuroCrops** | `food_system_local_assets` / `soils_landcover` | EU | GeoParquet, FlatGeobuf, PMTiles | per-country (research) |
-| **Fields of the World / fiboa** | `food_system_local_assets` / `land_property_planning` | standard + samples | GeoParquet | per-dataset |
-| **STAC-GeoParquet (Sentinel-2, Landsat)** | `imagery_observation` (STAC index) | Global | GeoParquet | open metadata |
-| **Sentinel-2 Grid** | `imagery_observation` (reference) | Global | GeoParquet | open |
-| **Ordnance Survey Open Data** (cloud-native) | multi (terrain/roads/places) | United Kingdom | GeoParquet, PMTiles | OGL |
+| Dataset                                                                                                       | vmesh bucket                                          | Coverage            | Format                          | License (verify)                       |
+| ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------- | ------------------------------- | -------------------------------------- |
+| **Open Administrative Boundaries** (Overture divisions, Jan 2025; `countries.parquet`, **ADM0/country only**) | jurisdiction index / `knowledge_context`              | Global              | GeoParquet                      | Overture (CDLA-Permissive / ODbL)      |
+| **Cloud Native MGRS** (1 km grid + admin boundaries)                                                          | reference grid / jurisdiction                         | Global              | GeoParquet                      | grid public-domain; admin per-Overture |
+| **Overture Open Buildings**                                                                                   | `access_infrastructure`                               | Global              | GeoParquet, PMTiles             | ODbL / CDLA                            |
+| **Google Open Buildings**                                                                                     | `access_infrastructure`                               | Africa, S & SE Asia | GeoParquet, PMTiles             | CC BY 4.0                              |
+| **National Hydrography Dataset (NHD)**                                                                        | `water_hydrology`                                     | USA                 | GeoParquet                      | US public domain                       |
+| **EuroCrops**                                                                                                 | `food_system_local_assets` / `soils_landcover`        | EU                  | GeoParquet, FlatGeobuf, PMTiles | per-country (research)                 |
+| **Fields of the World / fiboa**                                                                               | `food_system_local_assets` / `land_property_planning` | standard + samples  | GeoParquet                      | per-dataset                            |
+| **STAC-GeoParquet (Sentinel-2, Landsat)**                                                                     | `imagery_observation` (STAC index)                    | Global              | GeoParquet                      | open metadata                          |
+| **Sentinel-2 Grid**                                                                                           | `imagery_observation` (reference)                     | Global              | GeoParquet                      | open                                   |
+| **Ordnance Survey Open Data** (cloud-native)                                                                  | multi (terrain/roads/places)                          | United Kingdom      | GeoParquet, PMTiles             | OGL                                    |
 
 **Why it matters for vmesh:**
+
 - **Admin boundaries — mind the level.** `cholmes/admin-boundaries` is **ADM0/country only** today (`countries.parquet`), which vmesh already has via geoBoundaries CGAZ ADM0 — so it does **not** close the ADM1/ADM2 gap; treat it only as a fast country-code tagger / cross-check. The real ADM1/2 deepening in `JURISDICTION_INDEX.md` still comes from geoBoundaries gbOpen ADM1/2 (CC BY 4.0) or the **full** Overture `divisions` theme (region/county/locality), not this country-filtered file.
 - **No-key global candidates** for buildings (`access_infrastructure`), hydrography (`water_hydrology`), the imagery STAC index (`imagery_observation`), and food/field boundaries (`food_system_local_assets`).
 - **Cloud-native format = cheap recipes** — GeoParquet bbox reads need no provider account, so these are strong `ready_source_ref` candidates once per-AOI coverage + license are confirmed.
 
 **Promotion path:** probe one dataset per bucket against the Kamloops/Rose + Alberta eval AOIs, confirm per-dataset license, then register as `source_collections` with a `geoparquet-bbox` recipe and promote per `INTEL_VMESH_SOURCE_HANDOFF_CONTRACT.md`.
+
+## OpenAerialMap (OAM) — open imagery STAC catalog [candidate authority, added 2026-06-22]
+
+[OpenAerialMap](https://map.openaerialmap.org/) (community service stewarded by HOT / the Open Imagery
+Network) is an open catalog of openly-licensed **aerial, drone, and satellite imagery**, served as
+**Cloud-Optimized GeoTIFFs (COG) + TMS tiles** and exposed through a **STAC-aligned catalog API**
+(`https://api.openaerialmap.org/`) — **no API key**. Imagery is predominantly **CC BY 4.0**
+(uploader-chosen open license). This fits the vmesh broker as a candidate `imagery_observation` STAC
+source (a `stac-search → COG` recipe) and complements the STAC-GeoParquet (Sentinel-2 / Landsat) index
+from Source Cooperative with **high-resolution local / drone** captures where they exist.
+
+| Field                     | Value                                                                                                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| vmesh bucket              | `imagery_observation`                                                                                                                                              |
+| Endpoint                  | STAC-aligned catalog API (`api.openaerialmap.org`); web browser at `map.openaerialmap.org`                                                                         |
+| Format                    | COG (GeoTIFF) + TMS tiles + thumbnails                                                                                                                             |
+| License (verify per item) | mostly CC BY 4.0 (Open Imagery Network); confirm per-image                                                                                                         |
+| Coverage                  | **crowd-sourced + sparse/uneven** — strong where contributors uploaded (humanitarian mapping, drone surveys), empty elsewhere; variable resolution + capture dates |
+
+**Why it matters for vmesh:**
+
+- **No-key, openly-licensed, high-res** imagery — fills what STAC-GeoParquet / Sentinel-2 cannot (sub-metre drone/aerial vs ~10 m satellite) wherever coverage exists.
+- **Per-image provenance + license + capture date** ride on each STAC item → fits the provenance-first contract.
+- **Coverage is the catch, not the API.** Treat as an **opportunistic AOI supplement**, not a systematic source — most AOIs return nothing, so the per-AOI coverage probe decides usefulness. (Operator shared an AOI link over central Scotland, ~56.0° N / -3.5° W, near the Perthshire eval sites — a good first coverage probe.)
+
+**Promotion path:** probe the OAM STAC API for coverage over the Scotland/Perthshire + Kamloops/Rose eval AOIs; where imagery exists, verify the per-image license, then register as a `source_collection` with a `stac-search` recipe per `STAC_BROKER_CONTRACT.md` + `INTEL_VMESH_SOURCE_HANDOFF_CONTRACT.md`. Until then it stays `needs_probe` / `needs_license_review`.
 
 ## Cloud-native geo tooling [added 2026-06-18]
 
