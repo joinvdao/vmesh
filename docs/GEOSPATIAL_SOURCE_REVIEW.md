@@ -87,6 +87,26 @@ Open tools that make the `geoparquet-bbox` adapter + the H3 jurisdiction index c
 
 - **[geoparquet-io](https://github.com/geoparquet/geoparquet-io)** (Python lib + CLI, Apache-2.0; docs at geoparquet.io) — fast GeoParquet I/O + transform: convert / sort / partition, **spatial indexing (H3, S2, A5, quadkey, KD-tree)**, auto bbox column, Hilbert sort, ZSTD, GeoParquet 1.1/2.0. Built on **DuckDB + PyArrow + GDAL + Obstore** with native S3 / GCS / Azure / HTTPS reads. This is the implementation tool for (a) the `geoparquet-bbox` fetch adapter that reads Source Cooperative datasets by bbox/point with no key, and (b) the H3 polyfill in `JURISDICTION_INDEX.md` — its built-in H3 indexing emits the `cell → jurisdiction_id` table directly.
 - **[GeoLibre](https://github.com/opengeos/GeoLibre)** (opengeos / Qiusheng Wu, MIT) — cloud-native GIS platform: **MapLibre GL JS + DuckDB-WASM Spatial + deck.gl** front end, FastAPI Python sidecar, runs desktop / web / Android / Jupyter. Loads remote GeoParquet/GeoJSON/Shapefile and runs spatial SQL **client-side in the browser via DuckDB-WASM** — i.e. a working reference architecture for vmesh's map/H3 UI and for executing `geoparquet-bbox` queries with no server. Integrates Planetary Computer / Earth Engine. Treat as a UI/serving-layer reference (see `SYSTEM_DESIGN.md`), not a data source.
+  - **ADOPT/REJECT verdict [2026-07-05, full assessment → vmesh public queue `008-geolibre-harvest`]:**
+    **ADOPT (1) as the operator source-review bench** for the `needs_probe` /
+    `needs_license_review` step: drag in a COG, hit a STAC endpoint, WMS
+    GetCapabilities discovery, range-read remote GeoParquet (its SQL samples
+    read `data.source.coop` — our Source Cooperative candidates directly),
+    inspect, then record the verdict in this registry as usual. Workflow
+    adoption, zero code dependency. **ADOPT (2) native DuckDB in the
+    worker/pipeline** for the `geoparquet-bbox` recipe (AOI extracts + H3
+    summaries via HTTP range reads; pairs with geoparquet-io above);
+    DuckDB-WASM in-browser only later, lazy-loaded, operator/advanced view
+    only (~30MB payload has no place in the default atlas). **PATTERN REFS:**
+    Field Collection → user-records milestone; PWA offline-area precache →
+    offline milestone; `?url=` project deep links → package-manifest sharing.
+    **REJECT (recorded so it isn't relitigated):** embedding/forking the
+    workbench (identity conflict — vmesh is a curated provenance-gated atlas,
+    not a generic GIS); the add-anything ingestion UI in the default surface;
+    Whitebox-WASM/browser raster processing (server-side discipline stands);
+    Tauri desktop/mobile builds; the canvas atmosphere plugin (our Three.js
+    globe exceeds it). Prefer consuming the underlying libs (duckdb, geotiff.js,
+    pmtiles, flatgeobuf) over depending on the 6-week-old platform itself.
 
 ## Sources Ready For BA
 
