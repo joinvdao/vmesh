@@ -49,6 +49,11 @@ The VMesh/Abundance seam is partially implemented, not fully resolved. The
 current code can emit Abundance-oriented handoffs and Abundance can normalize
 those into builder inputs/source-pack summaries. The remaining proof is:
 
+Prerequisite worker readiness is reconciled with Abundance at
+`abundance-v2 303f7a9`: GIS/GPU/palette preflight accepts a 3 km VMesh
+source-slice handoff under fixture callbacks and fails closed for missing or
+synthetic data. This is not a live-provider proof.
+
 1. `025-terrain-slice-source-pack-proof.md` - live/provider-backed terrain source
    packs from VMesh handoffs.
 2. `026-vector-mask-source-pack-proof.md` - buildings, roads, water, landcover,

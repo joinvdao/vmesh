@@ -46,6 +46,18 @@ Do not use private Rose exact coordinates in committed artifacts.
   confidence, warnings, and gaps.
 - Regression tests that compare key fields, not brittle timestamps.
 
+## Current Prerequisite Evidence
+
+- Abundance worker readiness landed on `feat/v4-V0-visual-uplift` at
+  `abundance-v2 303f7a9`.
+- Evidence file: `abundance-v2/docs/v4-acceptance/slice-worker-readiness.md`.
+- Test file: `abundance-v2/tests/unit/sliceWorkerReadiness.test.ts`.
+- This proves the GIS/GPU/palette worker preflight can accept a 3 km VMesh
+  source-slice handoff with fixture callbacks and fail closed when data is
+  missing or synthetic.
+- It does not prove live provider execution. Phase 028 still needs public-safe
+  VMesh resolver samples through Abundance source-pack/runtime-pack artifacts.
+
 ## Gates
 
 Run:

@@ -304,6 +304,16 @@
         "Abundance privacy/no-private-ref scan",
         "Abundance GIS/GPU/palette worker readiness evidence",
         "source-pack fixture validation"
+      ],
+      "prerequisiteEvidence": [
+        "abundance-v2 303f7a9",
+        "abundance-v2 docs/v4-acceptance/slice-worker-readiness.md",
+        "abundance-v2 tests/unit/sliceWorkerReadiness.test.ts"
+      ],
+      "remaining": [
+        "Public-safe VMesh resolver samples through Abundance source-pack/runtime-pack artifacts.",
+        "Live provider execution for terrain, vectors, masks, and imagery where source coverage exists.",
+        "Capability-tier matrix across USA, BC, Canada non-BC, England, Scotland, and generic fallback samples."
       ]
     }
   ],
