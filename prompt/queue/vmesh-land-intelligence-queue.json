@@ -302,6 +302,7 @@
         "VMesh privacy check",
         "Abundance touched tests/typecheck",
         "Abundance privacy/no-private-ref scan",
+        "Abundance GIS/GPU/palette worker readiness evidence",
         "source-pack fixture validation"
       ]
     }

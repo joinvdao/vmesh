@@ -10,6 +10,7 @@ Prove the VMesh/Abundance seam end to end with public-safe sample coordinates:
 VMesh resolver
   -> vmesh-abundance-source-handoff-v1
   -> Abundance recipe executor
+  -> GIS/GPU/palette worker preflight
   -> Abundance source pack
   -> Abundance runtime-pack input
 ```
@@ -35,6 +36,12 @@ Do not use private Rose exact coordinates in committed artifacts.
 - VMesh handoff fixture per sample.
 - Abundance source-pack fixture per sample.
 - Runtime-pack input or adapter output per sample.
+- Worker readiness evidence for the Abundance execution side:
+  - GIS worker can fetch/clip terrain and vectors or returns a blocked reason.
+  - GPU worker can process terrain/imagery/material jobs or returns a blocked
+    reason.
+  - Palette worker can emit source-labelled material slots without upgrading
+    terrain truth.
 - Matrix report with capability tier, terrain source, vector status, mask status,
   confidence, warnings, and gaps.
 - Regression tests that compare key fields, not brittle timestamps.
@@ -48,6 +55,7 @@ Run:
 - VMesh privacy check
 - Abundance touched tests/typecheck
 - Abundance privacy/no-private-ref scan where available
+- Abundance worker preflight for GIS/GPU/palette roles
 - source-pack fixture validation
 
 ## Hard Fail Conditions
@@ -56,6 +64,7 @@ Run:
 - generic DEM reported as high-confidence DTM;
 - DSM used as DTM;
 - source coverage claimed without proof;
+- worker execution claimed without worker readiness evidence;
 - exact private coordinates or local paths in committed fixtures;
 - license-gated source selected as default operational source.
 
