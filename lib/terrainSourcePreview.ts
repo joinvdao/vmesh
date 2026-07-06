@@ -178,6 +178,9 @@ const CANADA_SOURCE_BOUNDS: LonLatBbox[] = [{ west: -141.5, south: 41.5, east: -
 const BRITISH_COLUMBIA_SOURCE_BOUNDS: LonLatBbox[] = [
   { west: -139.2, south: 48.1, east: -119.0, north: 60.1 }
 ];
+const KAMLOOPS_OPERATOR_LOCAL_TERRAIN_BOUNDS: LonLatBbox[] = [
+  { west: -120.75, south: 50.48, east: -119.95, north: 50.88 }
+];
 const BC_LIDAR_FEATURE_SERVER_BASE_URL =
   "https://services6.arcgis.com/ubm4tcTYICKBpist/ArcGIS/rest/services/LiDAR_BC_S3_Public/FeatureServer";
 const BC_LIDAR_FEATURE_SERVER_LAYER_IDS: Record<TerrainSourcePreviewRole, string[]> = {
@@ -273,6 +276,12 @@ export function isCanadaTerrainSourceCoordinate(coordinate: LonLatCoordinate): b
 
 export function isBritishColumbiaTerrainSourceCoordinate(coordinate: LonLatCoordinate): boolean {
   return BRITISH_COLUMBIA_SOURCE_BOUNDS.some((bbox) => bboxContainsCoordinate(bbox, coordinate));
+}
+
+export function isKamloopsOperatorLocalTerrainCoordinate(coordinate: LonLatCoordinate): boolean {
+  return KAMLOOPS_OPERATOR_LOCAL_TERRAIN_BOUNDS.some((bbox) =>
+    bboxContainsCoordinate(bbox, coordinate)
+  );
 }
 
 export function isNorthAmericaTerrainSourceCoordinate(coordinate: LonLatCoordinate): boolean {
@@ -635,23 +644,23 @@ export function createUsgsLpcDsmSourceIndexQueryUrl(coordinate: LonLatCoordinate
 
 export function createUsgsLpcDsmSourceIndexQueryUrls(coordinate: LonLatCoordinate): string[] {
   return [8, 24].map((layerId) => {
-  const url = new URL(
-    `https://index.nationalmap.gov/arcgis/rest/services/3DEPElevationIndex/MapServer/${layerId}/query`
-  );
+    const url = new URL(
+      `https://index.nationalmap.gov/arcgis/rest/services/3DEPElevationIndex/MapServer/${layerId}/query`
+    );
 
-  url.searchParams.set("f", "json");
-  url.searchParams.set("where", "1=1");
-  url.searchParams.set(
-    "geometry",
-    `${Number(coordinate.longitude.toFixed(6))},${Number(coordinate.latitude.toFixed(6))}`
-  );
-  url.searchParams.set("geometryType", "esriGeometryPoint");
-  url.searchParams.set("inSR", "4326");
-  url.searchParams.set("spatialRel", "esriSpatialRelIntersects");
-  url.searchParams.set("outFields", "*");
-  url.searchParams.set("returnGeometry", "false");
+    url.searchParams.set("f", "json");
+    url.searchParams.set("where", "1=1");
+    url.searchParams.set(
+      "geometry",
+      `${Number(coordinate.longitude.toFixed(6))},${Number(coordinate.latitude.toFixed(6))}`
+    );
+    url.searchParams.set("geometryType", "esriGeometryPoint");
+    url.searchParams.set("inSR", "4326");
+    url.searchParams.set("spatialRel", "esriSpatialRelIntersects");
+    url.searchParams.set("outFields", "*");
+    url.searchParams.set("returnGeometry", "false");
 
-  return url.toString();
+    return url.toString();
   });
 }
 

@@ -53,84 +53,84 @@ Some records will never display in the default UI. VMesh should mark them for `a
 
 Tracks organizations or source families.
 
-| Field | Purpose |
-| --- | --- |
-| `id` | Stable VMesh authority id. |
-| `name` | Provider or authority name. |
-| `jurisdiction_level` | One of the jurisdiction levels above. |
-| `country_code` | ISO country code where applicable. |
-| `region_code` | State, province, territory, or regional code where applicable. |
-| `municipality` | Municipality or local authority where applicable. |
-| `homepage_url` | Public homepage or catalog root. |
-| `operator_type` | Government, NGO, academic, community, private, or mixed. |
-| `reliability_tier` | `official`, `trusted_open`, `community`, `research`, `commercial`, or `unknown`. |
-| `notes` | Short public-safe context. |
+| Field                | Purpose                                                                          |
+| -------------------- | -------------------------------------------------------------------------------- |
+| `id`                 | Stable VMesh authority id.                                                       |
+| `name`               | Provider or authority name.                                                      |
+| `jurisdiction_level` | One of the jurisdiction levels above.                                            |
+| `country_code`       | ISO country code where applicable.                                               |
+| `region_code`        | State, province, territory, or regional code where applicable.                   |
+| `municipality`       | Municipality or local authority where applicable.                                |
+| `homepage_url`       | Public homepage or catalog root.                                                 |
+| `operator_type`      | Government, NGO, academic, community, private, or mixed.                         |
+| `reliability_tier`   | `official`, `trusted_open`, `community`, `research`, `commercial`, or `unknown`. |
+| `notes`              | Short public-safe context.                                                       |
 
 ### `source_endpoints`
 
 Tracks callable catalogs, APIs, services, and indexes.
 
-| Field | Purpose |
-| --- | --- |
-| `id` | Stable endpoint id. |
-| `authority_id` | Parent authority. |
-| `endpoint_type` | `stac_api`, `stac_static`, `tnm_api`, `arcgis_feature_server`, `arcgis_image_server`, `ogc_wms`, `ogc_wfs`, `ogc_wcs`, `object_store`, `open_data_catalog`, `download_index`, `api`, or `manual`. |
-| `url` | Public endpoint URL. Do not store secrets or signed URLs. |
-| `auth_mode` | `none`, `api_key`, `oauth`, `account_required`, `paid`, `unknown`. |
-| `license` | Public license summary or review state. |
-| `status` | `candidate`, `reviewed`, `probed`, `live_proof`, `blocked`, `license_gated`, `token_gated`, `paid_only`, `no_data`, `outdated`. |
-| `last_checked_at` | Last probe timestamp. |
-| `evidence_ref` | Retained artifact path or redacted evidence id. |
+| Field             | Purpose                                                                                                                                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`              | Stable endpoint id.                                                                                                                                                                               |
+| `authority_id`    | Parent authority.                                                                                                                                                                                 |
+| `endpoint_type`   | `stac_api`, `stac_static`, `tnm_api`, `arcgis_feature_server`, `arcgis_image_server`, `ogc_wms`, `ogc_wfs`, `ogc_wcs`, `object_store`, `open_data_catalog`, `download_index`, `api`, or `manual`. |
+| `url`             | Public endpoint URL. Do not store secrets or signed URLs.                                                                                                                                         |
+| `auth_mode`       | `none`, `api_key`, `oauth`, `account_required`, `paid`, `unknown`.                                                                                                                                |
+| `license`         | Public license summary or review state.                                                                                                                                                           |
+| `status`          | `candidate`, `reviewed`, `probed`, `live_proof`, `blocked`, `license_gated`, `token_gated`, `paid_only`, `no_data`, `outdated`.                                                                   |
+| `last_checked_at` | Last probe timestamp.                                                                                                                                                                             |
+| `evidence_ref`    | Retained artifact path or redacted evidence id.                                                                                                                                                   |
 
 ### `source_collections`
 
 Tracks datasets, STAC collections, ArcGIS layers, product families, and table groups inside an endpoint.
 
-| Field | Purpose |
-| --- | --- |
-| `id` | Stable collection id. |
-| `endpoint_id` | Parent endpoint. |
-| `provider_collection_id` | Native STAC collection, ArcGIS layer id, dataset id, or product code. |
-| `data_bucket` | One of the buckets above. |
-| `source_role` | `bare-earth-dtm`, `surface-dsm`, `point-cloud`, `orthophoto`, `roads`, `buildings`, `water`, `vegetation`, `soil`, `climate`, and so on. |
-| `resolution_meters` | Nominal pixel, point, or vector scale when known. |
-| `crs` | CRS or native projection where known. |
-| `vertical_datum` | Vertical datum where known. |
-| `asset_roles` | Expected provider-native assets. |
-| `coverage_summary` | Public-safe jurisdiction or coverage note. |
-| `limitations` | Known gaps, role mismatches, or license constraints. |
+| Field                    | Purpose                                                                                                                                  |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                     | Stable collection id.                                                                                                                    |
+| `endpoint_id`            | Parent endpoint.                                                                                                                         |
+| `provider_collection_id` | Native STAC collection, ArcGIS layer id, dataset id, or product code.                                                                    |
+| `data_bucket`            | One of the buckets above.                                                                                                                |
+| `source_role`            | `bare-earth-dtm`, `surface-dsm`, `point-cloud`, `orthophoto`, `roads`, `buildings`, `water`, `vegetation`, `soil`, `climate`, and so on. |
+| `resolution_meters`      | Nominal pixel, point, or vector scale when known.                                                                                        |
+| `crs`                    | CRS or native projection where known.                                                                                                    |
+| `vertical_datum`         | Vertical datum where known.                                                                                                              |
+| `asset_roles`            | Expected provider-native assets.                                                                                                         |
+| `coverage_summary`       | Public-safe jurisdiction or coverage note.                                                                                               |
+| `limitations`            | Known gaps, role mismatches, or license constraints.                                                                                     |
 
 ### `coverage_evidence`
 
 Tracks whether a source covers a site or tile without exposing private coordinates.
 
-| Field | Purpose |
-| --- | --- |
-| `id` | Stable evidence id. |
-| `collection_id` | Source collection checked. |
-| `query_ref` | Public-safe H3, redacted site id, tile id, or coarse AOI label. |
+| Field              | Purpose                                                                        |
+| ------------------ | ------------------------------------------------------------------------------ |
+| `id`               | Stable evidence id.                                                            |
+| `collection_id`    | Source collection checked.                                                     |
+| `query_ref`        | Public-safe H3, redacted site id, tile id, or coarse AOI label.                |
 | `disclosure_class` | `public_safe`, `operator_local`, `private_redacted`, or `not_for_public_repo`. |
-| `run_class` | `mock`, `dry_run`, `configured`, or `live_proof`. |
-| `coverage_status` | `covered`, `partial`, `no_data`, `blocked`, `unknown`. |
-| `selected_assets` | Provider-native asset refs or redacted refs. |
-| `evidence_ref` | Retained artifact path or operator-local evidence id. |
-| `checked_at` | Probe timestamp. |
+| `run_class`        | `mock`, `dry_run`, `configured`, or `live_proof`.                              |
+| `coverage_status`  | `covered`, `partial`, `no_data`, `blocked`, `unknown`.                         |
+| `selected_assets`  | Provider-native asset refs or redacted refs.                                   |
+| `evidence_ref`     | Retained artifact path or operator-local evidence id.                          |
+| `checked_at`       | Probe timestamp.                                                               |
 
 ### `source_runs`
 
 Tracks discovery and processing runs.
 
-| Field | Purpose |
-| --- | --- |
-| `id` | Stable run id. |
-| `run_type` | `intel_tools_discovery`, `vmesh_probe`, `license_review`, `source_promotion`, `scheduled_refresh`. |
-| `prompt_or_recipe_ref` | Prompt id, recipe id, or worker config. |
-| `jurisdiction_scope` | Country, region, municipality, or site-safe label. |
-| `data_buckets` | Buckets targeted. |
-| `candidate_count` | Raw candidates found. |
-| `promoted_count` | Candidates promoted to reviewed/probed/live-proof states. |
-| `quarantined_count` | Noise, blocked, or unsafe records. |
-| `artifact_ref` | Public-safe artifact path or redacted operator-local artifact id. |
+| Field                  | Purpose                                                                                            |
+| ---------------------- | -------------------------------------------------------------------------------------------------- |
+| `id`                   | Stable run id.                                                                                     |
+| `run_type`             | `intel_tools_discovery`, `vmesh_probe`, `license_review`, `source_promotion`, `scheduled_refresh`. |
+| `prompt_or_recipe_ref` | Prompt id, recipe id, or worker config.                                                            |
+| `jurisdiction_scope`   | Country, region, municipality, or site-safe label.                                                 |
+| `data_buckets`         | Buckets targeted.                                                                                  |
+| `candidate_count`      | Raw candidates found.                                                                              |
+| `promoted_count`       | Candidates promoted to reviewed/probed/live-proof states.                                          |
+| `quarantined_count`    | Noise, blocked, or unsafe records.                                                                 |
+| `artifact_ref`         | Public-safe artifact path or redacted operator-local artifact id.                                  |
 
 ## Promotion States
 
@@ -167,15 +167,15 @@ The response to BA should be laser-fast because the slow source discovery and pr
 
 ### Natural Resources Canada / Geo.ca Datacube
 
-| Field | Value |
-| --- | --- |
-| Authority | Natural Resources Canada / Geo.ca Datacube |
-| Jurisdiction | `country`, Canada |
-| STAC API | `https://datacube.services.geo.ca/stac/api/` |
-| Collections | `hrdem-mosaic-1m`, `hrdem-mosaic-2m`, `hrdem-lidar` |
+| Field        | Value                                                                             |
+| ------------ | --------------------------------------------------------------------------------- |
+| Authority    | Natural Resources Canada / Geo.ca Datacube                                        |
+| Jurisdiction | `country`, Canada                                                                 |
+| STAC API     | `https://datacube.services.geo.ca/stac/api/`                                      |
+| Collections  | `hrdem-mosaic-1m`, `hrdem-mosaic-2m`, `hrdem-lidar`                               |
 | Source roles | `bare-earth-dtm`, `surface-dsm`, `lidar-derived-terrain`, `lidar-derived-surface` |
-| License | Open Government Licence - Canada, confirm per collection/item |
-| Notes | Direct official STAC should be probed before making source-resolution claims. |
+| License      | Open Government Licence - Canada, confirm per collection/item                     |
+| Notes        | Direct official STAC should be probed before making source-resolution claims.     |
 
 Key collection URLs:
 
@@ -187,21 +187,29 @@ Key collection URLs:
 
 Mapterhorn is useful as a source-family clue, not as a full provenance database for VMesh.
 
-| Field | Value |
-| --- | --- |
-| Mapterhorn source id | `cahrdem2` |
-| Name | `Canada DTM 2018-2024` |
-| Producer | Natural Resources Canada |
-| License | Open Government Licence - Canada |
-| Resolution listed by Mapterhorn | `2` meters |
-| Tarball URL | `https://download.mapterhorn.com/sources/cahrdem2.tar` |
-| Attribution URL | `https://download.mapterhorn.com/attribution.json` |
+| Field                           | Value                                                  |
+| ------------------------------- | ------------------------------------------------------ |
+| Mapterhorn source id            | `cahrdem2`                                             |
+| Name                            | `Canada DTM 2018-2024`                                 |
+| Producer                        | Natural Resources Canada                               |
+| License                         | Open Government Licence - Canada                       |
+| Resolution listed by Mapterhorn | `2` meters                                             |
+| Tarball URL                     | `https://download.mapterhorn.com/sources/cahrdem2.tar` |
+| Attribution URL                 | `https://download.mapterhorn.com/attribution.json`     |
 
 Registry rule: do not infer Canada-wide 1 m coverage from Mapterhorn. Use the official Canadian STAC and role-specific COG/item evidence for 1 m DTM or DSM claims.
 
 ### Rose Source-Pack And Fallback Test Note
 
 Rose already has a strong operator-local source pack and should not be described as dependent on Mapterhorn for core site data. The Mapterhorn/Canadian STAC work was a fallback and provenance test: if BA or VMesh needs a public/open terrain source path for comparison, fallback, or source attribution, the redacted Rose AOI can be checked against direct official Canadian source families.
+
+VMesh now models the golden-quality Kamloops terrain handoff as
+`kamloops-local-lidar-dtm-1m`: a configured municipal/operator-local source rail
+inside a coarse public Kamloops service area. VMesh indexes the source authority
+and clean configured endpoint, but it does not store the DTM payload. Abundance
+must window the configured raster, prove non-no-data AOI coverage, preserve
+CRS/vertical datum/resolution, and retain public-safe QA artifacts before a
+neighbour pack can claim golden-quality terrain.
 
 For the redacted Rose golden-eval AOI, the fallback/provenance test matched these public source item families:
 
@@ -215,31 +223,31 @@ The public docs can store these source-family and item ids because they are broa
 
 ### USGS National Map / 3DEP
 
-| Field | Value |
-| --- | --- |
-| Authority | U.S. Geological Survey |
-| Jurisdiction | `country`, United States |
-| TNM API | `https://tnmaccess.nationalmap.gov/api/v1/` |
-| 3DEP ImageServer | `https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer` |
-| Source roles | `bare-earth-dtm`, `generic-dem`, terrain preview |
-| Notes | Use official coverage and product-index checks before claiming source resolution for a given AOI. |
+| Field            | Value                                                                                             |
+| ---------------- | ------------------------------------------------------------------------------------------------- |
+| Authority        | U.S. Geological Survey                                                                            |
+| Jurisdiction     | `country`, United States                                                                          |
+| TNM API          | `https://tnmaccess.nationalmap.gov/api/v1/`                                                       |
+| 3DEP ImageServer | `https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer`                |
+| Source roles     | `bare-earth-dtm`, `generic-dem`, terrain preview                                                  |
+| Notes            | Use official coverage and product-index checks before claiming source resolution for a given AOI. |
 
 ### Microsoft Planetary Computer 3DEP STAC
 
-| Field | Value |
-| --- | --- |
-| STAC API | `https://planetarycomputer.microsoft.com/api/stac/v1` |
-| Collections | `3dep-seamless`, `3dep-lidar-copc`, `3dep-lidar-dtm`, `3dep-lidar-dsm`, `3dep-lidar-hag` |
-| Source roles | DTM, DSM, COPC point cloud, height above ground |
-| Notes | Useful STAC interface for 3DEP-derived assets. Treat as a source resolver, then retain provider-native refs and licenses. |
+| Field        | Value                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| STAC API     | `https://planetarycomputer.microsoft.com/api/stac/v1`                                                                     |
+| Collections  | `3dep-seamless`, `3dep-lidar-copc`, `3dep-lidar-dtm`, `3dep-lidar-dsm`, `3dep-lidar-hag`                                  |
+| Source roles | DTM, DSM, COPC point cloud, height above ground                                                                           |
+| Notes        | Useful STAC interface for 3DEP-derived assets. Treat as a source resolver, then retain provider-native refs and licenses. |
 
 ### AWS USGS LiDAR STAC / EPT
 
-| Field | Value |
-| --- | --- |
-| Static catalog | `https://usgs-lidar-stac.s3-us-west-2.amazonaws.com/ept/catalog.json` |
-| Source roles | LiDAR point cloud, EPT/COPC style source discovery |
-| Notes | Use for point-cloud discovery and handoff where USGS 3DEP lidar coverage exists. |
+| Field          | Value                                                                            |
+| -------------- | -------------------------------------------------------------------------------- |
+| Static catalog | `https://usgs-lidar-stac.s3-us-west-2.amazonaws.com/ept/catalog.json`            |
+| Source roles   | LiDAR point cloud, EPT/COPC style source discovery                               |
+| Notes          | Use for point-cloud discovery and handoff where USGS 3DEP lidar coverage exists. |
 
 USA source ladder:
 

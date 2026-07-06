@@ -164,6 +164,7 @@ const SEGMENT_LAYERS: Record<BaGeospatialSegmentId, PackageLayerId[]> = {
 
 const SEGMENT_SOURCE_IDS: Record<BaGeospatialSegmentId, string[]> = {
   terrain_elevation: [
+    "kamloops-local-lidar-dtm-1m",
     "usgs-3dep",
     "usgs-3dep-lpc-dsm",
     "canada-hrdem",
@@ -287,6 +288,9 @@ function adapterForProbeStrategy(strategy: PackageProbeStrategy): string {
 }
 
 function statusForSource(source: GeospatialSourceCandidate): BaReviewedSourceStatus | null {
+  if (source.id === "kamloops-local-lidar-dtm-1m") {
+    return source.status === "configured" ? "adapter_ready" : null;
+  }
   if (LIVE_PROOF_EVIDENCE[source.id]) return "live_proof_ready";
   if (VIEWER_READY_SOURCE_IDS.has(source.id)) return "viewer_ready";
   if (ADAPTER_READY_SOURCE_IDS.has(source.id)) return "adapter_ready";

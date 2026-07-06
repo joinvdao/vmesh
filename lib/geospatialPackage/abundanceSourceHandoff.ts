@@ -11,8 +11,10 @@ import {
   type BuildingPackageWorkerHandoff
 } from "@/lib/geospatialPackage/buildingPackageWorker";
 import {
+  createLiveNorthAmericaDtmSourceAdapterPlan,
   createTerrainSourceAdapterPlan,
   isSourceNativeTerrainAdapterSupported,
+  type TerrainSourceAdapterOptions,
   type TerrainSourceAdapterPlan
 } from "@/lib/geospatialPackage/terrainSourceAdapters";
 import {
@@ -41,6 +43,15 @@ function createdAt(options: { now?: () => Date }) {
   return (options.now?.() ?? new Date("2026-07-06T00:00:00.000Z")).toISOString();
 }
 
+interface AbundanceSourceHandoffOptions {
+  now?: () => Date;
+  terrainAdapterPlans?: TerrainSourceAdapterPlan[];
+}
+
+interface LiveAbundanceSourceHandoffOptions extends AbundanceSourceHandoffOptions {
+  terrainSourceAdapterOptions?: TerrainSourceAdapterOptions;
+}
+
 function packageRequestFromBaPackage(
   baPackage: BaGeospatialPackage,
   preferredSourceIds: string[]
@@ -60,7 +71,12 @@ function packageRequestFromBaPackage(
   };
 }
 
-function terrainAdapterPlansForPackage(baPackage: BaGeospatialPackage): TerrainSourceAdapterPlan[] {
+function terrainAdapterPlansForPackage(
+  baPackage: BaGeospatialPackage,
+  options: AbundanceSourceHandoffOptions = {}
+): TerrainSourceAdapterPlan[] {
+  if (options.terrainAdapterPlans) return options.terrainAdapterPlans;
+
   const terrainSources = baPackage.sourceRecords.filter(
     (source) =>
       source.segment === "terrain_elevation" &&
@@ -73,6 +89,55 @@ function terrainAdapterPlansForPackage(baPackage: BaGeospatialPackage): TerrainS
       request: packageRequestFromBaPackage(baPackage, [source.id])
     })
   );
+}
+
+function selectedReadyTerrainSourceId(plans: TerrainSourceAdapterPlan[]) {
+  return (
+    plans.find((plan) => plan.status === "ready" && plan.selectedSource?.id)?.selectedSource?.id ??
+    null
+  );
+}
+
+function applyLiveTerrainSelection(
+  baPackage: BaGeospatialPackage,
+  terrainAdapterPlans: TerrainSourceAdapterPlan[],
+  strictLiveResolution = false
+): BaGeospatialPackage {
+  const selectedTerrainSourceId = selectedReadyTerrainSourceId(terrainAdapterPlans);
+  if (!selectedTerrainSourceId && !strictLiveResolution) return baPackage;
+
+  const sourceRecords = baPackage.sourceRecords.map((source) =>
+    source.segment !== "terrain_elevation"
+      ? source
+      : {
+          ...source,
+          selectedForAoi: selectedTerrainSourceId !== null && source.id === selectedTerrainSourceId,
+          warnings:
+            source.id === selectedTerrainSourceId
+              ? source.warnings.filter((warning) => warning !== "source_ref_only")
+              : Array.from(new Set(["source_ref_only", ...source.warnings]))
+        }
+  );
+  const coverage = baPackage.coverage.map((record) =>
+    sourceRecords.some(
+      (source) =>
+        source.segment === "terrain_elevation" &&
+        source.id === record.sourceId &&
+        source.selectedForAoi
+    )
+      ? { ...record, coverageStatus: "selected-for-aoi" as const }
+      : sourceRecords.some(
+            (source) => source.segment === "terrain_elevation" && source.id === record.sourceId
+          )
+        ? { ...record, coverageStatus: "coverage-check-required" as const }
+        : record
+  );
+
+  return {
+    ...baPackage,
+    sourceRecords,
+    coverage
+  };
 }
 
 function findFetchRecipe(recipes: BaFetchRecipe[], sourceId: string): BaFetchRecipe | null {
@@ -274,14 +339,19 @@ function terrainSummary(baPackage: BaGeospatialPackage): AbundanceSourceHandoff[
 
 export function createAbundanceSourceHandoff(
   input: AbundanceSourceHandoffRequest,
-  options: { now?: () => Date } = {}
+  options: AbundanceSourceHandoffOptions = {}
 ): AbundanceSourceHandoff {
   const consumerAppId = input.consumerAppId ?? "building-abundance";
-  const baPackage = createBaGeospatialPackage({
+  const baseBaPackage = createBaGeospatialPackage({
     ...input,
     consumerAppId
   });
-  const terrainAdapterPlans = terrainAdapterPlansForPackage(baPackage);
+  const terrainAdapterPlans = terrainAdapterPlansForPackage(baseBaPackage, options);
+  const baPackage = applyLiveTerrainSelection(
+    baseBaPackage,
+    terrainAdapterPlans,
+    options.terrainAdapterPlans !== undefined
+  );
   const layers = getBaGeospatialLayersForSegments(baPackage.request.segments);
   const buildingWorkerHandoff = layers.includes("buildings")
     ? publicBuildingWorkerHandoff(
@@ -359,4 +429,37 @@ export function createAbundanceSourceHandoff(
       "Fail closed when provider coverage, license, or payload QA cannot be proven for the AOI."
     ]
   };
+}
+
+export async function createLiveAbundanceSourceHandoff(
+  input: AbundanceSourceHandoffRequest,
+  options: LiveAbundanceSourceHandoffOptions = {}
+): Promise<AbundanceSourceHandoff> {
+  const consumerAppId = input.consumerAppId ?? "building-abundance";
+  const terrainRequested = input.segments.includes("terrain_elevation");
+  const terrainAdapterPlans = terrainRequested
+    ? [
+        await createLiveNorthAmericaDtmSourceAdapterPlan(
+          {
+            request: {
+              aoi: input.aoi,
+              layers: ["terrain"],
+              consumerAppId
+            }
+          },
+          options.terrainSourceAdapterOptions
+        )
+      ]
+    : undefined;
+
+  return createAbundanceSourceHandoff(
+    {
+      ...input,
+      consumerAppId
+    },
+    {
+      now: options.now,
+      terrainAdapterPlans
+    }
+  );
 }

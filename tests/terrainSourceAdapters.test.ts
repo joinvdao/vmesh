@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import {
   createLiveNorthAmericaDsmSourceAdapterPlan,
@@ -149,6 +149,12 @@ const usgsOneMeterCoverageResponse = {
 const emptyCoverageResponse = {
   features: []
 };
+
+afterEach(() => {
+  delete process.env.VMESH_KAMLOOPS_LOCAL_LIDAR_MODE;
+  delete process.env.VMESH_KAMLOOPS_LOCAL_LIDAR_GEOTIFF_URL;
+  delete process.env.VMESH_KAMLOOPS_LOCAL_LIDAR_GEOTIFF_URL_TEMPLATE;
+});
 
 describe("terrain source adapters", () => {
   it("plans an official USGS 3DEP ArcGIS ImageServer export without fetching data", () => {
@@ -724,6 +730,72 @@ describe("terrain source adapters", () => {
           aoi: {
             centroid: { latitude: 49.2827, longitude: -123.1207 },
             label: "Vancouver public-safe AOI"
+          },
+          layers: ["terrain"]
+        }
+      },
+      { env: {}, fetchImpl }
+    );
+
+    expect(plan.status).toBe("ready");
+    expect(plan.selectedSource?.id).toBe("bc-lidarbc");
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toContain("/FeatureServer/5/query");
+  });
+
+  it("resolves configured Kamloops operator-local DTM before public BC/Canada fallbacks", async () => {
+    const fetchImpl: typeof fetch = async () => {
+      throw new Error("configured Kamloops local DTM should not need a catalog fetch");
+    };
+
+    const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
+      {
+        request: {
+          aoi: {
+            centroid: { latitude: 50.64, longitude: -120.26 },
+            label: "Kamloops public-safe operator-local AOI"
+          },
+          layers: ["terrain"]
+        }
+      },
+      {
+        env: {},
+        fetchImpl,
+        kamloopsLocalLidarGeoTiffUrlTemplate:
+          "https://terrain.example.test/kamloops/{packageId}.tif?bbox={bbox}"
+      }
+    );
+
+    expect(plan.status).toBe("ready");
+    expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
+    expect(plan.toolProfile?.toolId).toBe("kamloops-local-lidar");
+    expect(plan.inputRefs[0]).toMatchObject({
+      kind: "direct-geotiff",
+      format: "geotiff",
+      provider: "City of Kamloops / operator-retained municipal LiDAR DTM",
+      groundModelRole: "bare-earth-dtm",
+      targetResolutionMeters: 1
+    });
+    expect(plan.inputRefs[0].url).toContain("terrain.example.test/kamloops/");
+    expect(plan.inputRefs[0].notes.join(" ")).toContain("Abundance must window");
+  });
+
+  it("falls through from unconfigured Kamloops local DTM to public BC LidarBC", async () => {
+    const requests: string[] = [];
+    const fetchImpl: typeof fetch = async (url) => {
+      requests.push(String(url));
+      return new Response(JSON.stringify(lidarBcOneMeterDemResponse), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+
+    const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
+      {
+        request: {
+          aoi: {
+            centroid: { latitude: 50.64, longitude: -120.26 },
+            label: "Kamloops public-safe fallback AOI"
           },
           layers: ["terrain"]
         }

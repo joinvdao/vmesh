@@ -265,6 +265,17 @@ export const TERRAIN_TOOL_PROFILES: TerrainToolProfile[] = [
     notes: "Spain terrain upgrade where MDT01/MDT02 coverage exists."
   },
   {
+    toolId: "kamloops-local-lidar",
+    sourceIds: ["kamloops-local-lidar-dtm-1m"],
+    provider: "City of Kamloops / operator-retained municipal LiDAR DTM",
+    targetResolutionMeters: 1,
+    sourceRelease: "Kamloops operator-local municipal DTM source pack",
+    groundModelRole: "bare-earth-dtm",
+    payloadCapable: true,
+    notes:
+      "Operator-local Kamloops DTM rail. VMesh indexes the configured endpoint; Abundance must fetch, window, QA, and retain public-safe package artifacts before claiming golden-quality terrain."
+  },
+  {
     toolId: "canada-hrdem",
     sourceIds: ["canada-hrdem"],
     provider: "Natural Resources Canada HRDEM",

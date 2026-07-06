@@ -73,6 +73,18 @@ coordinate / H3 / AOI request
 
 For a LidarBC coordinate, vmesh should hide ArcGIS layer quirks from the consumer. It should query the relevant DEM, DSM, and point-cloud index layers, select the intersecting source assets, and return STAC Items whose `assets.data.href` values point to the official BC object-store files.
 
+For the Kamloops/Rose golden-quality path, vmesh may return the configured
+`kamloops-local-lidar-dtm-1m` operator-local source rail when the coordinate is
+inside the public-safe Kamloops service area and the private deployment has a
+clean municipal/source-pack GeoTIFF endpoint configured. This is still an index
+handoff, not payload storage: downstream workers must fetch/window/QA the
+source and publish only public-safe derived package artifacts.
+
+For unsupported regions, vmesh should expose fallback/global terrain as
+fallback/generic context so downstream apps can keep a coherent visual style.
+That fallback must not be represented as source-backed DTM, 1 m LiDAR, parcel
+truth, or golden-quality proof.
+
 ## Intel Tools Processing Layer
 
 Intel Tools close discovery gaps by scraping, searching, and lightly probing source candidates. vmesh processes those outputs into a learning source registry. The processing output is a public-safe source broker package, not raw GIS data and not a copy of the sidecar SQLite databases.

@@ -20,6 +20,7 @@ import {
   createUsgs3depOneMeterCoverageQueryUrl,
   isBritishColumbiaTerrainSourceCoordinate,
   isCanadaTerrainSourceCoordinate,
+  isKamloopsOperatorLocalTerrainCoordinate,
   isUsaTerrainSourceCoordinate,
   selectCanadaHrdemStacAsset,
   type TerrainSourcePreviewRole
@@ -65,6 +66,8 @@ export interface TerrainSourceAdapterOptions {
   canadaHrdemGeoTiffUrl?: string;
   canadaHrdemGeoTiffUrlTemplate?: string;
   canadaHrdemStacSearchResponse?: unknown;
+  kamloopsLocalLidarGeoTiffUrl?: string;
+  kamloopsLocalLidarGeoTiffUrlTemplate?: string;
   bcLidarGeoTiffUrl?: string;
   bcLidarGeoTiffUrlTemplate?: string;
   bcLidarFeatureServerResponse?: unknown;
@@ -135,6 +138,8 @@ const BC_LIDAR_FEATURE_SERVER_BASE_URL =
 const SOURCE_NATIVE_TOOL_IDS = new Set([
   "usgs-3dep",
   "usgs-3dep-lpc-dsm",
+  "kamloops-local-lidar",
+  "kamloops-local-lidar-dtm-1m",
   "canada-hrdem",
   "canada-hrdem-best-dtm",
   "canada-hrdem-dsm",
@@ -903,6 +908,27 @@ function createCanadaHrdemSourcePlan(context: SourceAdapterContext): TerrainSour
   });
 }
 
+function createKamloopsLocalLidarSourcePlan(
+  context: SourceAdapterContext
+): TerrainSourceAdapterPlan {
+  return createConfiguredRegionalSourcePlan({
+    context,
+    url:
+      context.options.kamloopsLocalLidarGeoTiffUrl ??
+      context.options.env?.VMESH_KAMLOOPS_LOCAL_LIDAR_GEOTIFF_URL,
+    urlTemplate:
+      context.options.kamloopsLocalLidarGeoTiffUrlTemplate ??
+      context.options.env?.VMESH_KAMLOOPS_LOCAL_LIDAR_GEOTIFF_URL_TEMPLATE,
+    missingReason:
+      "Kamloops operator-local LiDAR requires a configured clean GeoTIFF/COG URL or URL template before vmesh can hand off the municipal DTM rail.",
+    notes: [
+      "Configured Kamloops operator-local municipal DTM source input for the selected AOI.",
+      "VMesh is only indexing the configured source ref; Abundance must window the raster, prove non-no-data AOI coverage, preserve CRS/vertical datum, and retain QA artifacts.",
+      "Do not expose local file paths, signed URLs, private coordinates, or raw municipal payload refs in public-safe runtime packs."
+    ]
+  });
+}
+
 function terrainPreviewRoleForToolProfile(
   toolProfile: TerrainToolProfile
 ): TerrainSourcePreviewRole {
@@ -1063,6 +1089,7 @@ function createContext({
     }),
     options: {
       ...options,
+      env: options.env ?? process.env,
       maxImageSide: options.maxImageSide ?? DEFAULT_MAX_IMAGE_SIDE
     }
   };
@@ -1091,6 +1118,8 @@ export function createTerrainSourceAdapterPlan(
       return createUsgs3depSourcePlan(context);
     case "usgs-3dep-lpc-dsm":
       return createUsgsLpcDsmSourcePlan(context);
+    case "kamloops-local-lidar":
+      return createKamloopsLocalLidarSourcePlan(context);
     case "canada-hrdem":
       return createCanadaHrdemSourcePlan(context);
     case "bc-lidarbc":
@@ -1262,6 +1291,7 @@ function northAmericaDtmCandidateSourceIds(coordinate: {
     if (!sourceIds.includes(sourceId)) sourceIds.push(sourceId);
   };
 
+  if (isKamloopsOperatorLocalTerrainCoordinate(coordinate)) add("kamloops-local-lidar-dtm-1m");
   if (isBritishColumbiaTerrainSourceCoordinate(coordinate)) add("bc-lidarbc");
   if (isUsaTerrainSourceCoordinate(coordinate)) add("usgs-3dep");
   if (isCanadaTerrainSourceCoordinate(coordinate)) {

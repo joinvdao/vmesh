@@ -65,6 +65,19 @@ const REGIONAL_TERRAIN_SOURCES: RegionalTerrainSource[] = [
     notes: "Strong Iberian terrain source for local packages."
   },
   {
+    id: "kamloops-local-lidar-dtm-1m",
+    label: "Kamloops operator-local municipal LiDAR DTM",
+    coverage:
+      "City of Kamloops / Rose Hill operator-retained municipal DTM coverage where configured",
+    resolution:
+      "1m bare-earth DTM where the operator-retained municipal source pack covers the AOI",
+    sourceUrl: "https://maps.kamloops.ca/arcgis/rest/services",
+    attribution: "City of Kamloops and operator-retained source-pack evidence",
+    license: "Operator-retained municipal/source-pack terms; public-safe downstream artifacts only",
+    notes:
+      "VMesh indexes this as a configured local source rail only. It does not store the municipal DTM payload; Abundance must fetch/window/QA the configured operator endpoint before claiming golden-quality terrain."
+  },
+  {
     id: "canada-hrdem",
     label: "Canada HRDEM",
     coverage: "Canada where HRDEM/LiDAR coverage exists",
@@ -160,8 +173,20 @@ export function getRegionalTerrainPackageSources(): GeospatialSourceCandidate[] 
     source({
       ...entry,
       layerIds: ["terrain", "contours"],
-      status: entry.id === "opentopography" ? "token-gated" : "preprocessing-required",
-      access: entry.id === "opentopography" ? "token-gated" : "open",
+      status:
+        entry.id === "opentopography"
+          ? "token-gated"
+          : entry.id === "kamloops-local-lidar-dtm-1m"
+            ? process.env.VMESH_KAMLOOPS_LOCAL_LIDAR_MODE === "configured-geotiff"
+              ? "configured"
+              : "future"
+            : "preprocessing-required",
+      access:
+        entry.id === "opentopography"
+          ? "token-gated"
+          : entry.id === "kamloops-local-lidar-dtm-1m"
+            ? "local"
+            : "open",
       artifactKinds: ["cog", "pmtiles", "h3-summary", "manifest"],
       requiresApiKey: entry.id === "opentopography",
       packageReady: true,

@@ -1,11 +1,33 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import {
   ABUNDANCE_SOURCE_HANDOFF_SCHEMA_VERSION,
-  createAbundanceSourceHandoff
+  createAbundanceSourceHandoff,
+  createLiveAbundanceSourceHandoff
 } from "@/lib/geospatialPackage";
 
 const FIXED_NOW = () => new Date("2026-07-06T00:00:00.000Z");
+const EMPTY_FEATURES = { features: [] };
+const CANADA_HRDEM_ONE_METER_STAC = {
+  features: [
+    {
+      collection: "hrdem-mosaic-1m",
+      id: "2_4-mosaic-1m",
+      assets: {
+        dtm: {
+          href: "https://canelevation-dem.s3.ca-central-1.amazonaws.com/hrdem-mosaic-1m/2_4-mosaic-1m-dtm.tif",
+          type: "image/tiff; application=geotiff; profile=cloud-optimized"
+        }
+      }
+    }
+  ]
+};
+
+afterEach(() => {
+  delete process.env.VMESH_KAMLOOPS_LOCAL_LIDAR_MODE;
+  delete process.env.VMESH_KAMLOOPS_LOCAL_LIDAR_GEOTIFF_URL;
+  delete process.env.VMESH_KAMLOOPS_LOCAL_LIDAR_GEOTIFF_URL_TEMPLATE;
+});
 
 describe("Abundance source handoff", () => {
   it("builds a recipe-first handoff for the Abundance 3 km source-slice frame", () => {
@@ -131,6 +153,116 @@ describe("Abundance source handoff", () => {
       selectedSourceIds: []
     });
     expect(handoff.terrain.selectedSourceIds).toEqual([]);
+    expect(handoff.gaps.join(" ")).toContain("fallback visual/generic terrain only");
+  });
+
+  it("can live-resolve a BC handoff to Canada HRDEM when LidarBC has no 1m tile", async () => {
+    const requests: string[] = [];
+    const fetchImpl: typeof fetch = async (url) => {
+      const requestUrl = String(url);
+      requests.push(requestUrl);
+      return new Response(
+        JSON.stringify(
+          requestUrl.includes("LiDAR_BC_S3_Public") ? EMPTY_FEATURES : CANADA_HRDEM_ONE_METER_STAC
+        ),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    };
+
+    const handoff = await createLiveAbundanceSourceHandoff(
+      {
+        aoi: {
+          centroid: { latitude: 50.64, longitude: -120.26 },
+          label: "Kamloops public-safe neighbour"
+        },
+        segments: ["terrain_elevation", "access_infrastructure"],
+        consumerAppId: "building-abundance"
+      },
+      { now: FIXED_NOW, terrainSourceAdapterOptions: { env: {}, fetchImpl } }
+    );
+    const terrainLayer = handoff.layers.find((layer) => layer.layerId === "terrain");
+
+    expect(requests[0]).toContain("LiDAR_BC_S3_Public");
+    expect(requests[1]).toBe("https://datacube.services.geo.ca/stac/api/search");
+    expect(handoff.terrain.selectedSourceIds).toEqual(["canada-hrdem"]);
+    expect(terrainLayer?.selectedSourceIds).toEqual(["canada-hrdem"]);
+    expect(handoff.terrainAdapterPlans[0]).toMatchObject({
+      status: "ready",
+      selectedSource: { id: "canada-hrdem" },
+      toolProfile: { toolId: "canada-hrdem" }
+    });
+    expect(handoff.terrainAdapterPlans[0].inputRefs[0].url).toContain("mosaic-1m-dtm.tif");
+  });
+
+  it("can live-resolve configured Kamloops operator-local DTM without treating VMesh as terrain storage", async () => {
+    process.env.VMESH_KAMLOOPS_LOCAL_LIDAR_MODE = "configured-geotiff";
+    const fetchImpl: typeof fetch = async () => {
+      throw new Error("configured local DTM handoff should not call public catalogs");
+    };
+
+    const handoff = await createLiveAbundanceSourceHandoff(
+      {
+        aoi: {
+          centroid: { latitude: 50.64, longitude: -120.26 },
+          label: "Kamloops public-safe operator-local AOI"
+        },
+        segments: ["terrain_elevation"],
+        consumerAppId: "building-abundance"
+      },
+      {
+        now: FIXED_NOW,
+        terrainSourceAdapterOptions: {
+          env: {},
+          fetchImpl,
+          kamloopsLocalLidarGeoTiffUrlTemplate:
+            "https://terrain.example.test/kamloops/{packageId}.tif?bbox={bbox}"
+        }
+      }
+    );
+
+    expect(handoff.terrain.selectedSourceIds).toEqual(["kamloops-local-lidar-dtm-1m"]);
+    expect(handoff.layers.find((layer) => layer.layerId === "terrain")).toMatchObject({
+      status: "ready-to-execute",
+      selectedSourceIds: ["kamloops-local-lidar-dtm-1m"]
+    });
+    expect(handoff.terrainAdapterPlans[0]).toMatchObject({
+      status: "ready",
+      selectedSource: { id: "kamloops-local-lidar-dtm-1m" },
+      toolProfile: { toolId: "kamloops-local-lidar" }
+    });
+    expect(handoff.terrainAdapterPlans[0].inputRefs[0].url).toContain(
+      "terrain.example.test/kamloops/"
+    );
+    expect(handoff.warnings.join(" ")).toContain("source refs and recipes");
+  });
+
+  it("keeps global live fallback terrain out of selected source truth", async () => {
+    const fetchImpl: typeof fetch = async () => {
+      throw new Error("global fallback should not perform a source-native fetch");
+    };
+    const handoff = await createLiveAbundanceSourceHandoff(
+      {
+        aoi: {
+          centroid: { latitude: 38.7223, longitude: -9.1393 },
+          label: "Global fallback sample"
+        },
+        segments: ["terrain_elevation"]
+      },
+      { now: FIXED_NOW, terrainSourceAdapterOptions: { env: {}, fetchImpl } }
+    );
+
+    expect(handoff.terrain.selectedSourceIds).toEqual([]);
+    expect(handoff.layers.find((layer) => layer.layerId === "terrain")).toMatchObject({
+      status: "blocked",
+      selectedSourceIds: []
+    });
+    expect(handoff.terrainAdapterPlans[0]).toMatchObject({
+      status: "blocked",
+      selectedSource: { id: "mapterhorn-pmtiles-terrain" }
+    });
     expect(handoff.gaps.join(" ")).toContain("fallback visual/generic terrain only");
   });
 

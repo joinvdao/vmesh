@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   BA_GEOSPATIAL_SEGMENTS,
   createAbundanceSourceHandoff,
+  createLiveAbundanceSourceHandoff,
   MAX_PACKAGE_PLAN_BODY_BYTES,
   sanitizeConsumerAppId,
   sanitizeTextLabel,
@@ -153,7 +154,12 @@ function parcelVertexCount(value: unknown): number | null {
   return Array.isArray(ring) ? ring.length : null;
 }
 
-function buildHandoff(input: AbundanceSourceHandoffRequest) {
+function parseLiveTerrain(value: unknown) {
+  return value === true || value === "true" || value === "1" || value === "yes";
+}
+
+async function buildHandoff(input: AbundanceSourceHandoffRequest, liveTerrain = false) {
+  if (liveTerrain) return createLiveAbundanceSourceHandoff(input);
   return createAbundanceSourceHandoff(input);
 }
 
@@ -169,16 +175,19 @@ export async function GET(req: NextRequest) {
   }
 
   return jsonResponse(
-    buildHandoff({
-      aoi,
-      segments: parseSegments(req.nextUrl.searchParams.get("segments")),
-      consumerAppId: parseConsumer(
-        req.nextUrl.searchParams.get("consumer") ?? req.nextUrl.searchParams.get("consumerAppId")
-      ),
-      edgeMeters: boundedNumber(req.nextUrl.searchParams.get("edgeMeters"), 512, 10000),
-      gridSize: boundedNumber(req.nextUrl.searchParams.get("gridSize"), 17, 2049),
-      includeReviewOnly: req.nextUrl.searchParams.get("includeReviewOnly") === "true"
-    })
+    await buildHandoff(
+      {
+        aoi,
+        segments: parseSegments(req.nextUrl.searchParams.get("segments")),
+        consumerAppId: parseConsumer(
+          req.nextUrl.searchParams.get("consumer") ?? req.nextUrl.searchParams.get("consumerAppId")
+        ),
+        edgeMeters: boundedNumber(req.nextUrl.searchParams.get("edgeMeters"), 512, 10000),
+        gridSize: boundedNumber(req.nextUrl.searchParams.get("gridSize"), 17, 2049),
+        includeReviewOnly: req.nextUrl.searchParams.get("includeReviewOnly") === "true"
+      },
+      parseLiveTerrain(req.nextUrl.searchParams.get("liveTerrain"))
+    )
   );
 }
 
@@ -219,24 +228,27 @@ export async function POST(req: NextRequest) {
   const vertexCount = parcelVertexCount(parcelBoundary);
 
   return jsonResponse(
-    buildHandoff({
-      aoi,
-      segments: parseSegments(body.segments),
-      consumerAppId: parseConsumer(body.consumer ?? body.consumerAppId),
-      edgeMeters: boundedNumber(body.edgeMeters, 512, 10000),
-      gridSize: boundedNumber(body.gridSize, 17, 2049),
-      includeReviewOnly: body.includeReviewOnly === true,
-      parcelBoundaryContext:
-        vertexCount === null
-          ? undefined
-          : {
-              provided: true,
-              vertexCount,
-              label:
-                typeof body.parcelBoundaryLabel === "string"
-                  ? sanitizeTextLabel(body.parcelBoundaryLabel)
-                  : undefined
-            }
-    })
+    await buildHandoff(
+      {
+        aoi,
+        segments: parseSegments(body.segments),
+        consumerAppId: parseConsumer(body.consumer ?? body.consumerAppId),
+        edgeMeters: boundedNumber(body.edgeMeters, 512, 10000),
+        gridSize: boundedNumber(body.gridSize, 17, 2049),
+        includeReviewOnly: body.includeReviewOnly === true,
+        parcelBoundaryContext:
+          vertexCount === null
+            ? undefined
+            : {
+                provided: true,
+                vertexCount,
+                label:
+                  typeof body.parcelBoundaryLabel === "string"
+                    ? sanitizeTextLabel(body.parcelBoundaryLabel)
+                    : undefined
+              }
+      },
+      parseLiveTerrain(body.liveTerrain)
+    )
   );
 }

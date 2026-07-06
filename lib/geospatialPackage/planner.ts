@@ -25,6 +25,7 @@ import {
 import {
   isBritishColumbiaTerrainSourceCoordinate,
   isCanadaTerrainSourceCoordinate,
+  isKamloopsOperatorLocalTerrainCoordinate,
   isUsaTerrainSourceCoordinate
 } from "@/lib/terrainSourcePreview";
 
@@ -113,6 +114,9 @@ function regionalTerrainPreferenceRank({
   const coordinate = aoi.centroid;
   const inUsa = isUsaTerrainSourceCoordinate(coordinate);
   const inCanada = isCanadaTerrainSourceCoordinate(coordinate);
+  if (isKamloopsOperatorLocalTerrainCoordinate(coordinate)) {
+    if (source.id === "kamloops-local-lidar-dtm-1m") return 132;
+  }
   if (isBritishColumbiaTerrainSourceCoordinate(coordinate)) {
     if (source.id === "bc-lidarbc") return 112;
     if (source.id === "canada-hrdem") return 102;
