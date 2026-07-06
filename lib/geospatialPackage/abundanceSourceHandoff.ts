@@ -16,6 +16,10 @@ import {
   type TerrainSourceAdapterPlan
 } from "@/lib/geospatialPackage/terrainSourceAdapters";
 import {
+  parcelBoundaryContext,
+  publicBuildingWorkerHandoff
+} from "@/lib/geospatialPackage/abundanceSourceHandoffRedaction";
+import {
   ABUNDANCE_PAYLOAD_KIND_BY_LAYER,
   ABUNDANCE_SEGMENTS_BY_LAYER,
   ABUNDANCE_SOURCE_HANDOFF_DEFAULT_EDGE_METERS,
@@ -124,27 +128,6 @@ function buildingRecipeFromHandoff(
     steps: handoff.workerRequest.workerSteps,
     status: handoff.workerRequest.output.status === "blocked" ? "blocked" : "requires-worker",
     requiredWorker: "abundance"
-  };
-}
-
-function publicBuildingWorkerHandoff(
-  handoff: BuildingPackageWorkerHandoff,
-  includeReviewOnly: boolean
-): BuildingPackageWorkerHandoff {
-  if (includeReviewOnly) return handoff;
-
-  return {
-    ...handoff,
-    workerRequest: {
-      ...handoff.workerRequest,
-      sourceLadder: handoff.workerRequest.sourceLadder.filter(
-        (source) => source.workerRole !== "review-required" && source.canMaterialize
-      )
-    },
-    warnings: [
-      ...handoff.warnings,
-      "Review-only building sources were omitted from this operational handoff by default."
-    ]
   };
 }
 
@@ -286,33 +269,6 @@ function terrainSummary(baPackage: BaGeospatialPackage): AbundanceSourceHandoff[
       confidence: source.confidence,
       selectedForAoi: source.selectedForAoi
     }))
-  };
-}
-
-function parcelBoundaryContext(
-  input: AbundanceSourceHandoffRequest
-): AbundanceSourceHandoff["parcelBoundaryContext"] {
-  if (!input.parcelBoundaryContext?.provided) {
-    return {
-      provided: false,
-      role: "overlay-only",
-      coordinateDisclosure: "not-provided",
-      vertexCount: null,
-      label: null,
-      notes: ["No parcel boundary geometry was attached to this resolver request."]
-    };
-  }
-
-  return {
-    provided: true,
-    role: "overlay-only",
-    coordinateDisclosure: "redacted-request-geometry",
-    vertexCount: input.parcelBoundaryContext.vertexCount,
-    label: input.parcelBoundaryContext.label ?? null,
-    notes: [
-      "Parcel boundary coordinates are intentionally omitted from the VMesh handoff.",
-      "The boundary is context for highlighting/overlay only and does not change the 3 km source-slice frame."
-    ]
   };
 }
 
