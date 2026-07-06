@@ -95,6 +95,7 @@ Resilient communications should enter through a local bridge, not directly throu
 - `GeospatialPackagePlan`: historical package-planning contract; use it as a planning surface for optional workers/cache modes, not as the default BA-facing storage contract.
 - `GeospatialSourceCandidate`: historical name for source registry entries covering terrain, imagery, roads, buildings, water, vegetation, parcels, climate, weather, hydrology, soils, biodiversity, infrastructure, food-system/local assets, contours, landcover, and field boundaries.
 - `PackagePlanArtifact`: optional app-ready artifact contract for PMTiles, vector tiles, raster tiles, COG, Zarr, GeoParquet, H3 summaries, manifests, or bounded APIs when a worker/cache mode is explicitly enabled.
+- `BuildingPackageWorkerHandoff`: Overture-first building-footprint worker contract that exposes the source ladder and planned `buildings.json` output without claiming that registry metadata is already a materialized feature index.
 - `SourceProvenance`: provider/source id, source type, source URL, ground model role, acquisition/processing/vintage metadata, license, attribution, and limitations.
 - `GroundModelRole`: `bare-earth-dtm`, `generic-dem`, `surface-dsm`, `topobathy`, `imagery-inferred-context`, `visual-context`, or `not-authoritative`.
 - `BasemapProviderConfig`: provider metadata for Protomaps PMTiles, OpenFreeMap, MapLibre/OSM raster fallback, custom style JSON, and offline shell.
@@ -144,15 +145,15 @@ The ownership boundary is deliberate: vmesh owns source selection, provenance, S
 
 Recommended ownership:
 
-| Contract area                                          | Owning layer | Consumers       |
-| ------------------------------------------------------ | ------------ | --------------- |
-| H3 macro/micro summaries                               | vmesh        | Downstream apps |
-| Basemap, terrain, imagery, and provider metadata       | vmesh        | Downstream apps |
-| STAC/source manifests, ecosystem records, and provider-native asset refs | vmesh | Downstream apps |
-| Optional package/cache artifact contracts              | vmesh/deployment | Downstream apps |
-| Property intelligence and parcel provenance patterns   | vmesh        | Downstream apps |
-| Hub playbook cards and local status checklists         | vmesh        | Downstream apps |
-| Permaculture/local land interaction ontology           | vmesh        | Downstream apps |
+| Contract area                                                            | Owning layer     | Consumers       |
+| ------------------------------------------------------------------------ | ---------------- | --------------- |
+| H3 macro/micro summaries                                                 | vmesh            | Downstream apps |
+| Basemap, terrain, imagery, and provider metadata                         | vmesh            | Downstream apps |
+| STAC/source manifests, ecosystem records, and provider-native asset refs | vmesh            | Downstream apps |
+| Optional package/cache artifact contracts                                | vmesh/deployment | Downstream apps |
+| Property intelligence and parcel provenance patterns                     | vmesh            | Downstream apps |
+| Hub playbook cards and local status checklists                           | vmesh            | Downstream apps |
+| Permaculture/local land interaction ontology                             | vmesh            | Downstream apps |
 
 The near-term sharing mechanism is Markdown plus fixtures. A shared package should wait until duplication is painful and the contract has stabilized. If that happens, the first candidate should be a narrow package such as `@vdao/geo-contracts` that contains TypeScript types, JSON Schemas, and validators only. It should not include provider calls, tokens, private data, or app-specific rendering code.
 

@@ -3,6 +3,7 @@ export * from "@/lib/geospatialPackage/apiSurface";
 export * from "@/lib/geospatialPackage/baGoldenEvalPackage";
 export * from "@/lib/geospatialPackage/baPackage";
 export * from "@/lib/geospatialPackage/baEcosystemPackage";
+export * from "@/lib/geospatialPackage/buildingPackageWorker";
 export * from "@/lib/geospatialPackage/planner";
 export * from "@/lib/geospatialPackage/plannerUtils";
 export * from "@/lib/geospatialPackage/security";
