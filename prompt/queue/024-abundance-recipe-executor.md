@@ -22,6 +22,7 @@ Landed in private Abundance branch `feat/v4-V0-visual-uplift`:
 - `719ca0d feat(data): emit vmesh source packs`
 - `852763e feat(data): persist vmesh builder inputs`
 - `63b1f0f feat(data): add vmesh runtime bridge readiness`
+- `4c19b29 feat(data): carry vmesh semantic-ground masks`
 
 Implemented:
 
@@ -58,6 +59,12 @@ Implemented:
 - tests proving terrain-ready/vector-ready source packs still cannot claim all
   data types when masks/context/parcels are gaps, and proving the bridge blocks
   runtime-pack creation when terrain lacks a heightfield-ready payload.
+- source-pack payload-ref naming for `semantic-ground-vector` outputs, so
+  runtime bridges see decoded mask/vegetation occupancy as
+  `semantic-ground.json` instead of generic landcover context.
+- worker proof that a VMesh-selected ESA WorldCover source can call the
+  existing Abundance semantic-ground query path and turn vegetation masks into a
+  runtime-input-ready layer without renderer changes.
 
 Still open before marking `done`:
 
