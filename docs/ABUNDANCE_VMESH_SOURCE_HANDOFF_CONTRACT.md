@@ -109,11 +109,13 @@ inputs to the source-slice frame. Building and Overture-style vector recipes use
 Code:
 
 - `lib/geospatialPackage/abundanceSourceHandoff.ts`
+- `app/api/geospatial-package/resolve/route.ts`
 - exported through `lib/geospatialPackage/index.ts`
 
 Tests:
 
 - `tests/abundanceSourceHandoff.test.ts`
+- `tests/abundanceResolveRoute.test.ts`
 
 Next phase:
 

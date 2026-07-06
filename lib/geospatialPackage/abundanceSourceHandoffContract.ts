@@ -45,6 +45,12 @@ export interface AbundanceSourceHandoffRequest extends Omit<
   consumerAppId?: string;
   edgeMeters?: number;
   gridSize?: number;
+  includeReviewOnly?: boolean;
+  parcelBoundaryContext?: {
+    provided: boolean;
+    vertexCount: number | null;
+    label?: string;
+  };
 }
 
 export interface AbundanceSourceHandoffRecipe {
@@ -87,6 +93,14 @@ export interface AbundanceSourceHandoff {
     edgeMeters: number;
     gridSize: number;
     parcelBoundaryRole: "overlay-only";
+    notes: string[];
+  };
+  parcelBoundaryContext: {
+    provided: boolean;
+    role: "overlay-only";
+    coordinateDisclosure: "redacted-request-geometry" | "not-provided";
+    vertexCount: number | null;
+    label: string | null;
     notes: string[];
   };
   jurisdiction: {

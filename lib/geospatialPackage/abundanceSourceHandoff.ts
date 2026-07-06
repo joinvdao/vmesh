@@ -127,6 +127,27 @@ function buildingRecipeFromHandoff(
   };
 }
 
+function publicBuildingWorkerHandoff(
+  handoff: BuildingPackageWorkerHandoff,
+  includeReviewOnly: boolean
+): BuildingPackageWorkerHandoff {
+  if (includeReviewOnly) return handoff;
+
+  return {
+    ...handoff,
+    workerRequest: {
+      ...handoff.workerRequest,
+      sourceLadder: handoff.workerRequest.sourceLadder.filter(
+        (source) => source.workerRole !== "review-required" && source.canMaterialize
+      )
+    },
+    warnings: [
+      ...handoff.warnings,
+      "Review-only building sources were omitted from this operational handoff by default."
+    ]
+  };
+}
+
 function statusForLayer({
   layerId,
   sourceRefs,
@@ -268,6 +289,33 @@ function terrainSummary(baPackage: BaGeospatialPackage): AbundanceSourceHandoff[
   };
 }
 
+function parcelBoundaryContext(
+  input: AbundanceSourceHandoffRequest
+): AbundanceSourceHandoff["parcelBoundaryContext"] {
+  if (!input.parcelBoundaryContext?.provided) {
+    return {
+      provided: false,
+      role: "overlay-only",
+      coordinateDisclosure: "not-provided",
+      vertexCount: null,
+      label: null,
+      notes: ["No parcel boundary geometry was attached to this resolver request."]
+    };
+  }
+
+  return {
+    provided: true,
+    role: "overlay-only",
+    coordinateDisclosure: "redacted-request-geometry",
+    vertexCount: input.parcelBoundaryContext.vertexCount,
+    label: input.parcelBoundaryContext.label ?? null,
+    notes: [
+      "Parcel boundary coordinates are intentionally omitted from the VMesh handoff.",
+      "The boundary is context for highlighting/overlay only and does not change the 3 km source-slice frame."
+    ]
+  };
+}
+
 export function createAbundanceSourceHandoff(
   input: AbundanceSourceHandoffRequest,
   options: { now?: () => Date } = {}
@@ -280,11 +328,14 @@ export function createAbundanceSourceHandoff(
   const terrainAdapterPlans = terrainAdapterPlansForPackage(baPackage);
   const layers = getBaGeospatialLayersForSegments(baPackage.request.segments);
   const buildingWorkerHandoff = layers.includes("buildings")
-    ? createBuildingPackageWorkerHandoff({
-        aoi: input.aoi,
-        consumerAppId,
-        offline: true
-      })
+    ? publicBuildingWorkerHandoff(
+        createBuildingPackageWorkerHandoff({
+          aoi: input.aoi,
+          consumerAppId,
+          offline: true
+        }),
+        input.includeReviewOnly === true
+      )
     : null;
 
   const handoffLayers = layers.map((layerId) =>
@@ -320,6 +371,7 @@ export function createAbundanceSourceHandoff(
         "This handoff contains source refs and executable recipes, not raw provider payloads."
       ]
     },
+    parcelBoundaryContext: parcelBoundaryContext(input),
     jurisdiction: {
       status: "h3-only",
       h3Id: baPackage.h3Context.h3Id,
