@@ -33,7 +33,7 @@ and store/render payloads.
 | 019   | `019-abundance-source-pack-handoff.md`                 | queued               | VMesh to Abundance source-pack handoff.                         |
 | 020   | `020-operational-gates-live-proof-matrix.md`           | queued               | Gates, live-proof matrix, privacy, and regression discipline.   |
 | 021   | `021-abundance-vmesh-seam-audit.md`                    | done                 | Audit the current cross-repo seam and exact gaps.               |
-| 022   | `022-abundance-vmesh-handoff-contract.md`              | queued               | Freeze the recipe-first Abundance handoff contract.             |
+| 022   | `022-abundance-vmesh-handoff-contract.md`              | done                 | Freeze the recipe-first Abundance handoff contract.             |
 | 023   | `023-vmesh-abundance-resolver-mode.md`                 | queued               | Add VMesh resolver mode for Abundance.                          |
 | 024   | `024-abundance-recipe-executor.md`                     | queued               | Build the Abundance-side recipe executor adapter.               |
 | 025   | `025-terrain-slice-source-pack-proof.md`               | queued               | Prove terrain source-pack generation from VMesh handoff.        |
