@@ -228,7 +228,9 @@ const LIVE_PROOF_EVIDENCE: Record<string, Omit<BaLiveProofRecord, "sourceId">> =
       ".artifacts/terrain-source-preview/source-preview-probe-route-lidarbc-live-proof-latest.json",
       ".artifacts/terrain-source-preview/source-preview-route-live-proof-latest.json"
     ],
-    limitations: ["Selected public-safe BC AOIs only; exact Kamloops/Rose proof remains local."]
+    limitations: [
+      "Selected public-safe BC AOIs only; exact Kamloops/Rose proof still needs redacted retained evidence."
+    ]
   },
   "bc-lidarbc-dsm": {
     status: "live-proof-retained",
@@ -289,7 +291,7 @@ function adapterForProbeStrategy(strategy: PackageProbeStrategy): string {
 
 function statusForSource(source: GeospatialSourceCandidate): BaReviewedSourceStatus | null {
   if (source.id === "kamloops-local-lidar-dtm-1m") {
-    return source.status === "configured" ? "adapter_ready" : null;
+    return source.status === "configured" ? "adapter_ready" : "ready_source_ref";
   }
   if (LIVE_PROOF_EVIDENCE[source.id]) return "live_proof_ready";
   if (VIEWER_READY_SOURCE_IDS.has(source.id)) return "viewer_ready";

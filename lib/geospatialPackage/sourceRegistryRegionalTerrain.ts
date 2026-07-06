@@ -66,16 +66,16 @@ const REGIONAL_TERRAIN_SOURCES: RegionalTerrainSource[] = [
   },
   {
     id: "kamloops-local-lidar-dtm-1m",
-    label: "Kamloops operator-local municipal LiDAR DTM",
-    coverage:
-      "City of Kamloops / Rose Hill operator-retained municipal DTM coverage where configured",
+    label: "Kamloops municipal public LiDAR/DEM",
+    coverage: "City of Kamloops Open Data DEM/LiDAR tile coverage",
     resolution:
-      "1m bare-earth DTM where the operator-retained municipal source pack covers the AOI",
-    sourceUrl: "https://maps.kamloops.ca/arcgis/rest/services",
-    attribution: "City of Kamloops and operator-retained source-pack evidence",
-    license: "Operator-retained municipal/source-pack terms; public-safe downstream artifacts only",
+      "1m-class source where public municipal LiDAR/DEM tile coverage and worker QA prove it",
+    sourceUrl:
+      "https://maps.kamloops.ca/arcgis/rest/services/OpenData/OpenDataAdminCad/MapServer/25",
+    attribution: "City of Kamloops",
+    license: "Open Government Licence - Kamloops",
     notes:
-      "VMesh indexes this as a configured local source rail only. It does not store the municipal DTM payload; Abundance must fetch/window/QA the configured operator endpoint before claiming golden-quality terrain."
+      "Legacy id kept for compatibility. VMesh indexes the public municipal DEM grid/LiDAR source family and optional configured raster overrides; it does not store the payload. Abundance must fetch/window/QA the resolved municipal source before claiming golden-quality terrain. Airbus/private imagery remains a separate non-public source."
   },
   {
     id: "canada-hrdem",
@@ -179,13 +179,13 @@ export function getRegionalTerrainPackageSources(): GeospatialSourceCandidate[] 
           : entry.id === "kamloops-local-lidar-dtm-1m"
             ? process.env.VMESH_KAMLOOPS_LOCAL_LIDAR_MODE === "configured-geotiff"
               ? "configured"
-              : "future"
+              : "preprocessing-required"
             : "preprocessing-required",
       access:
         entry.id === "opentopography"
           ? "token-gated"
           : entry.id === "kamloops-local-lidar-dtm-1m"
-            ? "local"
+            ? "open"
             : "open",
       artifactKinds: ["cog", "pmtiles", "h3-summary", "manifest"],
       requiresApiKey: entry.id === "opentopography",

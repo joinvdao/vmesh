@@ -223,8 +223,14 @@ available. DTM and DSM are represented as separate source IDs (`canada-hrdem`
 and `canada-hrdem-dsm`) so a surface model cannot silently become bare-earth
 terrain. LidarBC is also represented as separate DTM/DSM source IDs
 (`bc-lidarbc` and `bc-lidarbc-dsm`) and resolves official 1 metre GeoTIFF refs
-from the LidarBC ArcGIS FeatureServer indexes. Mapterhorn and Mapzen remain
-useful renderer fallbacks, not upstream terrain truth for generated packages.
+from the LidarBC ArcGIS FeatureServer indexes. Kamloops uses the compatibility
+source id `kamloops-local-lidar-dtm-1m` for the public City of Kamloops
+municipal DEM/LiDAR rail: the live resolver queries the public DEM Grid layer,
+records the selected grid cell, and leaves exact AOI query geometry out of
+public-safe artifacts. A downstream worker still has to resolve the matching
+LAS/DEM download and derive or window a QA-proven DTM before Abundance can claim
+golden-quality terrain. Mapterhorn and Mapzen remain useful renderer fallbacks,
+not upstream terrain truth for generated packages.
 
 The default terrain broker path is:
 

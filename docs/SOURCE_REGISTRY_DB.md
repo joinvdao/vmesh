@@ -201,15 +201,17 @@ Registry rule: do not infer Canada-wide 1 m coverage from Mapterhorn. Use the of
 
 ### Rose Source-Pack And Fallback Test Note
 
-Rose already has a strong operator-local source pack and should not be described as dependent on Mapterhorn for core site data. The Mapterhorn/Canadian STAC work was a fallback and provenance test: if BA or VMesh needs a public/open terrain source path for comparison, fallback, or source attribution, the redacted Rose AOI can be checked against direct official Canadian source families.
+Rose already has a strong retained source pack and should not be described as dependent on Mapterhorn for core site data. The Mapterhorn/Canadian STAC work was a fallback and provenance test: if BA or VMesh needs a public/open terrain source path for comparison, fallback, or source attribution, the redacted Rose AOI can be checked against direct official Canadian and City of Kamloops municipal source families.
 
 VMesh now models the golden-quality Kamloops terrain handoff as
-`kamloops-local-lidar-dtm-1m`: a configured municipal/operator-local source rail
-inside a coarse public Kamloops service area. VMesh indexes the source authority
-and clean configured endpoint, but it does not store the DTM payload. Abundance
-must window the configured raster, prove non-no-data AOI coverage, preserve
-CRS/vertical datum/resolution, and retain public-safe QA artifacts before a
-neighbour pack can claim golden-quality terrain.
+`kamloops-local-lidar-dtm-1m`: a compatibility id for the public City of
+Kamloops municipal DEM/LiDAR source rail. VMesh first resolves the public DEM
+Grid layer and selected grid cell, then downstream workers must resolve the
+matching LAS/DEM download, derive or window a bare-earth DTM, prove non-no-data
+AOI coverage, preserve CRS/vertical datum/resolution, and retain public-safe QA
+artifacts before a neighbour pack can claim golden-quality terrain. Optional
+configured GeoTIFF/COG URL templates are deployment accelerators, not the source
+of truth. Airbus/private imagery remains separate from this public terrain path.
 
 For the redacted Rose golden-eval AOI, the fallback/provenance test matched these public source item families:
 

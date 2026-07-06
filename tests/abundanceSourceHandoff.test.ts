@@ -8,6 +8,17 @@ import {
 
 const FIXED_NOW = () => new Date("2026-07-06T00:00:00.000Z");
 const EMPTY_FEATURES = { features: [] };
+const KAMLOOPS_DEM_GRID_RESPONSE = {
+  features: [
+    {
+      attributes: {
+        OBJECTID: 42,
+        CELLNAME: "5156",
+        PHOTOGRIDLIMITS: "YES"
+      }
+    }
+  ]
+};
 const CANADA_HRDEM_ONE_METER_STAC = {
   features: [
     {
@@ -161,15 +172,20 @@ describe("Abundance source handoff", () => {
     const fetchImpl: typeof fetch = async (url) => {
       const requestUrl = String(url);
       requests.push(requestUrl);
-      return new Response(
-        JSON.stringify(
-          requestUrl.includes("LiDAR_BC_S3_Public") ? EMPTY_FEATURES : CANADA_HRDEM_ONE_METER_STAC
-        ),
-        {
+      if (
+        requestUrl.includes("OpenDataAdminCad/MapServer/25/query") ||
+        requestUrl.includes("LiDAR_BC_S3_Public")
+      ) {
+        return new Response(JSON.stringify(EMPTY_FEATURES), {
           status: 200,
           headers: { "Content-Type": "application/json" }
-        }
-      );
+        });
+      }
+
+      return new Response(JSON.stringify(CANADA_HRDEM_ONE_METER_STAC), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
     };
 
     const handoff = await createLiveAbundanceSourceHandoff(
@@ -185,8 +201,9 @@ describe("Abundance source handoff", () => {
     );
     const terrainLayer = handoff.layers.find((layer) => layer.layerId === "terrain");
 
-    expect(requests[0]).toContain("LiDAR_BC_S3_Public");
-    expect(requests[1]).toBe("https://datacube.services.geo.ca/stac/api/search");
+    expect(requests[0]).toContain("OpenDataAdminCad/MapServer/25/query");
+    expect(requests[1]).toContain("LiDAR_BC_S3_Public");
+    expect(requests[2]).toBe("https://datacube.services.geo.ca/stac/api/search");
     expect(handoff.terrain.selectedSourceIds).toEqual(["canada-hrdem"]);
     expect(terrainLayer?.selectedSourceIds).toEqual(["canada-hrdem"]);
     expect(handoff.terrainAdapterPlans[0]).toMatchObject({
@@ -197,17 +214,61 @@ describe("Abundance source handoff", () => {
     expect(handoff.terrainAdapterPlans[0].inputRefs[0].url).toContain("mosaic-1m-dtm.tif");
   });
 
-  it("can live-resolve configured Kamloops operator-local DTM without treating VMesh as terrain storage", async () => {
-    process.env.VMESH_KAMLOOPS_LOCAL_LIDAR_MODE = "configured-geotiff";
-    const fetchImpl: typeof fetch = async () => {
-      throw new Error("configured local DTM handoff should not call public catalogs");
+  it("can live-resolve Kamloops municipal DEM-grid coverage without treating VMesh as terrain storage", async () => {
+    const requests: string[] = [];
+    const fetchImpl: typeof fetch = async (url) => {
+      requests.push(String(url));
+      return new Response(JSON.stringify(KAMLOOPS_DEM_GRID_RESPONSE), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
     };
 
     const handoff = await createLiveAbundanceSourceHandoff(
       {
         aoi: {
           centroid: { latitude: 50.64, longitude: -120.26 },
-          label: "Kamloops public-safe operator-local AOI"
+          label: "Kamloops public-safe municipal AOI"
+        },
+        segments: ["terrain_elevation"],
+        consumerAppId: "building-abundance"
+      },
+      { now: FIXED_NOW, terrainSourceAdapterOptions: { env: {}, fetchImpl } }
+    );
+
+    expect(handoff.terrain.selectedSourceIds).toEqual(["kamloops-local-lidar-dtm-1m"]);
+    expect(handoff.layers.find((layer) => layer.layerId === "terrain")).toMatchObject({
+      status: "ready-to-execute",
+      selectedSourceIds: ["kamloops-local-lidar-dtm-1m"]
+    });
+    expect(handoff.terrainAdapterPlans[0]).toMatchObject({
+      status: "ready",
+      selectedSource: { id: "kamloops-local-lidar-dtm-1m" },
+      toolProfile: { toolId: "kamloops-local-lidar" }
+    });
+    expect(handoff.terrainAdapterPlans[0].inputRefs[0]).toMatchObject({
+      kind: "source-index-required",
+      role: "source-index"
+    });
+    expect(handoff.terrainAdapterPlans[0].inputRefs[0].notes.join(" ")).toContain(
+      "DEM grid CELLNAME 5156"
+    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toContain("OpenDataAdminCad/MapServer/25/query");
+    expect(handoff.warnings.join(" ")).toContain("source refs and recipes");
+  });
+
+  it("can live-resolve configured Kamloops municipal DTM override without treating VMesh as terrain storage", async () => {
+    process.env.VMESH_KAMLOOPS_LOCAL_LIDAR_MODE = "configured-geotiff";
+    const fetchImpl: typeof fetch = async () => {
+      throw new Error("configured municipal DTM handoff should not call public catalogs");
+    };
+
+    const handoff = await createLiveAbundanceSourceHandoff(
+      {
+        aoi: {
+          centroid: { latitude: 50.64, longitude: -120.26 },
+          label: "Kamloops public-safe municipal AOI"
         },
         segments: ["terrain_elevation"],
         consumerAppId: "building-abundance"

@@ -178,7 +178,7 @@ const CANADA_SOURCE_BOUNDS: LonLatBbox[] = [{ west: -141.5, south: 41.5, east: -
 const BRITISH_COLUMBIA_SOURCE_BOUNDS: LonLatBbox[] = [
   { west: -139.2, south: 48.1, east: -119.0, north: 60.1 }
 ];
-const KAMLOOPS_OPERATOR_LOCAL_TERRAIN_BOUNDS: LonLatBbox[] = [
+const KAMLOOPS_MUNICIPAL_TERRAIN_BOUNDS: LonLatBbox[] = [
   { west: -120.75, south: 50.48, east: -119.95, north: 50.88 }
 ];
 const BC_LIDAR_FEATURE_SERVER_BASE_URL =
@@ -278,10 +278,12 @@ export function isBritishColumbiaTerrainSourceCoordinate(coordinate: LonLatCoord
   return BRITISH_COLUMBIA_SOURCE_BOUNDS.some((bbox) => bboxContainsCoordinate(bbox, coordinate));
 }
 
+export function isKamloopsMunicipalTerrainCoordinate(coordinate: LonLatCoordinate): boolean {
+  return KAMLOOPS_MUNICIPAL_TERRAIN_BOUNDS.some((bbox) => bboxContainsCoordinate(bbox, coordinate));
+}
+
 export function isKamloopsOperatorLocalTerrainCoordinate(coordinate: LonLatCoordinate): boolean {
-  return KAMLOOPS_OPERATOR_LOCAL_TERRAIN_BOUNDS.some((bbox) =>
-    bboxContainsCoordinate(bbox, coordinate)
-  );
+  return isKamloopsMunicipalTerrainCoordinate(coordinate);
 }
 
 export function isNorthAmericaTerrainSourceCoordinate(coordinate: LonLatCoordinate): boolean {

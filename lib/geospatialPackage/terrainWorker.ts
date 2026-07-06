@@ -267,13 +267,13 @@ export const TERRAIN_TOOL_PROFILES: TerrainToolProfile[] = [
   {
     toolId: "kamloops-local-lidar",
     sourceIds: ["kamloops-local-lidar-dtm-1m"],
-    provider: "City of Kamloops / operator-retained municipal LiDAR DTM",
+    provider: "City of Kamloops municipal LiDAR/DEM Open Data",
     targetResolutionMeters: 1,
-    sourceRelease: "Kamloops operator-local municipal DTM source pack",
+    sourceRelease: "Kamloops municipal Open Data DEM grid and LiDAR source family",
     groundModelRole: "bare-earth-dtm",
     payloadCapable: true,
     notes:
-      "Operator-local Kamloops DTM rail. VMesh indexes the configured endpoint; Abundance must fetch, window, QA, and retain public-safe package artifacts before claiming golden-quality terrain."
+      "Public Kamloops terrain source rail. VMesh indexes the municipal DEM grid/LiDAR source family and optional configured raster overrides; Abundance must fetch, window, QA, and retain public-safe package artifacts before claiming golden-quality terrain."
   },
   {
     toolId: "canada-hrdem",

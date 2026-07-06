@@ -135,7 +135,7 @@ Current one-at-a-time status:
 - `scotland-urban-edinburgh-mcdonald-place`: old BA retained imagery evidence is imported. A focused 2026-06-03 web sweep added Edinburgh candidates for the McDonald Place adopted-road record, city open data, Greenspace Scotland, SEPA flood data, Scotland environment maps, Scottish LiDAR, and city mobility/environment context. These remain `needs_probe`, `needs_license_review`, or `research_only`.
 - `scotland-rural-perth-ph1-road-building-alignment`: old BA retained imagery evidence is imported. A focused 2026-06-03 web sweep added Perth PH1 candidates for Perth & Kinross open data, ArcGIS Hub/DCAT feeds, adopted core paths, Scotland Phase 2 LiDAR DTM, SEPA flood data, Scone surface-water context, PKC climate-risk GIS context, and wind-turbine planning open data. These remain `needs_probe`, `needs_license_review`, or `research_only`.
 - `canada-rural-pemberton-bc`: old BA retained imagery evidence is imported. A focused 2026-06-03 web sweep added BC and regional candidates for LidarBC, the LidarBC Open LiDAR Data Index, BC topographic data, SLRD mapping, BC terrestrial ecosystem data, settlement planning context, and Agricultural Land Reserve context. These remain `needs_probe`, `needs_license_review`, or `research_only`.
-- `canada-dryland-kamloops-rose-hill`: old BA retained imagery evidence is imported. A focused 2026-06-03 web sweep added priority BC interior candidates for LidarBC DSM/DEM, the BC Data Catalogue, BC terrestrial ecosystem data, Thompson flood hazards, City of Kamloops open data, TNRD geohazard/property context, soil/wildfire/watershed catalogue references, and dryland grassland ecosystem context. These remain `needs_probe`, `needs_license_review`, or `research_only`; exact Rose AOI live proof still requires operator-local private-coordinate env vars.
+- `canada-dryland-kamloops-rose-hill`: old BA retained imagery evidence is imported. A focused 2026-06-03 web sweep added priority BC interior candidates for LidarBC DSM/DEM, the BC Data Catalogue, BC terrestrial ecosystem data, Thompson flood hazards, City of Kamloops open data, TNRD geohazard/property context, soil/wildfire/watershed catalogue references, and dryland grassland ecosystem context. These remain `needs_probe`, `needs_license_review`, or `research_only`; exact Rose AOI public-safe live proof still requires a redacted evidence artifact, but the municipal Kamloops terrain source family itself is public/open.
 - `canada-rural-alberta-parkland`: retained BA UP42 terrain evidence is imported as operator-local `live-proof`, with exact AOI details withheld. A focused 2026-06-03 web sweep added provincial candidates for Alberta wildfire GIS, soil/AGRASID, Agricultural Land Resource Atlas spatial data, Altalis products, ABMI airborne LiDAR, ABMI hydrological habitats, and ACIMS biodiversity data. These remain `needs_probe` or `needs_license_review`; exact Alberta AOI live proof still requires operator-local private-coordinate env vars.
 - `germany-rural-bavaria-wegele`: old BA retained imagery evidence is imported. A focused 2026-06-03 web sweep added Bavaria/Germany candidates for DGM1 terrain, Bavaria OpenData, Geoportal Bayern services, LDBV WMS/WFS docs, FIS-Natur FIN-Web, BGR Geoportal, soil-estimate context, and landscape-planning source guidance. These remain `needs_probe`, `needs_license_review`, or `research_only`.
 - `usa-vermont-rural-mad-river-valley`: old BA retained imagery evidence is imported. A focused 2026-06-03 web sweep added Vermont candidates for VCGI Open Geodata, lidar DEM metadata, ANR river/flood services, river corridors, NRCS/VCGI soils, ANR source directories, and Mad River stormwater context. These remain `needs_probe` or `research_only`.
@@ -203,7 +203,7 @@ Additional Canada source trace:
 - Official upstream Canadian STAC root: `https://datacube.services.geo.ca/stac/api/`.
 - Key Canadian terrain collections: `hrdem-mosaic-1m`, `hrdem-mosaic-2m`, and `hrdem-lidar`.
 - Mapterhorn source-family clue: `cahrdem2`, Natural Resources Canada, listed by Mapterhorn as partial 2 m Canada DTM. This is not enough to claim Canada-wide 1 m terrain.
-- Rose already has a strong operator-local source pack. The Mapterhorn/Canadian STAC work was a fallback and provenance test, not the original discovery of Rose source data.
+- Rose already has a strong retained source pack. The Mapterhorn/Canadian STAC work was a fallback and provenance test, not the original discovery of Rose source data. The Kamloops municipal terrain rail should now be treated as public/open; retained/private handling still applies to Airbus imagery, exact AOI disclosure, and old local artifacts.
 - A redacted Rose fallback/provenance probe matched public source item families `2_4-mosaic-1m`, `2_4-mosaic-2m`, and `BC-Riverine_Floodplain_UTM10_2019-1m`. Promote this to repo-level `live_proof` only after a retained redacted evidence artifact is added without exact private coordinates or local paths.
 
 Retained artifacts:
@@ -219,11 +219,11 @@ No retained live-proof exists yet for the non-terrain geospatial buckets.
 
 ## Kamloops / Rose Gap Assessment
 
-The repo has public-safe Kamloops/BC-interior evidence and an expected-gap coordinate proof, but exact Kamloops/Rose golden-site coordinates are not committed. Rose itself already has a strong operator-local source pack. A later Mapterhorn/Canadian STAC fallback test traced direct NRCan/Geo.ca source item families for the redacted Rose AOI, including HRDEM 1 m, HRDEM 2 m, and a LiDAR-derived 1 m project. Until a redacted retained artifact is added, the public repo can only say:
+The repo has public-safe Kamloops/BC-interior evidence and an expected-gap coordinate proof, but exact Kamloops/Rose golden-site coordinates are not committed. Rose itself already has a strong retained source pack. A later Mapterhorn/Canadian STAC fallback test traced direct NRCan/Geo.ca source item families for the redacted Rose AOI, including HRDEM 1 m, HRDEM 2 m, and a LiDAR-derived 1 m project. The City of Kamloops municipal DEM Grid/LiDAR source family is public/open; a redacted retained artifact is still needed before the exact Rose pack can be promoted as repo-level `live_proof`. Until then, the public repo can only say:
 
 - BC/LidarBC and HRDEM terrain paths are strong candidates for Kamloops/Rose.
 - The public-safe BC interior sample shows strict 1m can fail closed when no valid pixels exist.
-- Operator-local evidence indicates Rose has good source-pack data and should also be covered by direct NRCan/Geo.ca HRDEM/LiDAR-derived DTM/DSM fallback/provenance source families, but BA should receive repo-level `live_proof_ready` for that exact site only after redacted retained evidence is attached.
+- Retained evidence indicates Rose has good source-pack data and should also be covered by direct municipal Kamloops and NRCan/Geo.ca HRDEM/LiDAR-derived DTM/DSM fallback/provenance source families, but BA should receive repo-level `live_proof_ready` for that exact site only after redacted retained evidence is attached.
 - The source search must distinguish raw public point-cloud availability from processed LiDAR-derived DTM/DSM COG availability.
 
 Setup gap:
@@ -263,7 +263,7 @@ Prioritize review for:
 
 Probe in this order:
 
-1. Exact operator-local Kamloops/Rose DTM and DSM source coverage.
+1. Public Kamloops municipal DEM Grid/LiDAR tile handoff plus exact redacted Rose DTM/DSM worker proof.
 2. Exact operator-local Alberta DTM and DSM source coverage.
 3. Sentinel-2 Earth Search AOI package response for Kamloops/Rose and Alberta.
 4. OpenStreetMap or Overture roads/buildings/water extraction plan for both evaluation sites.

@@ -149,6 +149,17 @@ const usgsOneMeterCoverageResponse = {
 const emptyCoverageResponse = {
   features: []
 };
+const kamloopsDemGridResponse = {
+  features: [
+    {
+      attributes: {
+        OBJECTID: 42,
+        CELLNAME: "5156",
+        PHOTOGRIDLIMITS: "YES"
+      }
+    }
+  ]
+};
 
 afterEach(() => {
   delete process.env.VMESH_KAMLOOPS_LOCAL_LIDAR_MODE;
@@ -743,9 +754,9 @@ describe("terrain source adapters", () => {
     expect(requests[0]).toContain("/FeatureServer/5/query");
   });
 
-  it("resolves configured Kamloops operator-local DTM before public BC/Canada fallbacks", async () => {
+  it("resolves configured Kamloops municipal DTM override before public catalog fetches", async () => {
     const fetchImpl: typeof fetch = async () => {
-      throw new Error("configured Kamloops local DTM should not need a catalog fetch");
+      throw new Error("configured Kamloops municipal DTM should not need a catalog fetch");
     };
 
     const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
@@ -753,7 +764,7 @@ describe("terrain source adapters", () => {
         request: {
           aoi: {
             centroid: { latitude: 50.64, longitude: -120.26 },
-            label: "Kamloops public-safe operator-local AOI"
+            label: "Kamloops public-safe municipal AOI"
           },
           layers: ["terrain"]
         }
@@ -772,7 +783,7 @@ describe("terrain source adapters", () => {
     expect(plan.inputRefs[0]).toMatchObject({
       kind: "direct-geotiff",
       format: "geotiff",
-      provider: "City of Kamloops / operator-retained municipal LiDAR DTM",
+      provider: "City of Kamloops municipal LiDAR/DEM Open Data",
       groundModelRole: "bare-earth-dtm",
       targetResolutionMeters: 1
     });
@@ -780,10 +791,62 @@ describe("terrain source adapters", () => {
     expect(plan.inputRefs[0].notes.join(" ")).toContain("Abundance must window");
   });
 
-  it("falls through from unconfigured Kamloops local DTM to public BC LidarBC", async () => {
+  it("resolves Kamloops municipal public DEM-grid coverage before BC/Canada fallbacks", async () => {
     const requests: string[] = [];
     const fetchImpl: typeof fetch = async (url) => {
       requests.push(String(url));
+      return new Response(JSON.stringify(kamloopsDemGridResponse), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+
+    const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
+      {
+        request: {
+          aoi: {
+            centroid: { latitude: 50.64, longitude: -120.26 },
+            label: "Kamloops public-safe municipal AOI"
+          },
+          layers: ["terrain"]
+        }
+      },
+      { env: {}, fetchImpl }
+    );
+
+    expect(plan.status).toBe("ready");
+    expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
+    expect(plan.toolProfile?.toolId).toBe("kamloops-local-lidar");
+    expect(plan.inputRefs[0]).toMatchObject({
+      kind: "source-index-required",
+      format: "json",
+      role: "source-index",
+      provider: "City of Kamloops municipal LiDAR/DEM Open Data",
+      groundModelRole: "bare-earth-dtm",
+      targetResolutionMeters: 1
+    });
+    expect(plan.inputRefs[0].url).toBe(
+      "https://maps.kamloops.ca/arcgis/rest/services/OpenData/OpenDataAdminCad/MapServer/25"
+    );
+    expect(plan.inputRefs[0].notes.join(" ")).toContain("DEM grid CELLNAME 5156");
+    expect(plan.inputRefs[0].notes.join(" ")).toContain("not emitted");
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toContain("/OpenDataAdminCad/MapServer/25/query");
+    expect(requests[0]).toContain("geometry=-120.26%2C50.64");
+  });
+
+  it("falls through from uncovered Kamloops municipal grid to public BC LidarBC", async () => {
+    const requests: string[] = [];
+    const fetchImpl: typeof fetch = async (url) => {
+      const requestUrl = String(url);
+      requests.push(requestUrl);
+      if (requestUrl.includes("/OpenDataAdminCad/MapServer/25/query")) {
+        return new Response(JSON.stringify(emptyCoverageResponse), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
       return new Response(JSON.stringify(lidarBcOneMeterDemResponse), {
         status: 200,
         headers: { "Content-Type": "application/json" }
@@ -805,8 +868,9 @@ describe("terrain source adapters", () => {
 
     expect(plan.status).toBe("ready");
     expect(plan.selectedSource?.id).toBe("bc-lidarbc");
-    expect(requests).toHaveLength(1);
-    expect(requests[0]).toContain("/FeatureServer/5/query");
+    expect(requests).toHaveLength(2);
+    expect(requests[0]).toContain("/OpenDataAdminCad/MapServer/25/query");
+    expect(requests[1]).toContain("/FeatureServer/5/query");
   });
 
   it("resolves an ambiguous border-box Canada DTM chain by blocking USGS then selecting HRDEM", async () => {
