@@ -20,6 +20,7 @@ Landed in private Abundance branch `feat/v4-V0-visual-uplift`:
 - `fefbf4d feat(data): queue vmesh handoffs into site packages`
 - `4f92a9d feat(data): normalize vmesh builder inputs`
 - `719ca0d feat(data): emit vmesh source packs`
+- `852763e feat(data): persist vmesh builder inputs`
 
 Implemented:
 
@@ -45,10 +46,11 @@ Implemented:
   imagery, landcover, and environment layers;
 - explicit blocked source-pack gaps for climate/context and unsupported
   adapters.
+- fixture-safe `vmesh-builder-inputs.json` persistence beside the package store,
+  with write-time private coordinate/H3/path/secret checks.
 
 Still open before marking `done`:
 
-- persisting normalized builder-input JSON files to the builder/package store;
 - live provider execution for each adapter family, beyond unit-level
   classification and route queueing;
 - end-to-end runtime-pack proof from VMesh handoff -> builder input ->
