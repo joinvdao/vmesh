@@ -52,7 +52,10 @@ Do not use private Rose exact coordinates in committed artifacts.
   `abundance-v2 303f7a9`.
 - The 3 km source-slice-frame prerequisite was reconciled onto the same branch
   at `abundance-v2 a7dcf11`, with the queue marker at `abundance-v2 d949acc`.
+- The Kamloops coordinate proof runner landed at `abundance-v2 bba4941`.
 - Evidence file: `abundance-v2/docs/v4-acceptance/slice-worker-readiness.md`.
+- Runner evidence:
+  `abundance-v2/docs/v4-acceptance/kamloops-coordinate-proof-runner.md`.
 - Test file: `abundance-v2/tests/unit/sliceWorkerReadiness.test.ts`.
 - This proves the GIS/GPU/palette worker preflight can accept a 3 km VMesh
   source-slice handoff with fixture callbacks and fail closed when data is

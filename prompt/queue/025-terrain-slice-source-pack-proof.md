@@ -42,6 +42,21 @@ In Abundance or builder repo, produce source-pack fixtures that include:
 
 In VMesh, retain only public-safe handoff fixtures or route proof artifacts.
 
+## Current Prerequisite Evidence
+
+- Abundance runner landed on `feat/v4-V0-visual-uplift` at
+  `abundance-v2 bba4941`.
+- Evidence file:
+  `abundance-v2/docs/v4-acceptance/kamloops-coordinate-proof-runner.md`.
+- Runner:
+  `abundance-v2/scripts/proof/site-runtime-pack/kamloopsCoordinateProofRunner.ts`.
+- This proves the local/VPS runner can consume a VMesh Abundance handoff,
+  preserve the 3 km source-slice frame, emit fixture-redacted builder inputs,
+  record GIS/GPU/palette readiness, and emit source-pack/runtime-bridge
+  readiness artifacts.
+- It does not prove live provider execution for the public-safe matrix. This
+  phase still needs real terrain payloads or honest gaps per region.
+
 ## Tests
 
 Add tests for:

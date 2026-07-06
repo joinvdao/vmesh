@@ -52,9 +52,12 @@ those into builder inputs/source-pack summaries. The remaining proof is:
 Prerequisite source-slice and worker readiness are reconciled with Abundance on
 `feat/v4-V0-visual-uplift`: `abundance-v2 a7dcf11` carries the 3 km
 source-slice frame, `abundance-v2 303f7a9` carries GIS/GPU/palette preflight,
-and `abundance-v2 d949acc` marks the queue state. The preflight accepts a 3 km
-VMesh source-slice handoff under fixture callbacks and fails closed for missing
-or synthetic data. This is not a live-provider proof.
+`abundance-v2 bba4941` carries the Kamloops coordinate proof runner, and
+`abundance-v2 d949acc` marks the earlier queue state. The preflight accepts a
+3 km VMesh source-slice handoff under fixture callbacks and fails closed for
+missing or synthetic data. The runner can consume a VMesh Abundance handoff and
+emit fixture-redacted builder-input, source-pack, runtime-bridge, and worker
+readiness artifacts. This is not a live-provider proof.
 
 1. `025-terrain-slice-source-pack-proof.md` - live/provider-backed terrain source
    packs from VMesh handoffs.

@@ -35,6 +35,21 @@ Masks/landcover/vegetation:
 - Rejected-source reasons and gaps.
 - No synthetic fill.
 
+## Current Prerequisite Evidence
+
+- Abundance runner landed on `feat/v4-V0-visual-uplift` at
+  `abundance-v2 bba4941`.
+- Evidence file:
+  `abundance-v2/docs/v4-acceptance/kamloops-coordinate-proof-runner.md`.
+- Runner:
+  `abundance-v2/scripts/proof/site-runtime-pack/kamloopsCoordinateProofRunner.ts`.
+- This runner emits fixture-redacted builder inputs, worker status,
+  source-pack summaries, and runtime-bridge readiness for roads, buildings,
+  semantic-ground masks, imagery, and terrain when VMesh recipes and Abundance
+  worker callbacks are available.
+- It does not prove live Overture/mask/provider execution for all regions. This
+  phase still needs per-sample vector and mask payloads or explicit gaps.
+
 ## Tests
 
 Add tests for:
