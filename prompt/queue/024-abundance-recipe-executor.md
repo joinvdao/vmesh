@@ -19,6 +19,7 @@ Landed in private Abundance branch `feat/v4-V0-visual-uplift`:
 - `c4c8e14 feat(data): add vmesh abundance handoff executor`
 - `fefbf4d feat(data): queue vmesh handoffs into site packages`
 - `4f92a9d feat(data): normalize vmesh builder inputs`
+- `719ca0d feat(data): emit vmesh source packs`
 
 Implemented:
 
@@ -38,10 +39,15 @@ Implemented:
   GeoParquet, STAC, bounded API, download-index, manual-review, and
   unsupported recipes;
 - fallback/generic terrain downgrade tests before source-truth emission.
+- `vmesh-abundance-source-pack-v1` fixture-safe source-pack emission after the
+  Abundance worker result;
+- package-local/redacted payload refs for ready terrain, roads, buildings,
+  imagery, landcover, and environment layers;
+- explicit blocked source-pack gaps for climate/context and unsupported
+  adapters.
 
 Still open before marking `done`:
 
-- builder-side source-pack fixture emission from normalized builder inputs;
 - persisting normalized builder-input JSON files to the builder/package store;
 - live provider execution for each adapter family, beyond unit-level
   classification and route queueing;
