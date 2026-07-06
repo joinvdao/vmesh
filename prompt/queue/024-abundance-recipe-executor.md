@@ -18,6 +18,7 @@ Landed in private Abundance branch `feat/v4-V0-visual-uplift`:
 
 - `c4c8e14 feat(data): add vmesh abundance handoff executor`
 - `fefbf4d feat(data): queue vmesh handoffs into site packages`
+- `4f92a9d feat(data): normalize vmesh builder inputs`
 
 Implemented:
 
@@ -30,17 +31,22 @@ Implemented:
 - worker-step proof that terrain, vector, imagery, landcover, and environment
   callbacks execute from the VMesh-derived manifest;
 - public route response test proving H3/bounds are not leaked.
+- normalized builder-input records with `{lat}`, `{lon}`, `{bbox}`, `{h3}`,
+  and `{radius_km}` substitution;
+- fixture-safe coordinate/H3 redaction for committed proof inputs;
+- adapter-family classification for source-native terrain, Overture
+  GeoParquet, STAC, bounded API, download-index, manual-review, and
+  unsupported recipes;
+- fallback/generic terrain downgrade tests before source-truth emission.
 
 Still open before marking `done`:
 
-- placeholder substitution for `{lat}`, `{lon}`, `{bbox}`, `{h3}`, and
-  `{radius_km}` into normalized builder-input files;
-- explicit adapter-family handlers for `stac-cog-point`,
-  `arcgis-image-export`, `arcgis-feature-query`, `geoparquet-bbox`, and
-  `download-index`;
-- builder-side source-pack fixture emission from those normalized inputs;
-- fallback terrain downgrade tests against real recipe records, not only the
-  site-package manifest mapping.
+- builder-side source-pack fixture emission from normalized builder inputs;
+- persisting normalized builder-input JSON files to the builder/package store;
+- live provider execution for each adapter family, beyond unit-level
+  classification and route queueing;
+- end-to-end runtime-pack proof from VMesh handoff -> builder input ->
+  source-pack payload -> `site-runtime-pack.v1`.
 
 ## Repos
 
