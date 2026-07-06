@@ -50,6 +50,8 @@ Do not use private Rose exact coordinates in committed artifacts.
 
 - Abundance worker readiness landed on `feat/v4-V0-visual-uplift` at
   `abundance-v2 303f7a9`.
+- The 3 km source-slice-frame prerequisite was reconciled onto the same branch
+  at `abundance-v2 a7dcf11`, with the queue marker at `abundance-v2 d949acc`.
 - Evidence file: `abundance-v2/docs/v4-acceptance/slice-worker-readiness.md`.
 - Test file: `abundance-v2/tests/unit/sliceWorkerReadiness.test.ts`.
 - This proves the GIS/GPU/palette worker preflight can accept a 3 km VMesh

@@ -306,6 +306,8 @@
         "source-pack fixture validation"
       ],
       "prerequisiteEvidence": [
+        "abundance-v2 a7dcf11",
+        "abundance-v2 d949acc",
         "abundance-v2 303f7a9",
         "abundance-v2 docs/v4-acceptance/slice-worker-readiness.md",
         "abundance-v2 tests/unit/sliceWorkerReadiness.test.ts"
