@@ -64,7 +64,7 @@ describe("Mapbox satellite proxy helpers", () => {
 
   it("fetches fixed Mapbox satellite tiles server-side without exposing the token response-side", async () => {
     process.env.MAPBOX_TOKEN = "sk.server-secret";
-    const fetchMock = vi.fn(async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => {
       return new Response(new Uint8Array([1, 2, 3]), {
         status: 200,
         headers: {
@@ -84,7 +84,7 @@ describe("Mapbox satellite proxy helpers", () => {
       expect.stringContaining("https://api.mapbox.com/v4/mapbox.satellite/4/8/6"),
       expect.any(Object)
     );
-    expect(String(fetchMock.mock.calls[0][0])).toContain("access_token=sk.server-secret");
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("access_token=sk.server-secret");
     expect(response.headers.get("content-type")).toBe("image/jpeg");
     expect([...response.headers.entries()].join(" ")).not.toContain("sk.server-secret");
     expect(await response.arrayBuffer()).toHaveProperty("byteLength", 3);

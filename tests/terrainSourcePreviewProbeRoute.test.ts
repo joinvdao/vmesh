@@ -2,7 +2,10 @@ import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GET } from "@/app/api/terrain/source-preview/probe/route";
-import { probeTerrainCogCoordinate } from "@/lib/terrainSourceProbeWorker";
+import {
+  probeTerrainCogCoordinate,
+  type TerrainCogProbeWorkerResult
+} from "@/lib/terrainSourceProbeWorker";
 
 vi.mock("@/lib/terrainSourceProbeWorker", () => ({
   probeTerrainCogCoordinate: vi.fn()
@@ -20,7 +23,7 @@ function cogProbeResult({
   status?: "covered" | "blocked" | "failed";
   resolutionMeters?: number | null;
   sourceId?: string;
-}) {
+}): TerrainCogProbeWorkerResult {
   return {
     schemaVersion: "vmesh-terrain-cog-probe-v1",
     runClass: "live-proof",
