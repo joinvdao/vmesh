@@ -21,6 +21,7 @@ Landed in private Abundance branch `feat/v4-V0-visual-uplift`:
 - `4f92a9d feat(data): normalize vmesh builder inputs`
 - `719ca0d feat(data): emit vmesh source packs`
 - `852763e feat(data): persist vmesh builder inputs`
+- `63b1f0f feat(data): add vmesh runtime bridge readiness`
 
 Implemented:
 
@@ -48,13 +49,24 @@ Implemented:
   adapters.
 - fixture-safe `vmesh-builder-inputs.json` persistence beside the package store,
   with write-time private coordinate/H3/path/secret checks.
+- `vmesh-source-pack-runtime-bridge-v1` readiness artifacts from emitted source
+  packs, with per-layer runtime roles for terrain, roads, buildings, imagery,
+  masks, parcel overlay, and climate/context.
+- conservative bridge gating that treats terrain/vector payload refs as
+  runtime-input ready while keeping landcover/environment context partial until
+  decoded semantic-ground occupancy or mask refs exist.
+- tests proving terrain-ready/vector-ready source packs still cannot claim all
+  data types when masks/context/parcels are gaps, and proving the bridge blocks
+  runtime-pack creation when terrain lacks a heightfield-ready payload.
 
 Still open before marking `done`:
 
 - live provider execution for each adapter family, beyond unit-level
   classification and route queueing;
-- end-to-end runtime-pack proof from VMesh handoff -> builder input ->
-  source-pack payload -> `site-runtime-pack.v1`.
+- public-safe matrix fixtures that run VMesh handoff -> builder input ->
+  source-pack payload -> runtime bridge for every target region;
+- actual `site-runtime-pack.v1` generation from live payloads after terrain,
+  vector, and mask payloads are present.
 
 ## Repos
 

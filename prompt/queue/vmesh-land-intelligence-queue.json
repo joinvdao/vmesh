@@ -230,11 +230,13 @@
         "abundance-v2 fefbf4d",
         "abundance-v2 4f92a9d",
         "abundance-v2 719ca0d",
-        "abundance-v2 852763e"
+        "abundance-v2 852763e",
+        "abundance-v2 63b1f0f"
       ],
       "remaining": [
         "Live provider execution for each adapter family.",
-        "End-to-end runtime-pack proof from VMesh handoff to builder input to source pack to site-runtime-pack.v1 input."
+        "Public-safe matrix fixtures that run VMesh handoff to builder input to source pack to runtime bridge for every target region.",
+        "Actual site-runtime-pack.v1 generation from live payloads after terrain, vector, and mask payloads are present."
       ]
     },
     {
