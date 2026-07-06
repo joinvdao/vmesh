@@ -1,6 +1,7 @@
 export * from "@/lib/geospatialPackage/artifactUrlPolicy";
 export * from "@/lib/geospatialPackage/apiSurface";
 export * from "@/lib/geospatialPackage/abundanceSourceHandoff";
+export * from "@/lib/geospatialPackage/abundanceSourceHandoffContract";
 export * from "@/lib/geospatialPackage/baGoldenEvalPackage";
 export * from "@/lib/geospatialPackage/baPackage";
 export * from "@/lib/geospatialPackage/baEcosystemPackage";
