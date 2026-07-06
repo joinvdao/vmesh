@@ -7,12 +7,24 @@ import {
   sanitizeConsumerAppId,
   sanitizePublicUrl
 } from "@/lib/geospatialPackage";
+import { POST as BUILDINGS_POST } from "@/app/api/geospatial-package/buildings/route";
 import { GET, POST } from "@/app/api/geospatial-package/plan/route";
 
 const originalMapterhornUrl = process.env.NEXT_PUBLIC_MAPTERHORN_PMTILES_URL;
 
 function jsonRequest(body: unknown, headers: Record<string, string> = {}) {
   return new NextRequest("http://localhost/api/geospatial-package/plan", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      ...headers
+    },
+    body: JSON.stringify(body)
+  });
+}
+
+function buildingJsonRequest(body: unknown, headers: Record<string, string> = {}) {
+  return new NextRequest("http://localhost/api/geospatial-package/buildings", {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -97,5 +109,68 @@ describe("geospatial package hardening", () => {
     expect(payload.plan.aoi.centroid).toBeDefined();
     expect(payload.plan.aoiDisclosure).toBe("h3-cell");
     expect(payload.privacy.coordinateDisclosure).toBe("h3-cell");
+  });
+
+  it("returns an Overture-first building handoff without materialized fake footprints", async () => {
+    const response = await BUILDINGS_POST(
+      buildingJsonRequest({
+        aoi: { h3Id: "85393363fffffff" },
+        consumerAppId: "Building Abundance",
+        offline: true
+      })
+    );
+    const payload = (await response.json()) as {
+      plan: { aoiDisclosure: string };
+      privacy: { coordinateDisclosure: string };
+      workerRequest: {
+        selectedSourceId: string;
+        output: {
+          fileName: string;
+          status: string;
+          readyUrl: string | null;
+          featureCount: number | null;
+        };
+        sourceLadder: Array<{ sourceId: string; selected: boolean }>;
+        policies: { noSyntheticFill: boolean };
+      };
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.workerRequest.selectedSourceId).toBe("overture-maps-geoparquet");
+    expect(payload.workerRequest.output).toMatchObject({
+      fileName: "buildings.json",
+      status: "planned",
+      readyUrl: null,
+      featureCount: null
+    });
+    expect(payload.workerRequest.sourceLadder[0]).toMatchObject({
+      sourceId: "overture-maps-geoparquet",
+      selected: true
+    });
+    expect(payload.workerRequest.policies.noSyntheticFill).toBe(true);
+    expect(payload.plan.aoiDisclosure).toBe("h3-cell");
+    expect(payload.privacy.coordinateDisclosure).toBe("h3-cell");
+  });
+
+  it("does not allow gated building preferences to become the selected worker source", async () => {
+    const response = await BUILDINGS_POST(
+      buildingJsonRequest({
+        aoi: { h3Id: "85393363fffffff" },
+        preferredSourceIds: ["global-building-atlas-nc-lod1-height"]
+      })
+    );
+    const payload = (await response.json()) as {
+      workerRequest: {
+        selectedSourceId: string;
+        sourceLadder: Array<{ sourceId: string; canMaterialize: boolean; workerRole: string }>;
+      };
+    };
+    const gated = payload.workerRequest.sourceLadder.find(
+      (source) => source.sourceId === "global-building-atlas-nc-lod1-height"
+    );
+
+    expect(response.status).toBe(200);
+    expect(payload.workerRequest.selectedSourceId).not.toBe("global-building-atlas-nc-lod1-height");
+    expect(gated).toMatchObject({ canMaterialize: false, workerRole: "review-required" });
   });
 });

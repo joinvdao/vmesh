@@ -136,6 +136,35 @@ export const VMESH_GEOSPATIAL_PACKAGE_MCP_TOOLS: GeospatialMcpToolDescriptor[] =
     }
   },
   {
+    name: "vmesh.geospatial_package.plan_building_package",
+    description:
+      "Plan an Overture-first source-backed building footprint worker handoff for an AOI without claiming a completed global building index.",
+    inputSchema: {
+      type: "object",
+      required: ["aoi"],
+      properties: {
+        aoi: {
+          type: "object",
+          description: "AOI with h3Id, centroid, bounds, or a combination."
+        },
+        consumerAppId: {
+          type: "string",
+          description: "Downstream app identifier, for example downstream-app."
+        },
+        preferredSourceIds: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Optional building source preferences; only the first selectable source can become primary."
+        },
+        offline: {
+          type: "boolean",
+          description: "Prefer cacheable/package-ready building sources."
+        }
+      }
+    }
+  },
+  {
     name: "vmesh.geospatial_package.get_manifest",
     description:
       "Return a clean manifest reference for a planned package so downstream apps can consume URLs and provenance without provider branching.",

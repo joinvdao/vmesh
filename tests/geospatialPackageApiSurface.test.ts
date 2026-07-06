@@ -19,13 +19,14 @@ describe("geospatial package API surface", () => {
   });
 
   it("publishes a minimal future MCP contract for package consumers", () => {
-    expect(VMESH_GEOSPATIAL_PACKAGE_MCP_TOOLS).toHaveLength(7);
+    expect(VMESH_GEOSPATIAL_PACKAGE_MCP_TOOLS).toHaveLength(8);
     expect(VMESH_GEOSPATIAL_PACKAGE_MCP_TOOLS.map((tool) => tool.name)).toEqual([
       "vmesh.geospatial_package.list_sources",
       "vmesh.geospatial_package.plan_package",
       "vmesh.geospatial_package.plan_ba_geospatial_package",
       "vmesh.geospatial_package.plan_ba_ecosystem_package",
       "vmesh.geospatial_package.plan_sentinel_sr",
+      "vmesh.geospatial_package.plan_building_package",
       "vmesh.geospatial_package.get_manifest",
       "vmesh.geospatial_package.list_intel_broker_sources"
     ]);
