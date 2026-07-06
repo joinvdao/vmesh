@@ -10,6 +10,38 @@ Build the Abundance-side executor adapter that consumes
 VMesh remains the source broker. Abundance executes recipes, fetches/clips data,
 and emits source packs/runtime packs.
 
+## Status
+
+`private-done-partial` as of 2026-07-06.
+
+Landed in private Abundance branch `feat/v4-V0-visual-uplift`:
+
+- `c4c8e14 feat(data): add vmesh abundance handoff executor`
+- `fefbf4d feat(data): queue vmesh handoffs into site packages`
+
+Implemented:
+
+- schema-version guard and typed `vmesh-abundance-source-handoff-v1` consumer;
+- VMesh source-id to Abundance site-package adapter mapping;
+- normal `SitePackageManifest` generation for terrain, Overture roads/buildings,
+  Sentinel imagery context, landcover, hydrology/environment, parcels, and
+  unsupported climate context;
+- `/api/site-packages` ingress via `vmeshSourceHandoff`;
+- worker-step proof that terrain, vector, imagery, landcover, and environment
+  callbacks execute from the VMesh-derived manifest;
+- public route response test proving H3/bounds are not leaked.
+
+Still open before marking `done`:
+
+- placeholder substitution for `{lat}`, `{lon}`, `{bbox}`, `{h3}`, and
+  `{radius_km}` into normalized builder-input files;
+- explicit adapter-family handlers for `stac-cog-point`,
+  `arcgis-image-export`, `arcgis-feature-query`, `geoparquet-bbox`, and
+  `download-index`;
+- builder-side source-pack fixture emission from those normalized inputs;
+- fallback terrain downgrade tests against real recipe records, not only the
+  site-package manifest mapping.
+
 ## Repos
 
 - Read VMesh private `main`.
