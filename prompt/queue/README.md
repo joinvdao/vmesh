@@ -8,6 +8,8 @@ warehouse. It stores source refs, coverage evidence, fetch recipes, provenance,
 confidence, gaps, and review state. Downstream apps and workers execute recipes
 and store/render payloads.
 
+Machine-readable queue: `prompt/queue/vmesh-land-intelligence-queue.json`.
+
 ## Status Index
 
 | Phase | Prompt                                                 | Status               | Purpose                                                         |
@@ -40,6 +42,22 @@ and store/render payloads.
 | 026   | `026-vector-mask-source-pack-proof.md`                 | queued               | Prove vector and mask source-pack generation.                   |
 | 027   | `027-anywhere-capability-tiers.md`                     | queued               | Define honest worldwide capability tiers and fallback policy.   |
 | 028   | `028-end-to-end-seam-proof-matrix.md`                  | queued               | End-to-end public-safe proof matrix across regions.             |
+
+## Current Critical Path
+
+The VMesh/Abundance seam is partially implemented, not fully resolved. The
+current code can emit Abundance-oriented handoffs and Abundance can normalize
+those into builder inputs/source-pack summaries. The remaining proof is:
+
+1. `025-terrain-slice-source-pack-proof.md` - live/provider-backed terrain source
+   packs from VMesh handoffs.
+2. `026-vector-mask-source-pack-proof.md` - buildings, roads, water, landcover,
+   vegetation, and masks from VMesh recipes.
+3. `027-anywhere-capability-tiers.md` - honest quality tiers so "anywhere" means
+   requestable, not uniformly Kamloops-quality.
+4. `028-end-to-end-seam-proof-matrix.md` - public-safe matrix proving VMesh
+   resolver -> Abundance source pack -> runtime-pack input across USA, BC,
+   Canada non-BC, England, Scotland, and a generic fallback region.
 
 ## North Star
 

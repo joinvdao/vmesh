@@ -1,0 +1,320 @@
+{
+  "schemaVersion": "vmesh-land-intelligence-queue-v1",
+  "sourceOfTruth": {
+    "repository": "0xkri/vmesh",
+    "branch": "main",
+    "visibility": "private",
+    "rule": "Private VMesh is canonical. Public-safe discovery outputs may be ingested into private; private source truth is never pushed outward by default."
+  },
+  "statusVocab": ["queued", "in_progress", "blocked", "private-done-partial", "done"],
+  "operatingRules": [
+    "VMesh is an aggregator and indexer, not heavy data storage.",
+    "Terrain selection runs first; vectors, soils, landcover, ecology, climate, hazard, imagery, and parcel context cannot upgrade terrain truth.",
+    "Return source refs, coverage evidence, fetch recipes, confidence, rejected-source reasons, and gaps.",
+    "Downstream workers execute recipes and store or render payloads.",
+    "Synthetic, generic, visual, or modelled fallbacks must be explicitly labelled and confidence-capped.",
+    "Do not commit exact private coordinates, private addresses, local paths, secrets, signed URLs, paid-provider refs, or raw bulky payloads.",
+    "License-gated or research-only sources stay out of operational defaults until reviewed."
+  ],
+  "criticalPath": [
+    "vmesh:013",
+    "vmesh:014",
+    "vmesh:015",
+    "vmesh:016",
+    "vmesh:017",
+    "vmesh:018",
+    "vmesh:019",
+    "vmesh:020",
+    "vmesh:025",
+    "vmesh:026",
+    "vmesh:027",
+    "vmesh:028"
+  ],
+  "nextRecommended": ["vmesh:025", "vmesh:026", "vmesh:028"],
+  "tracks": [
+    {
+      "id": "land-intelligence-core",
+      "goalPath": "prompt/queue/GOAL-land-intelligence-aggregator.md",
+      "purpose": "Make VMesh answer coordinate, H3, parcel-center, or AOI requests with the best open source land-intelligence package for USA, Canada, and the UK."
+    },
+    {
+      "id": "abundance-seam",
+      "goalPath": "prompt/queue/GOAL-abundance-vmesh-seam.md",
+      "purpose": "Prove VMesh can hand Abundance executable source recipes that become source packs and runtime-pack inputs without renderer coupling."
+    }
+  ],
+  "entries": [
+    {
+      "id": "vmesh:013",
+      "phase": 13,
+      "slug": "canonical-land-intelligence-resolver",
+      "status": "queued",
+      "promptPath": "prompt/queue/013-canonical-land-intelligence-resolver.md",
+      "track": "land-intelligence-core",
+      "dependsOn": [],
+      "deliverable": "Canonical /api/geospatial-package/resolve route accepting coordinate, H3, parcel-center, or AOI inputs and returning source-honest land intelligence.",
+      "requiredBuckets": [
+        "terrain_elevation",
+        "access_infrastructure",
+        "water_hydrology",
+        "soils_landcover",
+        "ecology_biodiversity_carbon",
+        "land_property_planning",
+        "imagery_observation",
+        "climate_weather",
+        "risk_hazard"
+      ],
+      "gates": [
+        "npx tsc --noEmit",
+        "targeted resolver Vitest",
+        "npm run privacy:check",
+        "public-safe route proofs for USA, Canada/BC, and UK"
+      ]
+    },
+    {
+      "id": "vmesh:014",
+      "phase": 14,
+      "slug": "terrain-first-provider-proof",
+      "status": "queued",
+      "promptPath": "prompt/queue/014-terrain-first-provider-proof.md",
+      "track": "land-intelligence-core",
+      "dependsOn": ["vmesh:013"],
+      "deliverable": "Terrain-first provider selection and proof matrix for USA 3DEP, BC LidarBC/HRDEM, Canada HRDEM, England, Scotland, and generic fallback regions.",
+      "gates": [
+        "terrain provider targeted Vitest",
+        "live/source-preview proof artifacts where providers are reachable",
+        "generic fallback downgrade assertions",
+        "npm run privacy:check"
+      ]
+    },
+    {
+      "id": "vmesh:015",
+      "phase": 15,
+      "slug": "jurisdiction-coverage-index",
+      "status": "queued",
+      "promptPath": "prompt/queue/015-jurisdiction-coverage-index.md",
+      "track": "land-intelligence-core",
+      "dependsOn": ["vmesh:013", "vmesh:014"],
+      "deliverable": "Coverage-aware jurisdiction and H3 routing index that explains which source families apply at a coordinate and which need probe/review.",
+      "gates": [
+        "source registry targeted Vitest",
+        "coverage index fixture validation",
+        "privacy check"
+      ]
+    },
+    {
+      "id": "vmesh:016",
+      "phase": 16,
+      "slug": "fetch-recipe-adapters",
+      "status": "queued",
+      "promptPath": "prompt/queue/016-fetch-recipe-adapters.md",
+      "track": "land-intelligence-core",
+      "dependsOn": ["vmesh:013", "vmesh:015"],
+      "deliverable": "Typed executable recipe families for STAC/COG, ArcGIS image export, ArcGIS feature query, GeoParquet bbox, download indexes, and manual-review gaps.",
+      "gates": [
+        "recipe schema tests",
+        "unsafe URL and local path rejection tests",
+        "fixture-safe placeholder substitution tests"
+      ]
+    },
+    {
+      "id": "vmesh:017",
+      "phase": 17,
+      "slug": "vector-built-environment-broker",
+      "status": "queued",
+      "promptPath": "prompt/queue/017-vector-built-environment-broker.md",
+      "track": "land-intelligence-core",
+      "dependsOn": ["vmesh:013", "vmesh:016"],
+      "deliverable": "Buildings, roads, hydro/water, parcels, addresses, and other open vector source ladders with Overture/OSM/official-source provenance and gaps.",
+      "gates": [
+        "vector resolver tests",
+        "building source ladder tests",
+        "license and attribution preservation tests",
+        "no synthetic feature-count claims"
+      ]
+    },
+    {
+      "id": "vmesh:018",
+      "phase": 18,
+      "slug": "soils-landcover-ecology-climate-broker",
+      "status": "queued",
+      "promptPath": "prompt/queue/018-soils-landcover-ecology-climate-broker.md",
+      "track": "land-intelligence-core",
+      "dependsOn": ["vmesh:013", "vmesh:016"],
+      "deliverable": "Source ladders and confidence caps for soils, landcover, vegetation/ecology, biodiversity/carbon, climate/weather, and risk/hazard context.",
+      "gates": [
+        "non-terrain bucket resolver tests",
+        "modelled/global context confidence cap tests",
+        "review-only source gating tests"
+      ]
+    },
+    {
+      "id": "vmesh:019",
+      "phase": 19,
+      "slug": "abundance-source-pack-handoff",
+      "status": "queued",
+      "promptPath": "prompt/queue/019-abundance-source-pack-handoff.md",
+      "track": "abundance-seam",
+      "dependsOn": ["vmesh:013", "vmesh:016", "vmesh:017", "vmesh:018"],
+      "deliverable": "Canonical vmesh-abundance-source-handoff-v1 emission from the resolver with source recipes and explicit gaps for Abundance.",
+      "gates": [
+        "handoff schema tests",
+        "Abundance consumer compatibility tests",
+        "privacy-safe fixture checks"
+      ]
+    },
+    {
+      "id": "vmesh:020",
+      "phase": 20,
+      "slug": "operational-gates-live-proof-matrix",
+      "status": "queued",
+      "promptPath": "prompt/queue/020-operational-gates-live-proof-matrix.md",
+      "track": "land-intelligence-core",
+      "dependsOn": ["vmesh:014", "vmesh:017", "vmesh:018", "vmesh:019"],
+      "deliverable": "Live-proof matrix, privacy gates, capability assertions, and regression discipline for VMesh as an operational source broker.",
+      "gates": [
+        "npx tsc --noEmit",
+        "resolver and registry targeted tests",
+        "npm run privacy:check",
+        "public-safe proof matrix"
+      ]
+    },
+    {
+      "id": "vmesh:021",
+      "phase": 21,
+      "slug": "abundance-vmesh-seam-audit",
+      "status": "done",
+      "promptPath": "prompt/queue/021-abundance-vmesh-seam-audit.md",
+      "track": "abundance-seam",
+      "dependsOn": [],
+      "deliverable": "Cross-repo audit of the VMesh, Abundance, and builder seam, including current gaps by data type.",
+      "evidence": ["docs/ABUNDANCE_VMESH_SEAM_AUDIT.md"]
+    },
+    {
+      "id": "vmesh:022",
+      "phase": 22,
+      "slug": "abundance-vmesh-handoff-contract",
+      "status": "done",
+      "promptPath": "prompt/queue/022-abundance-vmesh-handoff-contract.md",
+      "track": "abundance-seam",
+      "dependsOn": ["vmesh:021"],
+      "deliverable": "Frozen recipe-first vmesh-abundance-source-handoff-v1 contract.",
+      "evidence": [
+        "docs/ABUNDANCE_VMESH_SOURCE_HANDOFF_CONTRACT.md",
+        "lib/geospatialPackage/abundanceSourceHandoff.ts",
+        "tests/abundanceSourceHandoff.test.ts"
+      ]
+    },
+    {
+      "id": "vmesh:023",
+      "phase": 23,
+      "slug": "vmesh-abundance-resolver-mode",
+      "status": "done",
+      "promptPath": "prompt/queue/023-vmesh-abundance-resolver-mode.md",
+      "track": "abundance-seam",
+      "dependsOn": ["vmesh:022"],
+      "deliverable": "Resolver mode that emits Abundance-compatible source handoffs.",
+      "evidence": ["app/api/geospatial-package/resolve", "tests/abundanceResolveRoute.test.ts"]
+    },
+    {
+      "id": "vmesh:024",
+      "phase": 24,
+      "slug": "abundance-recipe-executor",
+      "status": "private-done-partial",
+      "promptPath": "prompt/queue/024-abundance-recipe-executor.md",
+      "track": "abundance-seam",
+      "dependsOn": ["vmesh:022", "vmesh:023"],
+      "deliverable": "Abundance-side executor adapter that consumes VMesh handoffs, queues site-package work, normalizes builder inputs, and emits fixture-safe source-pack summaries.",
+      "evidence": [
+        "abundance-v2 c4c8e14",
+        "abundance-v2 fefbf4d",
+        "abundance-v2 4f92a9d",
+        "abundance-v2 719ca0d",
+        "abundance-v2 852763e"
+      ],
+      "remaining": [
+        "Live provider execution for each adapter family.",
+        "End-to-end runtime-pack proof from VMesh handoff to builder input to source pack to site-runtime-pack.v1 input."
+      ]
+    },
+    {
+      "id": "vmesh:025",
+      "phase": 25,
+      "slug": "terrain-slice-source-pack-proof",
+      "status": "queued",
+      "promptPath": "prompt/queue/025-terrain-slice-source-pack-proof.md",
+      "track": "abundance-seam",
+      "dependsOn": ["vmesh:023", "vmesh:024"],
+      "deliverable": "Public-safe terrain source-pack proof from VMesh handoff for USA, BC, Canada non-BC, England, Scotland, and generic fallback samples.",
+      "gates": [
+        "VMesh resolver proof per sample",
+        "Abundance/builder terrain tests",
+        "privacy scans in both repos",
+        "DTM/DSM/fallback role assertions"
+      ]
+    },
+    {
+      "id": "vmesh:026",
+      "phase": 26,
+      "slug": "vector-mask-source-pack-proof",
+      "status": "queued",
+      "promptPath": "prompt/queue/026-vector-mask-source-pack-proof.md",
+      "track": "abundance-seam",
+      "dependsOn": ["vmesh:023", "vmesh:024", "vmesh:025"],
+      "deliverable": "Source-backed buildings, roads, water, landcover, vegetation, and mask builder inputs and source-pack layers from VMesh recipes.",
+      "gates": [
+        "VMesh vector resolver tests",
+        "Abundance/builder vector tests",
+        "mask confidence cap tests",
+        "privacy scans"
+      ]
+    },
+    {
+      "id": "vmesh:027",
+      "phase": 27,
+      "slug": "anywhere-capability-tiers",
+      "status": "queued",
+      "promptPath": "prompt/queue/027-anywhere-capability-tiers.md",
+      "track": "land-intelligence-core",
+      "dependsOn": ["vmesh:014", "vmesh:017", "vmesh:018", "vmesh:025", "vmesh:026"],
+      "deliverable": "Honest capability-tier system explaining that anywhere is requestable, while quality depends on source coverage.",
+      "gates": [
+        "tier downgrade tests",
+        "sample capability matrix",
+        "downstream wording reviewed for no overclaim"
+      ]
+    },
+    {
+      "id": "vmesh:028",
+      "phase": 28,
+      "slug": "end-to-end-seam-proof-matrix",
+      "status": "queued",
+      "promptPath": "prompt/queue/028-end-to-end-seam-proof-matrix.md",
+      "track": "abundance-seam",
+      "dependsOn": ["vmesh:025", "vmesh:026", "vmesh:027"],
+      "deliverable": "End-to-end VMesh resolver to Abundance source-pack and runtime-pack input matrix across public-safe USA, BC, Canada non-BC, England, Scotland, and fallback samples.",
+      "gates": [
+        "VMesh typecheck",
+        "VMesh resolver targeted tests",
+        "VMesh privacy check",
+        "Abundance touched tests/typecheck",
+        "Abundance privacy/no-private-ref scan",
+        "source-pack fixture validation"
+      ]
+    }
+  ],
+  "definitionOfDone": {
+    "landIntelligenceAggregator": [
+      "For USA, Canada, and UK samples, VMesh can select terrain, vectors, hydro, soils, landcover, ecology, climate/weather, risk/hazard, imagery, and parcel/planning source candidates.",
+      "Each selected source includes role, coverage status, resolution or scale where known, confidence, license, attribution, limitations, rejected alternatives, and gaps.",
+      "VMesh emits executable recipes without storing heavy payloads by default.",
+      "Coverage gaps fail closed as needs_probe, blocked, license_gated, or source-ref-only."
+    ],
+    "abundanceSeam": [
+      "VMesh emits vmesh-abundance-source-handoff-v1 for each public-safe matrix sample.",
+      "Abundance consumes the handoff and writes normalized builder inputs.",
+      "Abundance source-pack summaries are emitted with ready layers or explicit blocked gaps.",
+      "A runtime-pack readiness/input artifact exists for every sample without changing the frozen site-runtime-pack.v1 contract."
+    ]
+  }
+}
