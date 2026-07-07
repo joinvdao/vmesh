@@ -5,6 +5,8 @@ const DEM_GRID_LAYER_URL =
   "https://maps.kamloops.ca/arcgis/rest/services/FeatureDataset/GIS_Administrative_1/MapServer/6";
 const DEM_DOWNLOAD_BASE_URL = "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013";
 const LIDAR_DOWNLOAD_BASE_URL = "https://maps.kamloops.ca/opendata/Lidar/2024";
+const KAMLOOPS_PROPERTY_LAYER_URL =
+  "https://maps.kamloops.ca/arcgis/rest/services/OpenData/OpenDataAdminCad/MapServer/67";
 const BC_LIDAR_FEATURE_SERVER_BASE_URL =
   "https://services6.arcgis.com/ubm4tcTYICKBpist/ArcGIS/rest/services/LiDAR_BC_S3_Public/FeatureServer";
 const CANADA_HRDEM_STAC_SEARCH_URL = "https://datacube.services.geo.ca/stac/api/search";
@@ -22,6 +24,7 @@ function usage() {
     "Usage:",
     "  npm run terrain:kamloops-audit -- [--grid 5] [--edge-meters 3000] [--output .artifacts/kamloops-terrain-coverage-audit/latest.private.json]",
     "  npm run terrain:kamloops-audit -- --sample-mode random --samples 16 --seed 1701 [--edge-meters 3000] [--probe-timeout-ms 5000]",
+    "  npm run terrain:kamloops-audit -- --sample-mode parcels --samples 16 --seed 1701 [--edge-meters 3000] [--probe-timeout-ms 5000]",
     "",
     "The output path is private/operator-local by default because it contains exact sample coordinates."
   ].join("\n");
@@ -66,8 +69,8 @@ function parseArgs(args) {
     }
     if (arg === "--sample-mode") {
       const value = valueAfter(args, index, arg).trim().toLowerCase();
-      if (value !== "grid" && value !== "random") {
-        throw new Error("--sample-mode must be grid or random.");
+      if (value !== "grid" && value !== "random" && value !== "parcels") {
+        throw new Error("--sample-mode must be grid, random, or parcels.");
       }
       options.sampleMode = value;
       index += 1;
@@ -576,7 +579,131 @@ function randomSampleCenters({ samples, edgeMeters, seed }) {
   }));
 }
 
-function auditSampleCenters(options) {
+function propertyObjectIdsQueryUrl() {
+  const url = new URL(`${KAMLOOPS_PROPERTY_LAYER_URL}/query`);
+  url.searchParams.set("f", "json");
+  url.searchParams.set("where", "1=1");
+  url.searchParams.set("returnIdsOnly", "true");
+  return url.toString();
+}
+
+function propertyFeaturesQueryUrl(objectIds) {
+  const url = new URL(`${KAMLOOPS_PROPERTY_LAYER_URL}/query`);
+  url.searchParams.set("f", "json");
+  url.searchParams.set("where", "1=1");
+  url.searchParams.set("objectIds", objectIds.join(","));
+  url.searchParams.set("outFields", "OBJECTID,FEATUREAREA,PARCELSTATUS,PARCELCLASS");
+  url.searchParams.set("returnGeometry", "true");
+  url.searchParams.set("outSR", "4326");
+  return url.toString();
+}
+
+function deterministicSample(items, count, seed) {
+  const random = lcg(seed);
+  return [...items]
+    .map((value) => ({ value, rank: random() }))
+    .sort(
+      (left, right) =>
+        left.rank - right.rank || String(left.value).localeCompare(String(right.value))
+    )
+    .slice(0, count)
+    .map((entry) => entry.value);
+}
+
+function polygonCentroidFromGeometry(geometry) {
+  const rings = Array.isArray(geometry?.rings) ? geometry.rings : [];
+  const points = [];
+  for (const ring of rings) {
+    if (!Array.isArray(ring)) continue;
+    for (const point of ring) {
+      if (!Array.isArray(point) || point.length < 2) continue;
+      const [longitude, latitude] = point;
+      if (Number.isFinite(longitude) && Number.isFinite(latitude)) {
+        points.push({ latitude, longitude });
+      }
+    }
+  }
+  if (points.length === 0) return null;
+
+  let west = Infinity;
+  let east = -Infinity;
+  let south = Infinity;
+  let north = -Infinity;
+  for (const point of points) {
+    west = Math.min(west, point.longitude);
+    east = Math.max(east, point.longitude);
+    south = Math.min(south, point.latitude);
+    north = Math.max(north, point.latitude);
+  }
+
+  return {
+    latitude: (south + north) / 2,
+    longitude: (west + east) / 2
+  };
+}
+
+async function parcelSampleCenters({ samples, seed, probeTimeoutMs }) {
+  const idsResponse = await fetchWithTimeout(
+    propertyObjectIdsQueryUrl(),
+    { headers: { Accept: "application/json" } },
+    probeTimeoutMs
+  );
+  if (!idsResponse.ok) {
+    throw new Error(
+      `Kamloops property layer object-id query failed with HTTP ${idsResponse.status}.`
+    );
+  }
+
+  const idsPayload = await idsResponse.json();
+  const objectIds = Array.isArray(idsPayload.objectIds)
+    ? idsPayload.objectIds.filter((id) => Number.isInteger(id))
+    : [];
+  if (objectIds.length === 0) {
+    throw new Error("Kamloops property layer did not return selectable parcel object ids.");
+  }
+
+  const sampledObjectIds = deterministicSample(objectIds, samples, seed);
+  const featuresResponse = await fetchWithTimeout(
+    propertyFeaturesQueryUrl(sampledObjectIds),
+    { headers: { Accept: "application/json" } },
+    probeTimeoutMs
+  );
+  if (!featuresResponse.ok) {
+    throw new Error(
+      `Kamloops property layer feature query failed with HTTP ${featuresResponse.status}.`
+    );
+  }
+
+  const featuresPayload = await featuresResponse.json();
+  const features = Array.isArray(featuresPayload.features) ? featuresPayload.features : [];
+  return features
+    .map((feature, index) => {
+      const centroid = polygonCentroidFromGeometry(feature?.geometry);
+      const attributes =
+        feature?.attributes && typeof feature.attributes === "object" ? feature.attributes : {};
+      if (!centroid) return null;
+      return {
+        id: `parcel-${String(index + 1).padStart(3, "0")}`,
+        latitude: centroid.latitude,
+        longitude: centroid.longitude,
+        selectableParcel: {
+          sourceLayer: KAMLOOPS_PROPERTY_LAYER_URL,
+          objectId: Number.isInteger(attributes.OBJECTID) ? attributes.OBJECTID : null,
+          featureAreaSqm:
+            typeof attributes.FEATUREAREA === "number" && Number.isFinite(attributes.FEATUREAREA)
+              ? attributes.FEATUREAREA
+              : null,
+          parcelStatus:
+            typeof attributes.PARCELSTATUS === "string" ? attributes.PARCELSTATUS : null,
+          parcelClass: typeof attributes.PARCELCLASS === "string" ? attributes.PARCELCLASS : null
+        }
+      };
+    })
+    .filter(Boolean);
+}
+
+async function auditSampleCenters(options) {
+  if (options.sampleMode === "parcels") return parcelSampleCenters(options);
   return options.sampleMode === "random" ? randomSampleCenters(options) : sampleCenters(options);
 }
 
@@ -722,7 +849,7 @@ function publicSummary(report) {
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   const samples = [];
-  for (const sample of auditSampleCenters(options)) {
+  for (const sample of await auditSampleCenters(options)) {
     samples.push(
       await classifySample(sample, {
         edgeMeters: options.edgeMeters,
@@ -755,6 +882,7 @@ async function main() {
       demGridLayer: DEM_GRID_LAYER_URL,
       demDownloadBaseUrl: DEM_DOWNLOAD_BASE_URL,
       lidarDownloadBaseUrl: LIDAR_DOWNLOAD_BASE_URL,
+      propertyLayer: options.sampleMode === "parcels" ? KAMLOOPS_PROPERTY_LAYER_URL : null,
       bcLidarFeatureServerBaseUrl: BC_LIDAR_FEATURE_SERVER_BASE_URL,
       canadaHrdemStacSearchUrl: CANADA_HRDEM_STAC_SEARCH_URL
     },
@@ -762,7 +890,7 @@ async function main() {
     probeTimeoutMs: options.probeTimeoutMs,
     sampleMode: options.sampleMode,
     grid: options.grid,
-    seed: options.sampleMode === "random" ? options.seed : null,
+    seed: options.sampleMode === "random" || options.sampleMode === "parcels" ? options.seed : null,
     counts,
     samples
   };
