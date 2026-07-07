@@ -501,6 +501,42 @@ interface KamloopsMunicipalDemGridSelection {
   lidarZipUrl: string;
 }
 
+export type KamloopsMunicipalDemCoverageStatus =
+  | "source-backed"
+  | "partial"
+  | "no-downloadable-cells"
+  | "no-grid-cells"
+  | "lookup-failed"
+  | "blocked";
+
+export interface KamloopsMunicipalDemCoverageCell {
+  sourceId: string;
+  cellName: string;
+  objectId: number | null;
+  photoGridLimits: string | null;
+  downloadable: boolean;
+}
+
+export interface KamloopsMunicipalDemCoveragePreflight {
+  schemaVersion: "vmesh-kamloops-municipal-dem-coverage-preflight-v1";
+  status: KamloopsMunicipalDemCoverageStatus;
+  sourceBacked: boolean;
+  terrainSourceId: "kamloops-local-lidar-dtm-1m";
+  role: "bare-earth-dtm";
+  resolutionMeters: 1;
+  selectedSourceIds: string[];
+  inputRefCount: number;
+  inputRefKinds: TerrainSourceAdapterKind[];
+  cells: {
+    total: number;
+    downloadable: KamloopsMunicipalDemCoverageCell[];
+    nonDownloadable: KamloopsMunicipalDemCoverageCell[];
+  };
+  blockedReasons: string[];
+  warnings: string[];
+  nextActions: string[];
+}
+
 function createUsgsLpcSourceIndexQueryUrl({
   bbox,
   baseUrl = USGS_3DEP_LPC_INDEX_QUERY_URL
@@ -583,6 +619,174 @@ function isDownloadableKamloopsMunicipalDemGridTile(
   tile: KamloopsMunicipalDemGridSelection
 ): boolean {
   return tile.photoGridLimits?.trim().toUpperCase() === "YES";
+}
+
+function publicKamloopsMunicipalDemCoverageCell(
+  tile: KamloopsMunicipalDemGridSelection
+): KamloopsMunicipalDemCoverageCell {
+  return {
+    sourceId: tile.sourceId,
+    cellName: tile.cellName,
+    objectId: tile.objectId,
+    photoGridLimits: tile.photoGridLimits,
+    downloadable: isDownloadableKamloopsMunicipalDemGridTile(tile)
+  };
+}
+
+function kamloopsMunicipalDemPreflightInput(
+  input: TerrainPackageWorkerInput
+): TerrainPackageWorkerInput {
+  if (!input.request) return input;
+  return {
+    ...input,
+    request: {
+      ...input.request,
+      layers: ["terrain"],
+      preferredSourceIds: ["kamloops-local-lidar-dtm-1m"]
+    }
+  };
+}
+
+function kamloopsMunicipalDemCoverageStatus({
+  plan,
+  downloadable,
+  nonDownloadable,
+  statusOverride
+}: {
+  plan: TerrainSourceAdapterPlan;
+  downloadable: KamloopsMunicipalDemCoverageCell[];
+  nonDownloadable: KamloopsMunicipalDemCoverageCell[];
+  statusOverride?: KamloopsMunicipalDemCoverageStatus;
+}): KamloopsMunicipalDemCoverageStatus {
+  if (statusOverride) return statusOverride;
+  if (plan.status === "ready" && downloadable.length > 0 && nonDownloadable.length === 0) {
+    return "source-backed";
+  }
+  if (downloadable.length > 0 && nonDownloadable.length > 0) return "partial";
+  if (downloadable.length === 0 && nonDownloadable.length > 0) return "no-downloadable-cells";
+  if (downloadable.length === 0 && nonDownloadable.length === 0) return "no-grid-cells";
+  return "blocked";
+}
+
+export function createKamloopsMunicipalDemCoveragePreflight(
+  input: TerrainPackageWorkerInput,
+  demGridResponse: unknown,
+  options: TerrainSourceAdapterOptions = {},
+  statusOverride?: KamloopsMunicipalDemCoverageStatus
+): KamloopsMunicipalDemCoveragePreflight {
+  const preflightInput = kamloopsMunicipalDemPreflightInput(input);
+  const tiles = selectKamloopsMunicipalDemGridTiles(demGridResponse);
+  const downloadable = tiles
+    .filter(isDownloadableKamloopsMunicipalDemGridTile)
+    .map(publicKamloopsMunicipalDemCoverageCell);
+  const nonDownloadable = tiles
+    .filter((tile) => !isDownloadableKamloopsMunicipalDemGridTile(tile))
+    .map(publicKamloopsMunicipalDemCoverageCell);
+  const plan = createTerrainSourceAdapterPlan(preflightInput, {
+    ...options,
+    kamloopsMunicipalDemGridResponse: demGridResponse
+  });
+  const status = kamloopsMunicipalDemCoverageStatus({
+    plan,
+    downloadable,
+    nonDownloadable,
+    statusOverride
+  });
+
+  return {
+    schemaVersion: "vmesh-kamloops-municipal-dem-coverage-preflight-v1",
+    status,
+    sourceBacked: status === "source-backed",
+    terrainSourceId: "kamloops-local-lidar-dtm-1m",
+    role: "bare-earth-dtm",
+    resolutionMeters: 1,
+    selectedSourceIds:
+      status === "source-backed" && plan.selectedSource?.id ? [plan.selectedSource.id] : [],
+    inputRefCount: plan.inputRefs.length,
+    inputRefKinds: Array.from(new Set(plan.inputRefs.map((inputRef) => inputRef.kind))),
+    cells: {
+      total: tiles.length,
+      downloadable,
+      nonDownloadable
+    },
+    blockedReasons: plan.blockedReasons,
+    warnings: plan.warnings,
+    nextActions:
+      status === "source-backed"
+        ? [
+            "Call the Abundance site-runtime-pack route in sourcePackMode=required for this coordinate.",
+            "The worker must still fetch/window each DEM ZIP and prove full non-no-data coverage before claiming runtime terrain readiness."
+          ]
+        : [
+            "Do not claim golden-quality terrain for this exact centered 3 km slice.",
+            "Offer fallback visual terrain, pick another center, or add another official DTM source for the missing cells."
+          ]
+  };
+}
+
+export async function createLiveKamloopsMunicipalDemCoveragePreflight(
+  input: TerrainPackageWorkerInput,
+  options: TerrainSourceAdapterOptions = {}
+): Promise<KamloopsMunicipalDemCoveragePreflight> {
+  const preflightInput = kamloopsMunicipalDemPreflightInput(input);
+  const initialPlan = createTerrainSourceAdapterPlan(preflightInput, options);
+
+  if (!initialPlan.bbox) {
+    return createKamloopsMunicipalDemCoveragePreflight(
+      preflightInput,
+      { features: [] },
+      options,
+      "blocked"
+    );
+  }
+
+  const fetchImpl = options.fetchImpl ?? fetch;
+
+  try {
+    const response = await fetchImpl(
+      createKamloopsMunicipalDemGridQueryUrl({
+        bbox: initialPlan.bbox,
+        baseUrl: options.kamloopsMunicipalDemGridBaseUrl ?? KAMLOOPS_MUNICIPAL_DEM_GRID_LAYER_URL
+      }),
+      { headers: { Accept: "application/json" } }
+    );
+
+    if (!response.ok) {
+      return {
+        ...createKamloopsMunicipalDemCoveragePreflight(
+          preflightInput,
+          { features: [] },
+          options,
+          "lookup-failed"
+        ),
+        blockedReasons: [
+          ...initialPlan.blockedReasons,
+          `City of Kamloops public DEM Grid resolver failed with HTTP ${response.status}.`
+        ]
+      };
+    }
+
+    return createKamloopsMunicipalDemCoveragePreflight(
+      preflightInput,
+      (await response.json()) as unknown,
+      options
+    );
+  } catch (error) {
+    return {
+      ...createKamloopsMunicipalDemCoveragePreflight(
+        preflightInput,
+        { features: [] },
+        options,
+        "lookup-failed"
+      ),
+      blockedReasons: [
+        ...initialPlan.blockedReasons,
+        error instanceof Error
+          ? `City of Kamloops public DEM Grid resolver failed: ${error.message}`
+          : "City of Kamloops public DEM Grid resolver failed."
+      ]
+    };
+  }
 }
 
 function selectUsgsLpcDsmSource(

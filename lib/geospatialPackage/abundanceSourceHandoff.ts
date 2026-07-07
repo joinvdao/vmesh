@@ -61,7 +61,7 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function boundsFromCentroidFrame({
+export function abundanceSourceSliceBoundsFromCentroid({
   centroid,
   edgeMeters
 }: {
@@ -92,7 +92,7 @@ function sourceSliceAoiForRequest(input: AbundanceSourceHandoffRequest): Package
 
   return {
     ...input.aoi,
-    bounds: boundsFromCentroidFrame({
+    bounds: abundanceSourceSliceBoundsFromCentroid({
       centroid: input.aoi.centroid,
       edgeMeters
     })
