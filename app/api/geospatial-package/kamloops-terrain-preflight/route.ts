@@ -1,6 +1,3 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -8,6 +5,7 @@ import {
   ABUNDANCE_SOURCE_HANDOFF_DEFAULT_GRID_SIZE,
   abundanceSourceSliceBoundsFromCentroid,
   createLiveKamloopsMunicipalDemCoveragePreflight,
+  loadKamloopsOperatorTerrainManifest,
   sanitizeConsumerAppId,
   sanitizeTextLabel
 } from "@/lib/geospatialPackage";
@@ -15,8 +13,6 @@ import {
 export const dynamic = "force-dynamic";
 
 const SUGGESTION_PROBE_TIMEOUT_MS = 3_000;
-const KAMLOOPS_OPERATOR_TERRAIN_MANIFEST_RELATIVE_PATH =
-  "config/operator-sources/kamloops-terrain.manifest.json";
 
 function jsonResponse(body: unknown, status = 200) {
   return NextResponse.json(body, {
@@ -49,51 +45,6 @@ function parseConsumer(value: unknown): string {
 
 function parseBoolean(value: unknown) {
   return value === true || value === "true" || value === "1" || value === "yes";
-}
-
-async function loadKamloopsOperatorTerrainManifest() {
-  const manifestPath = path.join(process.cwd(), KAMLOOPS_OPERATOR_TERRAIN_MANIFEST_RELATIVE_PATH);
-  try {
-    const raw = await readFile(manifestPath, "utf8");
-    return {
-      manifest: JSON.parse(raw) as unknown,
-      evidence: {
-        status: "loaded" as const,
-        relativePath: KAMLOOPS_OPERATOR_TERRAIN_MANIFEST_RELATIVE_PATH,
-        pathDisclosure: "relative-conventional-path-only" as const,
-        warnings: [] as string[]
-      }
-    };
-  } catch (error) {
-    const code = error && typeof error === "object" && "code" in error ? String(error.code) : null;
-    if (code === "ENOENT") {
-      return {
-        manifest: undefined,
-        evidence: {
-          status: "absent" as const,
-          relativePath: KAMLOOPS_OPERATOR_TERRAIN_MANIFEST_RELATIVE_PATH,
-          pathDisclosure: "relative-conventional-path-only" as const,
-          warnings: [
-            "No operator terrain manifest is present; preflight will use public DEM-grid and derived-elevation rails only."
-          ]
-        }
-      };
-    }
-
-    return {
-      manifest: undefined,
-      evidence: {
-        status: "invalid" as const,
-        relativePath: KAMLOOPS_OPERATOR_TERRAIN_MANIFEST_RELATIVE_PATH,
-        pathDisclosure: "relative-conventional-path-only" as const,
-        warnings: [
-          error instanceof Error
-            ? `Operator terrain manifest could not be read or parsed: ${error.message}`
-            : "Operator terrain manifest could not be read or parsed."
-        ]
-      }
-    };
-  }
 }
 
 function offsetCoordinate({

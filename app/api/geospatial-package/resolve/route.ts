@@ -5,6 +5,7 @@ import {
   BA_GEOSPATIAL_SEGMENTS,
   createAbundanceSourceHandoff,
   createLiveAbundanceSourceHandoff,
+  loadKamloopsOperatorTerrainManifest,
   MAX_PACKAGE_PLAN_BODY_BYTES,
   sanitizeConsumerAppId,
   sanitizeTextLabel,
@@ -160,11 +161,19 @@ function parseLiveTerrain(value: unknown) {
 
 async function buildHandoff(input: AbundanceSourceHandoffRequest, liveTerrain = false) {
   if (liveTerrain) {
-    return createLiveAbundanceSourceHandoff(input, {
+    const operatorTerrainManifest = await loadKamloopsOperatorTerrainManifest();
+    const handoff = await createLiveAbundanceSourceHandoff(input, {
       terrainSourceAdapterOptions: {
+        kamloopsOperatorTerrainManifest: operatorTerrainManifest.manifest,
         requireSourcePixelCoverage: true
       }
     });
+    return {
+      ...handoff,
+      warnings: Array.from(
+        new Set([...operatorTerrainManifest.evidence.warnings, ...handoff.warnings])
+      )
+    };
   }
   return createAbundanceSourceHandoff(input);
 }

@@ -1,3 +1,7 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -7,6 +11,8 @@ import { probeTerrainCogCoordinate } from "@/lib/terrainSourceProbeWorker";
 vi.mock("@/lib/terrainSourceProbeWorker", () => ({
   probeTerrainCogCoordinate: vi.fn()
 }));
+
+const tempRoots: string[] = [];
 
 function jsonRequest(body: unknown) {
   return new NextRequest("http://localhost/api/geospatial-package/resolve", {
@@ -34,7 +40,49 @@ const lidarBcOneMeterDemResponse = {
   ]
 };
 
-afterEach(() => {
+async function writeKamloopsOperatorTerrainManifest(rootDir: string) {
+  const manifestDir = path.join(rootDir, "config", "operator-sources");
+  await mkdir(manifestDir, { recursive: true });
+  await writeFile(
+    path.join(manifestDir, "kamloops-terrain.manifest.json"),
+    JSON.stringify(
+      {
+        schemaVersion: "vmesh-kamloops-operator-terrain-source-manifest-v1",
+        sources: [
+          {
+            id: "kamloops-municipal-dtm-cog-route-fixture",
+            sourceId: "kamloops-local-lidar-dtm-1m",
+            role: "bare-earth-dtm",
+            resolutionMeters: 1,
+            crs: "EPSG:26910",
+            verticalDatum: "CGVD2013",
+            coverage: {
+              west: -120.55,
+              south: 50.6,
+              east: -120.02,
+              north: 50.88
+            },
+            source: {
+              url: "https://terrain.example.test/kamloops/municipal-dtm-1m.cog.tif"
+            },
+            qa: {
+              sourceNativeRaster: true,
+              coverageStatus: "contains-aoi",
+              maxNoDataRatio: 0
+            }
+          }
+        ]
+      },
+      null,
+      2
+    ),
+    "utf8"
+  );
+}
+
+afterEach(async () => {
+  await Promise.all(tempRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
   vi.mocked(probeTerrainCogCoordinate).mockReset();
 });
@@ -108,6 +156,41 @@ describe("Abundance resolver route", () => {
         allowTwoMeterFallback: false
       })
     );
+  });
+
+  it("passes the Kamloops operator terrain manifest into live resolve handoff", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "vmesh-kamloops-manifest-"));
+    tempRoots.push(tempRoot);
+    await writeKamloopsOperatorTerrainManifest(tempRoot);
+    vi.spyOn(process, "cwd").mockReturnValue(tempRoot);
+    vi.stubGlobal("fetch", async () => {
+      throw new Error("manifest-backed Kamloops DTM should not call the public catalog fetch");
+    });
+
+    const response = await GET(
+      new NextRequest(
+        "http://localhost/api/geospatial-package/resolve?lat=50.64&lng=-120.26&consumer=abundance&segments=terrain_elevation&liveTerrain=1"
+      )
+    );
+    const payload = await response.json();
+    const plan = payload.terrainAdapterPlans[0];
+    const serialized = JSON.stringify(payload);
+
+    expect(response.status).toBe(200);
+    expect(payload.terrain.selectedSourceIds).toEqual(["kamloops-local-lidar-dtm-1m"]);
+    expect(plan.status).toBe("ready");
+    expect(plan.selectedSource.id).toBe("kamloops-local-lidar-dtm-1m");
+    expect(plan.inputRefs[0]).toMatchObject({
+      kind: "direct-geotiff",
+      format: "cog",
+      provider: "City of Kamloops municipal LiDAR/DEM Open Data",
+      groundModelRole: "bare-earth-dtm",
+      targetResolutionMeters: 1
+    });
+    expect(plan.inputRefs[0].url).toContain("terrain.example.test/kamloops/");
+    expect(plan.inputRefs[0].notes.join(" ")).toContain("operator terrain manifest");
+    expect(vi.mocked(probeTerrainCogCoordinate)).not.toHaveBeenCalled();
+    expect(serialized).not.toContain(tempRoot);
   });
 
   it("preserves H3 disclosure and parcel boundary as redacted overlay context on POST", async () => {
