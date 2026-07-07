@@ -257,6 +257,16 @@ describe("Abundance source handoff", () => {
     );
     expect(requests).toHaveLength(1);
     expect(requests[0]).toContain("FeatureDataset/GIS_Administrative_1/MapServer/6/query");
+    expect(requests[0]).toContain("geometryType=esriGeometryEnvelope");
+    const geometry = new URL(requests[0]).searchParams.get("geometry")?.split(",").map(Number);
+    expect(geometry).toHaveLength(4);
+    if (!geometry) throw new Error("Expected Kamloops DEM query geometry.");
+    const [west, south, east, north] = geometry;
+    expect(east - west).toBeLessThan(0.05);
+    expect(north - south).toBeLessThan(0.04);
+    expect(
+      handoff.baPackage.h3Context.bounds[2] - handoff.baPackage.h3Context.bounds[0]
+    ).toBeLessThan(0.05);
     expect(handoff.warnings.join(" ")).toContain("source refs and recipes");
   });
 

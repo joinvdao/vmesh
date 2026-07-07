@@ -35,6 +35,7 @@ import {
 } from "@/lib/geospatialPackage/abundanceSourceHandoffContract";
 import type {
   PackageArtifactKind,
+  PackageAoiInput,
   PackageLayerId,
   PackagePlanRequest
 } from "@/lib/geospatialPackage/types";
@@ -50,6 +51,52 @@ interface AbundanceSourceHandoffOptions {
 
 interface LiveAbundanceSourceHandoffOptions extends AbundanceSourceHandoffOptions {
   terrainSourceAdapterOptions?: TerrainSourceAdapterOptions;
+}
+
+function finitePositive(value: number | undefined, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function boundsFromCentroidFrame({
+  centroid,
+  edgeMeters
+}: {
+  centroid: NonNullable<PackageAoiInput["centroid"]>;
+  edgeMeters: number;
+}): [number, number, number, number] {
+  const halfMeters = edgeMeters * 0.5;
+  const metersPerDegreeLat = 111_320;
+  const metersPerDegreeLng = Math.max(
+    12_000,
+    metersPerDegreeLat * Math.cos((centroid.latitude * Math.PI) / 180)
+  );
+  const halfLatDegrees = halfMeters / metersPerDegreeLat;
+  const halfLngDegrees = halfMeters / metersPerDegreeLng;
+
+  return [
+    Number(clamp(centroid.longitude - halfLngDegrees, -180, 180).toFixed(7)),
+    Number(clamp(centroid.latitude - halfLatDegrees, -90, 90).toFixed(7)),
+    Number(clamp(centroid.longitude + halfLngDegrees, -180, 180).toFixed(7)),
+    Number(clamp(centroid.latitude + halfLatDegrees, -90, 90).toFixed(7))
+  ];
+}
+
+function sourceSliceAoiForRequest(input: AbundanceSourceHandoffRequest): PackageAoiInput {
+  if (input.aoi.bounds || !input.aoi.centroid) return input.aoi;
+
+  const edgeMeters = finitePositive(input.edgeMeters, ABUNDANCE_SOURCE_HANDOFF_DEFAULT_EDGE_METERS);
+
+  return {
+    ...input.aoi,
+    bounds: boundsFromCentroidFrame({
+      centroid: input.aoi.centroid,
+      edgeMeters
+    })
+  };
 }
 
 function packageRequestFromBaPackage(
@@ -342,8 +389,10 @@ export function createAbundanceSourceHandoff(
   options: AbundanceSourceHandoffOptions = {}
 ): AbundanceSourceHandoff {
   const consumerAppId = input.consumerAppId ?? "building-abundance";
+  const sourceSliceAoi = sourceSliceAoiForRequest(input);
   const baseBaPackage = createBaGeospatialPackage({
     ...input,
+    aoi: sourceSliceAoi,
     consumerAppId
   });
   const terrainAdapterPlans = terrainAdapterPlansForPackage(baseBaPackage, options);
@@ -356,7 +405,7 @@ export function createAbundanceSourceHandoff(
   const buildingWorkerHandoff = layers.includes("buildings")
     ? publicBuildingWorkerHandoff(
         createBuildingPackageWorkerHandoff({
-          aoi: input.aoi,
+          aoi: sourceSliceAoi,
           consumerAppId,
           offline: true
         }),
@@ -436,13 +485,14 @@ export async function createLiveAbundanceSourceHandoff(
   options: LiveAbundanceSourceHandoffOptions = {}
 ): Promise<AbundanceSourceHandoff> {
   const consumerAppId = input.consumerAppId ?? "building-abundance";
+  const sourceSliceAoi = sourceSliceAoiForRequest(input);
   const terrainRequested = input.segments.includes("terrain_elevation");
   const terrainAdapterPlans = terrainRequested
     ? [
         await createLiveNorthAmericaDtmSourceAdapterPlan(
           {
             request: {
-              aoi: input.aoi,
+              aoi: sourceSliceAoi,
               layers: ["terrain"],
               consumerAppId
             }
@@ -455,6 +505,7 @@ export async function createLiveAbundanceSourceHandoff(
   return createAbundanceSourceHandoff(
     {
       ...input,
+      aoi: sourceSliceAoi,
       consumerAppId
     },
     {
