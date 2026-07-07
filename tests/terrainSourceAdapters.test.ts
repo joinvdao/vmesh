@@ -795,6 +795,55 @@ describe("terrain source adapters", () => {
     expect(requests[0]).toContain("/FeatureServer/5/query");
   });
 
+  it("tries LidarBC before accepting a Kamloops municipal derived-elevation rail", async () => {
+    const requests: string[] = [];
+    const fetchImpl: typeof fetch = async (url) => {
+      const requestUrl = String(url);
+      requests.push(requestUrl);
+      if (requestUrl.includes("/FeatureDataset/GIS_Administrative_1/MapServer/6/query")) {
+        return new Response(JSON.stringify(kamloopsPartialDemGridResponse), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      if (requestUrl.includes("/opendata/DEM/2024_CGVD2013/")) {
+        return new Response(null, {
+          status: requestUrl.includes("DEM_CGVD2013_5156D.zip") ? 404 : 200
+        });
+      }
+      if (requestUrl.includes("/opendata/Lidar/2024/")) {
+        return new Response(null, { status: 404 });
+      }
+      if (requestUrl.includes("/FeatureServer/5/query")) {
+        return new Response(JSON.stringify(lidarBcOneMeterDemResponse), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      throw new Error("unexpected Kamloops/LidarBC candidate-chain request");
+    };
+
+    const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
+      {
+        request: {
+          aoi: kamloopsThreeKmAoi(50.68, -120.23, "Kamloops partial public-safe AOI"),
+          layers: ["terrain"]
+        }
+      },
+      { env: {}, fetchImpl }
+    );
+
+    expect(plan.status).toBe("ready");
+    expect(plan.selectedSource?.id).toBe("bc-lidarbc");
+    expect(plan.inputRefs[0]).toMatchObject({
+      kind: "direct-geotiff",
+      groundModelRole: "bare-earth-dtm"
+    });
+    expect(plan.warnings.join(" ")).toContain("deferred");
+    expect(requests.some((requestUrl) => requestUrl.includes("/FeatureServer/5/query"))).toBe(true);
+  });
+
   it("keeps a live LidarBC DTM candidate only after required source pixel proof covers the AOI", async () => {
     const requests: string[] = [];
     const probes: Array<{
@@ -1226,11 +1275,12 @@ describe("terrain source adapters", () => {
       );
     };
 
-    const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
+    const plan = await createLiveTerrainSourceAdapterPlan(
       {
         request: {
           aoi: kamloopsThreeKmAoi(50.64, -120.26, "Kamloops public-safe fallback AOI"),
-          layers: ["terrain"]
+          layers: ["terrain"],
+          preferredSourceIds: ["kamloops-local-lidar-dtm-1m"]
         }
       },
       { env: {}, fetchImpl }
@@ -1288,11 +1338,12 @@ describe("terrain source adapters", () => {
       );
     };
 
-    const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
+    const plan = await createLiveTerrainSourceAdapterPlan(
       {
         request: {
           aoi: kamloopsThreeKmAoi(50.68, -120.23, "Kamloops partial public-safe AOI"),
-          layers: ["terrain"]
+          layers: ["terrain"],
+          preferredSourceIds: ["kamloops-local-lidar-dtm-1m"]
         }
       },
       { env: {}, fetchImpl }

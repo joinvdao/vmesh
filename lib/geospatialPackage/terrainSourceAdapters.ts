@@ -2445,6 +2445,31 @@ async function requireSourcePixelCoverageForPlan(
   };
 }
 
+function isKamloopsSourceNativeRasterRef(inputRef: TerrainSourceInputRef): boolean {
+  return (
+    inputRef.kind === "direct-geotiff" ||
+    inputRef.kind === "s3-cog" ||
+    inputRef.kind === "arcgis-image-export" ||
+    /\/opendata\/DEM\/[0-9]{4}_CGVD[0-9]+\/DEM_CGVD[0-9]+_[A-Z0-9_-]+\.zip$/i.test(inputRef.url)
+  );
+}
+
+function isKamloopsDerivedElevationRef(inputRef: TerrainSourceInputRef): boolean {
+  return (
+    inputRef.url === KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL ||
+    inputRef.url === KAMLOOPS_MUNICIPAL_CONTOUR_1M_LAYER_URL
+  );
+}
+
+function isDeferrableKamloopsDerivedElevationPlan(plan: TerrainSourceAdapterPlan): boolean {
+  return (
+    plan.status === "ready" &&
+    plan.selectedSource?.id === "kamloops-local-lidar-dtm-1m" &&
+    plan.inputRefs.some(isKamloopsDerivedElevationRef) &&
+    !plan.inputRefs.some(isKamloopsSourceNativeRasterRef)
+  );
+}
+
 async function createLiveNorthAmericaSourceAdapterPlan({
   input,
   options,
@@ -2468,6 +2493,7 @@ async function createLiveNorthAmericaSourceAdapterPlan({
     consumerAppId: basePlan.manifest.consumerAppId
   };
   const blockedPlans: TerrainSourceAdapterPlan[] = [];
+  const deferredReadyPlans: TerrainSourceAdapterPlan[] = [];
 
   for (const sourceId of candidateSourceIds) {
     const plan = await createLiveTerrainSourceAdapterPlan(
@@ -2481,8 +2507,37 @@ async function createLiveNorthAmericaSourceAdapterPlan({
     );
     const verifiedPlan = await requireSourcePixelCoverageForPlan(plan, options);
 
-    if (verifiedPlan.status === "ready") return verifiedPlan;
+    if (
+      isDeferrableKamloopsDerivedElevationPlan(verifiedPlan) &&
+      candidateSourceIds.some((candidateSourceId) => candidateSourceId !== sourceId)
+    ) {
+      deferredReadyPlans.push(verifiedPlan);
+      continue;
+    }
+
+    if (verifiedPlan.status === "ready") {
+      return deferredReadyPlans.length > 0
+        ? {
+            ...verifiedPlan,
+            warnings: [
+              ...verifiedPlan.warnings,
+              "VMesh deferred the Kamloops municipal DEMPoint/contour-derived rail until source-native regional raster candidates were attempted for this AOI."
+            ]
+          }
+        : verifiedPlan;
+    }
     blockedPlans.push(verifiedPlan);
+  }
+
+  if (deferredReadyPlans.length > 0) {
+    const fallback = deferredReadyPlans[0];
+    return {
+      ...fallback,
+      warnings: [
+        ...fallback.warnings,
+        "VMesh used the Kamloops municipal DEMPoint/contour-derived rail only after stronger source-native regional raster candidates failed or were unavailable."
+      ]
+    };
   }
 
   const fallback =
