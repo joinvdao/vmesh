@@ -1023,7 +1023,7 @@ describe("terrain source adapters", () => {
     expect(requests[0]).toMatch(/geometry=-120\.[0-9]+%2C50\.[0-9]+%2C-120\.[0-9]+%2C50\.[0-9]+/);
   });
 
-  it("uses official Kamloops contour refs when the municipal DEM grid has no raster cells", async () => {
+  it("uses official Kamloops derived-elevation refs when the municipal DEM grid has no raster cells", async () => {
     const requests: string[] = [];
     const fetchImpl: typeof fetch = async (url) => {
       const requestUrl = String(url);
@@ -1035,7 +1035,9 @@ describe("terrain source adapters", () => {
         });
       }
 
-      throw new Error("municipal contour fallback should avoid provincial fallback fetches");
+      throw new Error(
+        "municipal derived-elevation fallback should avoid provincial fallback fetches"
+      );
     };
 
     const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
@@ -1051,8 +1053,14 @@ describe("terrain source adapters", () => {
     expect(plan.status).toBe("ready");
     expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
     expect(plan.toolProfile?.toolId).toBe("kamloops-local-lidar");
-    expect(plan.inputRefs).toHaveLength(1);
+    expect(plan.inputRefs).toHaveLength(2);
     expect(plan.inputRefs[0]).toMatchObject({
+      kind: "zip-archive",
+      format: "zip",
+      role: "terrain-source",
+      url: "https://maps.kamloops.ca/OpenData/zipfiles/DEMPointBreakSHP.zip"
+    });
+    expect(plan.inputRefs[1]).toMatchObject({
       kind: "arcgis-feature-query",
       format: "json",
       role: "terrain-source",
@@ -1065,7 +1073,7 @@ describe("terrain source adapters", () => {
     expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
   });
 
-  it("uses official Kamloops contour refs when partial DEM-grid cells are not downloadable", async () => {
+  it("uses official Kamloops derived-elevation refs when partial DEM-grid cells are not downloadable", async () => {
     const requests: string[] = [];
     const fetchImpl: typeof fetch = async (url) => {
       const requestUrl = String(url);
@@ -1077,7 +1085,9 @@ describe("terrain source adapters", () => {
         });
       }
 
-      throw new Error("municipal contour fallback should avoid provincial fallback fetches");
+      throw new Error(
+        "municipal derived-elevation fallback should avoid provincial fallback fetches"
+      );
     };
 
     const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
@@ -1093,8 +1103,14 @@ describe("terrain source adapters", () => {
     expect(plan.status).toBe("ready");
     expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
     expect(plan.toolProfile?.toolId).toBe("kamloops-local-lidar");
-    expect(plan.inputRefs).toHaveLength(1);
+    expect(plan.inputRefs).toHaveLength(2);
     expect(plan.inputRefs[0]).toMatchObject({
+      kind: "zip-archive",
+      format: "zip",
+      role: "terrain-source",
+      url: "https://maps.kamloops.ca/OpenData/zipfiles/DEMPointBreakSHP.zip"
+    });
+    expect(plan.inputRefs[1]).toMatchObject({
       kind: "arcgis-feature-query",
       format: "json",
       role: "terrain-source",

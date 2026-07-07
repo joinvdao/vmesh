@@ -97,6 +97,8 @@ describe("Kamloops terrain coverage route", () => {
       },
       summary: {
         sourceBackedCount: 2,
+        rasterBackedCount: 1,
+        goldenQualityCandidateCount: 1,
         partialCount: 0,
         blockedCount: 0
       }
@@ -106,6 +108,9 @@ describe("Kamloops terrain coverage route", () => {
         id: "covered-cell",
         status: "source-backed",
         sourceBacked: true,
+        rasterBacked: true,
+        derivedElevationBacked: false,
+        goldenQualityTerrainCandidate: true,
         downloadableCellCount: 2,
         nonDownloadableCellCount: 0,
         selectedSourceIds: ["kamloops-local-lidar-dtm-1m"]
@@ -114,9 +119,16 @@ describe("Kamloops terrain coverage route", () => {
         id: "partial-cell",
         status: "source-backed",
         sourceBacked: true,
+        rasterBacked: false,
+        derivedElevationBacked: true,
+        goldenQualityTerrainCandidate: false,
         downloadableCellCount: 1,
         nonDownloadableCellCount: 1,
         selectedSourceIds: ["kamloops-local-lidar-dtm-1m"],
+        goldenQualityBlockers: expect.arrayContaining([
+          expect.stringContaining("non-downloadable"),
+          expect.stringContaining("contour-derived")
+        ]),
         warnings: expect.arrayContaining([expect.stringContaining("contour")])
       })
     ]);
@@ -146,6 +158,8 @@ describe("Kamloops terrain coverage route", () => {
     expect(fetchImpl).not.toHaveBeenCalled();
     expect(payload.summary).toMatchObject({
       sourceBackedCount: 0,
+      rasterBackedCount: 0,
+      goldenQualityCandidateCount: 0,
       partialCount: 0,
       blockedCount: 2
     });
@@ -153,12 +167,16 @@ describe("Kamloops terrain coverage route", () => {
       expect.objectContaining({
         id: "bad",
         status: "invalid-coordinate",
-        sourceBacked: false
+        sourceBacked: false,
+        rasterBacked: false,
+        goldenQualityTerrainCandidate: false
       }),
       expect.objectContaining({
         id: "outside",
         status: "outside-kamloops-municipal-index",
-        sourceBacked: false
+        sourceBacked: false,
+        rasterBacked: false,
+        goldenQualityTerrainCandidate: false
       })
     ]);
   });

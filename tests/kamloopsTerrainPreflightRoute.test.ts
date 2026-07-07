@@ -68,6 +68,9 @@ describe("Kamloops terrain preflight route", () => {
       schemaVersion: "vmesh-kamloops-municipal-dem-coverage-preflight-v1",
       status: "source-backed",
       sourceBacked: true,
+      rasterBacked: true,
+      derivedElevationBacked: false,
+      goldenQualityTerrainCandidate: true,
       terrainSourceId: "kamloops-local-lidar-dtm-1m",
       role: "bare-earth-dtm",
       resolutionMeters: 1,
@@ -89,6 +92,7 @@ describe("Kamloops terrain preflight route", () => {
       "5156C"
     ]);
     expect(payload.cells.nonDownloadable).toEqual([]);
+    expect(payload.goldenQualityBlockers).toEqual([]);
     expect(requests).toHaveLength(1);
     expect(requests[0]).toContain("FeatureDataset/GIS_Administrative_1/MapServer/6/query");
     expect(requests[0]).toContain("geometryType=esriGeometryEnvelope");
@@ -113,8 +117,13 @@ describe("Kamloops terrain preflight route", () => {
     expect(payload).toMatchObject({
       status: "source-backed",
       sourceBacked: true,
+      rasterBacked: false,
+      derivedElevationBacked: true,
+      contourDerived: true,
+      pointBreakDerived: true,
+      goldenQualityTerrainCandidate: false,
       selectedSourceIds: ["kamloops-local-lidar-dtm-1m"],
-      inputRefKinds: ["arcgis-feature-query"]
+      inputRefKinds: ["zip-archive", "arcgis-feature-query"]
     });
     expect(payload.cells.downloadable.map((cell: { cellName: string }) => cell.cellName)).toEqual([
       "5156B"
@@ -123,7 +132,9 @@ describe("Kamloops terrain preflight route", () => {
       payload.cells.nonDownloadable.map((cell: { cellName: string }) => cell.cellName)
     ).toEqual(["5156D"]);
     expect(payload.warnings.join(" ")).toContain("non-downloadable raster cell");
-    expect(payload.nextActions.join(" ")).toContain("contour-derived terrain");
+    expect(payload.goldenQualityBlockers.join(" ")).toContain("DEMPoint/DEMBreakline-derived");
+    expect(payload.goldenQualityBlockers.join(" ")).toContain("contour-derived");
+    expect(payload.nextActions.join(" ")).toContain("derived-elevation");
     expect(payload.nextActions.join(" ")).toContain("not label this path as a 1m LiDAR raster");
     expect(payload.suggestedSourceBackedFrame).toBeNull();
   });
@@ -155,7 +166,10 @@ describe("Kamloops terrain preflight route", () => {
     expect(payload).toMatchObject({
       status: "source-backed",
       sourceBacked: true,
-      inputRefKinds: ["arcgis-feature-query"],
+      rasterBacked: false,
+      derivedElevationBacked: true,
+      goldenQualityTerrainCandidate: false,
+      inputRefKinds: ["zip-archive", "arcgis-feature-query"],
       suggestedSourceBackedFrame: null
     });
     expect(requestCount).toBe(1);

@@ -105,9 +105,13 @@ async function classifySample({
       id,
       status: "invalid-coordinate",
       sourceBacked: false,
+      rasterBacked: false,
+      derivedElevationBacked: false,
+      goldenQualityTerrainCandidate: false,
       downloadableCellCount: 0,
       nonDownloadableCellCount: 0,
       selectedSourceIds: [],
+      goldenQualityBlockers: ["Invalid sample coordinate."],
       warnings: ["Sample requires finite lat/lng or latitude/longitude values."],
       blockedReasons: ["Invalid sample coordinate."]
     };
@@ -118,9 +122,15 @@ async function classifySample({
       id,
       status: "outside-kamloops-municipal-index",
       sourceBacked: false,
+      rasterBacked: false,
+      derivedElevationBacked: false,
+      goldenQualityTerrainCandidate: false,
       downloadableCellCount: 0,
       nonDownloadableCellCount: 0,
       selectedSourceIds: [],
+      goldenQualityBlockers: [
+        "Kamloops municipal DEM Grid coverage is not applicable to this sample."
+      ],
       warnings: ["Sample is outside the Kamloops municipal terrain preflight envelope."],
       blockedReasons: ["Kamloops municipal DEM Grid coverage is not applicable to this sample."]
     };
@@ -152,10 +162,14 @@ async function classifySample({
     id,
     status: preflight.status,
     sourceBacked: preflight.sourceBacked,
+    rasterBacked: preflight.rasterBacked,
+    derivedElevationBacked: preflight.derivedElevationBacked,
+    goldenQualityTerrainCandidate: preflight.goldenQualityTerrainCandidate,
     downloadableCellCount: preflight.cells.downloadable.length,
     nonDownloadableCellCount: preflight.cells.nonDownloadable.length,
     totalCellCount: preflight.cells.total,
     selectedSourceIds: preflight.selectedSourceIds,
+    goldenQualityBlockers: preflight.goldenQualityBlockers,
     warnings: preflight.warnings,
     blockedReasons: preflight.blockedReasons
   };
@@ -202,6 +216,10 @@ export async function POST(req: NextRequest) {
     )
   );
   const sourceBackedCount = samples.filter((sample) => sample.sourceBacked).length;
+  const rasterBackedCount = samples.filter((sample) => sample.rasterBacked).length;
+  const goldenQualityCandidateCount = samples.filter(
+    (sample) => sample.goldenQualityTerrainCandidate
+  ).length;
   const partialCount = samples.filter((sample) => sample.status === "partial").length;
   const blockedCount = samples.length - sourceBackedCount - partialCount;
 
@@ -225,6 +243,8 @@ export async function POST(req: NextRequest) {
     },
     summary: {
       sourceBackedCount,
+      rasterBackedCount,
+      goldenQualityCandidateCount,
       partialCount,
       blockedCount
     },
