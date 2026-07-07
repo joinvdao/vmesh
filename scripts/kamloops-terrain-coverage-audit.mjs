@@ -17,6 +17,7 @@ function usage() {
     "",
     "Usage:",
     "  npm run terrain:kamloops-audit -- [--grid 5] [--edge-meters 3000] [--output .artifacts/kamloops-terrain-coverage-audit/latest.private.json]",
+    "  npm run terrain:kamloops-audit -- --sample-mode random --samples 16 --seed 1701 [--edge-meters 3000] [--probe-timeout-ms 5000]",
     "",
     "The output path is private/operator-local by default because it contains exact sample coordinates."
   ].join("\n");
@@ -36,8 +37,12 @@ function parseNumber(value, flag) {
 
 function parseArgs(args) {
   const options = {
+    sampleMode: "grid",
     grid: 5,
+    samples: 16,
+    seed: 1701,
     edgeMeters: 3000,
+    probeTimeoutMs: 5000,
     output: ".artifacts/kamloops-terrain-coverage-audit/latest.private.json"
   };
 
@@ -55,10 +60,40 @@ function parseArgs(args) {
       index += 1;
       continue;
     }
+    if (arg === "--sample-mode") {
+      const value = valueAfter(args, index, arg).trim().toLowerCase();
+      if (value !== "grid" && value !== "random") {
+        throw new Error("--sample-mode must be grid or random.");
+      }
+      options.sampleMode = value;
+      index += 1;
+      continue;
+    }
+    if (arg === "--samples") {
+      options.samples = Math.max(
+        1,
+        Math.min(128, Math.floor(parseNumber(valueAfter(args, index, arg), arg)))
+      );
+      index += 1;
+      continue;
+    }
+    if (arg === "--seed") {
+      options.seed = Math.floor(parseNumber(valueAfter(args, index, arg), arg));
+      index += 1;
+      continue;
+    }
     if (arg === "--edge-meters") {
       options.edgeMeters = Math.max(
         512,
         Math.min(10000, parseNumber(valueAfter(args, index, arg), arg))
+      );
+      index += 1;
+      continue;
+    }
+    if (arg === "--probe-timeout-ms") {
+      options.probeTimeoutMs = Math.max(
+        1000,
+        Math.min(20000, Math.floor(parseNumber(valueAfter(args, index, arg), arg)))
       );
       index += 1;
       continue;
@@ -117,6 +152,32 @@ function bboxContains(container, target) {
   );
 }
 
+function lcg(seed) {
+  let value = Math.abs(seed || 1701) % 2147483647;
+  if (value === 0) value = 1;
+  return () => {
+    value = (value * 48271) % 2147483647;
+    return value / 2147483647;
+  };
+}
+
+function validCenterExtent(edgeMeters) {
+  const half = edgeMeters / 2;
+  const southWest = offsetCoordinate({
+    latitude: ELEVATION_VECTOR_EXTENT_WGS84.south,
+    longitude: ELEVATION_VECTOR_EXTENT_WGS84.west,
+    eastMeters: half,
+    northMeters: half
+  });
+  const northEast = offsetCoordinate({
+    latitude: ELEVATION_VECTOR_EXTENT_WGS84.north,
+    longitude: ELEVATION_VECTOR_EXTENT_WGS84.east,
+    eastMeters: -half,
+    northMeters: -half
+  });
+  return { southWest, northEast };
+}
+
 function formatCoordinate(value) {
   return Number(value.toFixed(6)).toString();
 }
@@ -146,6 +207,8 @@ function safeCellName(value) {
 function demZipUrl(cellName) {
   return `${DEM_DOWNLOAD_BASE_URL}/DEM_CGVD2013_${cellName}.zip`;
 }
+
+const demZipAvailabilityCache = new Map();
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 20_000) {
   const controller = new AbortController();
@@ -185,16 +248,24 @@ function parseCells(payload) {
   return cells.sort((left, right) => left.cellName.localeCompare(right.cellName));
 }
 
-async function verifyDemZip(cell) {
+async function verifyDemZip(cell, timeoutMs) {
+  const cached = demZipAvailabilityCache.get(cell.demZipUrl);
+  if (cached) return cached;
+
+  const promise = verifyDemZipUncached(cell, timeoutMs);
+  demZipAvailabilityCache.set(cell.demZipUrl, promise);
+  return promise;
+}
+
+async function verifyDemZipUncached(cell, timeoutMs) {
   const attempts = [
-    { method: "HEAD", headers: { Accept: "application/zip,*/*" } },
     { method: "HEAD", headers: { Accept: "application/zip,*/*" } },
     { method: "GET", headers: { Accept: "application/zip,*/*", Range: "bytes=0-0" } }
   ];
   let lastStatus = null;
   for (const attempt of attempts) {
     try {
-      const response = await fetchWithTimeout(cell.demZipUrl, attempt, 20_000);
+      const response = await fetchWithTimeout(cell.demZipUrl, attempt, timeoutMs);
       lastStatus = response.status;
       const contentLength = Number(response.headers.get("content-length") ?? "");
       const contentRange = response.headers.get("content-range") ?? "";
@@ -226,19 +297,7 @@ async function verifyDemZip(cell) {
 }
 
 function sampleCenters({ grid, edgeMeters }) {
-  const half = edgeMeters / 2;
-  const southWest = offsetCoordinate({
-    latitude: ELEVATION_VECTOR_EXTENT_WGS84.south,
-    longitude: ELEVATION_VECTOR_EXTENT_WGS84.west,
-    eastMeters: half,
-    northMeters: half
-  });
-  const northEast = offsetCoordinate({
-    latitude: ELEVATION_VECTOR_EXTENT_WGS84.north,
-    longitude: ELEVATION_VECTOR_EXTENT_WGS84.east,
-    eastMeters: -half,
-    northMeters: -half
-  });
+  const { southWest, northEast } = validCenterExtent(edgeMeters);
 
   const samples = [];
   for (let y = 0; y < grid; y += 1) {
@@ -261,7 +320,21 @@ function sampleCenters({ grid, edgeMeters }) {
   return samples;
 }
 
-async function classifySample(sample, edgeMeters) {
+function randomSampleCenters({ samples, edgeMeters, seed }) {
+  const { southWest, northEast } = validCenterExtent(edgeMeters);
+  const random = lcg(seed);
+  return Array.from({ length: samples }, (_, index) => ({
+    id: `random-${String(index + 1).padStart(3, "0")}`,
+    latitude: southWest.latitude + (northEast.latitude - southWest.latitude) * random(),
+    longitude: southWest.longitude + (northEast.longitude - southWest.longitude) * random()
+  }));
+}
+
+function auditSampleCenters(options) {
+  return options.sampleMode === "random" ? randomSampleCenters(options) : sampleCenters(options);
+}
+
+async function classifySample(sample, { edgeMeters, probeTimeoutMs }) {
   const bbox = boundsFromCentroid({
     latitude: sample.latitude,
     longitude: sample.longitude,
@@ -269,7 +342,11 @@ async function classifySample(sample, edgeMeters) {
   });
   let response;
   try {
-    response = await fetchWithTimeout(queryUrl(bbox), { headers: { Accept: "application/json" } });
+    response = await fetchWithTimeout(
+      queryUrl(bbox),
+      { headers: { Accept: "application/json" } },
+      probeTimeoutMs
+    );
   } catch (error) {
     return {
       ...sample,
@@ -300,13 +377,12 @@ async function classifySample(sample, edgeMeters) {
   }
 
   const cells = parseCells(await response.json());
-  const verifiedCells = [];
-  for (const cell of cells) {
-    verifiedCells.push({
+  const verifiedCells = await Promise.all(
+    cells.map(async (cell) => ({
       ...cell,
-      demZipAvailability: await verifyDemZip(cell)
-    });
-  }
+      demZipAvailability: await verifyDemZip(cell, probeTimeoutMs)
+    }))
+  );
 
   const missingCells = verifiedCells.filter((cell) => !cell.demZipAvailability.reachable);
   const rasterBacked = verifiedCells.length > 0 && missingCells.length === 0;
@@ -341,7 +417,10 @@ function publicSummary(report) {
     schemaVersion: report.schemaVersion,
     generatedAt: report.generatedAt,
     edgeMeters: report.edgeMeters,
+    probeTimeoutMs: report.probeTimeoutMs,
+    sampleMode: report.sampleMode,
     grid: report.grid,
+    seed: report.seed,
     sampleCount: report.samples.length,
     counts: report.counts,
     privacy: {
@@ -354,8 +433,13 @@ function publicSummary(report) {
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   const samples = [];
-  for (const sample of sampleCenters(options)) {
-    samples.push(await classifySample(sample, options.edgeMeters));
+  for (const sample of auditSampleCenters(options)) {
+    samples.push(
+      await classifySample(sample, {
+        edgeMeters: options.edgeMeters,
+        probeTimeoutMs: options.probeTimeoutMs
+      })
+    );
   }
   const counts = {
     goldenCandidate: samples.filter((sample) => sample.goldenQualityTerrainCandidate).length,
@@ -372,7 +456,10 @@ async function main() {
       demDownloadBaseUrl: DEM_DOWNLOAD_BASE_URL
     },
     edgeMeters: options.edgeMeters,
+    probeTimeoutMs: options.probeTimeoutMs,
+    sampleMode: options.sampleMode,
     grid: options.grid,
+    seed: options.sampleMode === "random" ? options.seed : null,
     counts,
     samples
   };
