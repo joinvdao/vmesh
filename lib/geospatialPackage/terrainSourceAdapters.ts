@@ -84,6 +84,7 @@ export interface TerrainSourceAdapterOptions {
   verifyKamloopsMunicipalLidarZipUrls?: boolean;
   verifyKamloopsMunicipalContourSupport?: boolean;
   kamloopsMunicipalDemProbeTimeoutMs?: number;
+  sourcePixelCoverageProbeTimeoutMs?: number;
   bcLidarGeoTiffUrl?: string;
   bcLidarGeoTiffUrlTemplate?: string;
   bcLidarFeatureServerResponse?: unknown;
@@ -1501,10 +1502,7 @@ function withLiveDerivedElevationSupport(
 ): KamloopsMunicipalDemCoveragePreflight {
   if (!preflight.derivedElevationBacked) return preflight;
 
-  const pointBreakExtentSupported =
-    preflight.pointBreakDerived && contourSupport.status === "unsupported";
-
-  if (contourSupport.status === "supported" || pointBreakExtentSupported) {
+  if (contourSupport.status === "supported") {
     const goldenQualityBlockers = preflight.goldenQualityBlockers.filter(
       (blocker) =>
         !blocker.startsWith(
@@ -1523,9 +1521,7 @@ function withLiveDerivedElevationSupport(
       warnings: [
         ...preflight.warnings,
         ...(contourSupport.warnings ?? []),
-        pointBreakExtentSupported
-          ? "City of Kamloops contour support probe returned zero features, but the official DEMPoint/DEMBreakline archive extent contains this exact 3 km AOI; VMesh is using that derived-elevation source rail with QA-required worker warnings."
-          : `City of Kamloops contour support probe found ${contourSupport.count} contour feature(s) for this exact 3 km AOI.`
+        `City of Kamloops contour support probe found ${contourSupport.count} contour feature(s) for this exact 3 km AOI.`
       ],
       nextActions: [
         "Call the Abundance site-runtime-pack route in sourcePackMode=required for this coordinate.",
@@ -1533,9 +1529,7 @@ function withLiveDerivedElevationSupport(
           ? "A raw-LiDAR-to-DTM worker could promote the missing raster cell(s), because every missing public DEM cell has a verified public raw LiDAR ZIP archive."
           : "The worker must use official DEMPoint/DEMBreakline or contour-derived interpolation for cells without a verified raster DEM ZIP.",
         "The worker must QA support distances and preserve derived-elevation warnings before claiming runtime terrain readiness.",
-        pointBreakExtentSupported
-          ? "DEMPoint/DEMBreakline extent support is not enough by itself for runtime readiness; the GIS worker must inspect features, interpolate, and reject sparse/no-data output."
-          : "Do not label this path as a 1m LiDAR raster DEM ZIP; it is official municipal derived-elevation terrain."
+        "Do not label this path as a 1m LiDAR raster DEM ZIP; it is official municipal derived-elevation terrain."
       ]
     };
   }
@@ -2652,22 +2646,6 @@ export async function createLiveTerrainSourceAdapterPlan(
         timeoutMs: kamloopsProbeTimeoutMs
       });
 
-      if (
-        contourSupport.status === "unsupported" &&
-        planWithFallbackWarning.inputRefs.some(
-          (inputRef) => inputRef.url === KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL
-        )
-      ) {
-        return {
-          ...planWithFallbackWarning,
-          warnings: [
-            ...planWithFallbackWarning.warnings,
-            ...(contourSupport.warnings ?? []),
-            "City of Kamloops contour support probe returned zero features, but the official DEMPoint/DEMBreakline archive extent contains this exact 3 km AOI; Abundance may attempt the derived-elevation rail and must reject sparse/no-data output during QA."
-          ]
-        };
-      }
-
       if (contourSupport.status === "unsupported") {
         return {
           ...planWithFallbackWarning,
@@ -2675,10 +2653,16 @@ export async function createLiveTerrainSourceAdapterPlan(
           inputRefs: [],
           blockedReasons: [
             ...planWithFallbackWarning.blockedReasons,
-            "City of Kamloops municipal derived-elevation rail was blocked because the official 1m contour support probe returned zero features for this exact 3 km AOI."
-          ],
+            "City of Kamloops municipal derived-elevation rail was blocked because the official 1m contour support probe returned zero features for this exact 3 km AOI.",
+            planWithFallbackWarning.inputRefs.some(
+              (inputRef) => inputRef.url === KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL
+            )
+              ? "DEMPoint/DEMBreakline archive extent alone is not exact-AOI source support; Abundance must not claim source-backed terrain until the worker finds usable point, breakline, contour, raster, or raw LiDAR samples."
+              : null
+          ].filter((reason): reason is string => Boolean(reason)),
           warnings: [
             ...planWithFallbackWarning.warnings,
+            ...(contourSupport.warnings ?? []),
             "Do not mark DEMPoint/contour-derived municipal terrain ready until an exact-AOI support probe finds source elevation samples."
           ]
         };
@@ -2942,7 +2926,8 @@ async function requireSourcePixelCoverageForPlan(
     role,
     allowTwoMeterFallback:
       plan.toolProfile.toolId === "canada-hrdem-best-dtm" ||
-      plan.selectedSource?.id === "canada-hrdem-best-dtm"
+      plan.selectedSource?.id === "canada-hrdem-best-dtm",
+    timeoutMs: options.sourcePixelCoverageProbeTimeoutMs
   });
   if (probe.status === "covered") {
     return {

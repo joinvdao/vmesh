@@ -46,6 +46,7 @@ export interface ProbeTerrainCogCoordinateOptions {
   windowPixels?: number;
   cacheRoot?: string;
   pythonCommand?: string;
+  timeoutMs?: number;
 }
 
 function defaultCacheRoot(): string {
@@ -102,7 +103,8 @@ export async function probeTerrainCogCoordinate({
   allowTwoMeterFallback = false,
   windowPixels = 64,
   cacheRoot = defaultCacheRoot(),
-  pythonCommand = process.env.PYTHON ?? "python"
+  pythonCommand = process.env.PYTHON ?? "python",
+  timeoutMs
 }: ProbeTerrainCogCoordinateOptions): Promise<TerrainCogProbeWorkerResult> {
   const jsonPath = stableProbePath({
     providerId,
@@ -144,7 +146,7 @@ export async function probeTerrainCogCoordinate({
   try {
     await execFileAsync(pythonCommand, args, {
       encoding: "utf8",
-      timeout: Number(process.env.VMESH_TERRAIN_COG_PROBE_TIMEOUT_MS ?? 120_000),
+      timeout: timeoutMs ?? Number(process.env.VMESH_TERRAIN_COG_PROBE_TIMEOUT_MS ?? 120_000),
       maxBuffer: 4 * 1024 * 1024,
       env: {
         ...process.env,

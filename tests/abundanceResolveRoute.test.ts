@@ -138,7 +138,7 @@ describe("Abundance resolver route", () => {
 
     const response = await GET(
       new NextRequest(
-        "http://localhost/api/geospatial-package/resolve?lat=49.2827&lng=-123.1207&consumer=abundance&segments=terrain_elevation&liveTerrain=1"
+        "http://localhost/api/geospatial-package/resolve?lat=49.2827&lng=-123.1207&consumer=abundance&segments=terrain_elevation&liveTerrain=1&probeTimeoutMs=750"
       )
     );
     const payload = await response.json();
@@ -154,7 +154,8 @@ describe("Abundance resolver route", () => {
       expect.objectContaining({
         providerId: "bc-lidarbc",
         role: "dtm",
-        allowTwoMeterFallback: false
+        allowTwoMeterFallback: false,
+        timeoutMs: 750
       })
     );
   });

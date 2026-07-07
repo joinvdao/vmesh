@@ -159,14 +159,24 @@ function parseLiveTerrain(value: unknown) {
   return value === true || value === "true" || value === "1" || value === "yes";
 }
 
-async function buildHandoff(input: AbundanceSourceHandoffRequest, liveTerrain = false) {
+function parseProbeTimeoutMs(value: unknown) {
+  return boundedNumber(value, 500, 15_000);
+}
+
+async function buildHandoff(
+  input: AbundanceSourceHandoffRequest,
+  liveTerrain = false,
+  probeTimeoutMs?: number
+) {
   if (liveTerrain) {
     const operatorTerrainManifest = await loadKamloopsOperatorTerrainManifest();
     const handoff = await createLiveAbundanceSourceHandoff(input, {
       includeFallbackTerrainPlans: true,
       terrainSourceAdapterOptions: {
         kamloopsOperatorTerrainManifest: operatorTerrainManifest.manifest,
-        requireSourcePixelCoverage: true
+        requireSourcePixelCoverage: true,
+        kamloopsMunicipalDemProbeTimeoutMs: probeTimeoutMs,
+        sourcePixelCoverageProbeTimeoutMs: probeTimeoutMs
       }
     });
     return {
@@ -202,7 +212,8 @@ export async function GET(req: NextRequest) {
         gridSize: boundedNumber(req.nextUrl.searchParams.get("gridSize"), 17, 2049),
         includeReviewOnly: req.nextUrl.searchParams.get("includeReviewOnly") === "true"
       },
-      parseLiveTerrain(req.nextUrl.searchParams.get("liveTerrain"))
+      parseLiveTerrain(req.nextUrl.searchParams.get("liveTerrain")),
+      parseProbeTimeoutMs(req.nextUrl.searchParams.get("probeTimeoutMs"))
     )
   );
 }
@@ -264,7 +275,8 @@ export async function POST(req: NextRequest) {
                     : undefined
               }
       },
-      parseLiveTerrain(body.liveTerrain)
+      parseLiveTerrain(body.liveTerrain),
+      parseProbeTimeoutMs(body.probeTimeoutMs)
     )
   );
 }
