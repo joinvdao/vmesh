@@ -7,6 +7,7 @@ const DEM_DOWNLOAD_BASE_URL = "https://maps.kamloops.ca/opendata/DEM/2024_CGVD20
 const LIDAR_DOWNLOAD_BASE_URL = "https://maps.kamloops.ca/opendata/Lidar/2024";
 const BC_LIDAR_FEATURE_SERVER_BASE_URL =
   "https://services6.arcgis.com/ubm4tcTYICKBpist/ArcGIS/rest/services/LiDAR_BC_S3_Public/FeatureServer";
+const CANADA_HRDEM_STAC_SEARCH_URL = "https://datacube.services.geo.ca/stac/api/search";
 const ELEVATION_VECTOR_EXTENT_WGS84 = {
   west: -120.546437,
   south: 50.607833,
@@ -346,6 +347,139 @@ async function probeLidarBcDtm(bbox, timeoutMs) {
   }
 }
 
+function selectCanadaHrdemDtm(payload) {
+  if (!payload || typeof payload !== "object" || !Array.isArray(payload.features)) return null;
+  const candidates = [];
+  for (const feature of payload.features) {
+    if (!feature || typeof feature !== "object") continue;
+    const collection =
+      feature.collection === "hrdem-mosaic-1m" || feature.collection === "hrdem-mosaic-2m"
+        ? feature.collection
+        : null;
+    if (!collection) continue;
+    const resolutionMeters = collection === "hrdem-mosaic-1m" ? 1 : 2;
+    const assets = feature.assets && typeof feature.assets === "object" ? feature.assets : null;
+    const asset = assets && assets.dtm && typeof assets.dtm === "object" ? assets.dtm : null;
+    const href = typeof asset?.href === "string" ? asset.href : "";
+    if (!/^https?:\/\//i.test(href)) continue;
+    const id = typeof feature.id === "string" ? feature.id : "unknown";
+    candidates.push({
+      sourceId: `${collection}:${id}`,
+      collection,
+      id,
+      href,
+      type: typeof asset.type === "string" ? asset.type : "unknown",
+      resolutionMeters
+    });
+  }
+  return (
+    candidates.sort((left, right) => {
+      if (left.resolutionMeters !== right.resolutionMeters) {
+        return left.resolutionMeters - right.resolutionMeters;
+      }
+      return left.sourceId.localeCompare(right.sourceId);
+    })[0] ?? null
+  );
+}
+
+async function probeCanadaHrdemDtm(sample, timeoutMs) {
+  try {
+    const response = await fetchWithTimeout(
+      CANADA_HRDEM_STAC_SEARCH_URL,
+      {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({
+          limit: 10,
+          collections: ["hrdem-mosaic-1m", "hrdem-mosaic-2m"],
+          intersects: {
+            type: "Point",
+            coordinates: [sample.longitude, sample.latitude]
+          }
+        })
+      },
+      timeoutMs
+    );
+    if (!response.ok) {
+      return {
+        status: "lookup-failed",
+        source: null,
+        reason: `Canada HRDEM STAC query failed with HTTP ${response.status}.`
+      };
+    }
+    const source = selectCanadaHrdemDtm(await response.json());
+    return source
+      ? {
+          status: source.resolutionMeters === 1 ? "ready-1m" : "ready-best-available",
+          source,
+          reason: null
+        }
+      : {
+          status: "not-covered",
+          source: null,
+          reason: "Canada HRDEM STAC did not return a DTM COG for this AOI centroid."
+        };
+  } catch (error) {
+    return {
+      status: "lookup-failed",
+      source: null,
+      reason:
+        error instanceof Error
+          ? `Canada HRDEM STAC query failed: ${error.message}.`
+          : "Canada HRDEM STAC query failed."
+    };
+  }
+}
+
+async function classifyProviderFallback({ sample, bbox, probeTimeoutMs, demFailureReason }) {
+  const lidarBcDtm = await probeLidarBcDtm(bbox, probeTimeoutMs);
+  const lidarBcDtmBacked = lidarBcDtm?.status === "ready";
+  const canadaHrdemDtm =
+    lidarBcDtmBacked === false ? await probeCanadaHrdemDtm(sample, probeTimeoutMs) : null;
+  const canadaHrdemOneMeterDtmBacked = canadaHrdemDtm?.status === "ready-1m";
+  const canadaHrdemBestAvailableDtmBacked = canadaHrdemDtm?.status === "ready-best-available";
+  const derivedElevationBacked = bboxContains(ELEVATION_VECTOR_EXTENT_WGS84, bbox);
+
+  return {
+    ...sample,
+    bbox,
+    status: lidarBcDtmBacked
+      ? "bc-lidarbc-dtm-candidate"
+      : canadaHrdemOneMeterDtmBacked
+        ? "canada-hrdem-1m-dtm-candidate"
+        : canadaHrdemBestAvailableDtmBacked
+          ? "canada-hrdem-best-dtm-candidate"
+          : derivedElevationBacked
+            ? "derived-elevation"
+            : "blocked",
+    goldenQualityTerrainCandidate: false,
+    rasterBacked: false,
+    lidarBcDtmBacked,
+    lidarBcDtm,
+    canadaHrdemOneMeterDtmBacked,
+    canadaHrdemBestAvailableDtmBacked,
+    canadaHrdemDtm,
+    missingRasterCellsRawLidarVerified: false,
+    derivedElevationBacked,
+    cells: [],
+    blockers: [
+      demFailureReason,
+      "Municipal DEM Grid lookup did not complete, so raw municipal LiDAR cell matching was not attempted.",
+      lidarBcDtmBacked
+        ? "LidarBC returned a source-native 1m DTM candidate; Abundance must window and QA the GeoTIFF before this can meet runtime golden terrain."
+        : (lidarBcDtm?.reason ?? "LidarBC DTM recovery was not probed."),
+      canadaHrdemOneMeterDtmBacked
+        ? "Canada HRDEM returned a source-native 1m DTM candidate; Abundance must window and QA the COG before this can meet runtime golden terrain."
+        : canadaHrdemBestAvailableDtmBacked
+          ? "Canada HRDEM returned a best-available DTM candidate below the Kamloops 1m municipal bar; label its resolution honestly."
+          : (canadaHrdemDtm?.reason ?? "Canada HRDEM recovery was not probed."),
+      derivedElevationBacked
+        ? "Official DEMPoint/DEMBreakline and contour-derived fallback can produce a labelled slice, but not the golden raster bar."
+        : "The exact 3 km frame falls outside the municipal derived-elevation fallback extent."
+    ]
+  };
+}
+
 async function verifyDemZip(cell, timeoutMs) {
   const cached = demZipAvailabilityCache.get(cell.demZipUrl);
   if (cached) return cached;
@@ -460,32 +594,23 @@ async function classifySample(sample, { edgeMeters, probeTimeoutMs }) {
       probeTimeoutMs
     );
   } catch (error) {
-    return {
-      ...sample,
+    return classifyProviderFallback({
+      sample,
       bbox,
-      status: "lookup-failed",
-      goldenQualityTerrainCandidate: false,
-      rasterBacked: false,
-      derivedElevationBacked: bboxContains(ELEVATION_VECTOR_EXTENT_WGS84, bbox),
-      cells: [],
-      blockers: [
+      probeTimeoutMs,
+      demFailureReason:
         error instanceof Error
           ? `DEM Grid query failed: ${error.message}.`
           : "DEM Grid query failed."
-      ]
-    };
+    });
   }
   if (!response.ok) {
-    return {
-      ...sample,
+    return classifyProviderFallback({
+      sample,
       bbox,
-      status: "lookup-failed",
-      goldenQualityTerrainCandidate: false,
-      rasterBacked: false,
-      derivedElevationBacked: false,
-      cells: [],
-      blockers: [`DEM Grid query failed with HTTP ${response.status}.`]
-    };
+      probeTimeoutMs,
+      demFailureReason: `DEM Grid query failed with HTTP ${response.status}.`
+    });
   }
 
   const cells = parseCells(await response.json());
@@ -506,6 +631,12 @@ async function classifySample(sample, { edgeMeters, probeTimeoutMs }) {
   const rasterBacked = verifiedCells.length > 0 && missingCells.length === 0;
   const lidarBcDtm = rasterBacked === false ? await probeLidarBcDtm(bbox, probeTimeoutMs) : null;
   const lidarBcDtmBacked = lidarBcDtm?.status === "ready";
+  const canadaHrdemDtm =
+    rasterBacked === false && lidarBcDtmBacked === false
+      ? await probeCanadaHrdemDtm(sample, probeTimeoutMs)
+      : null;
+  const canadaHrdemOneMeterDtmBacked = canadaHrdemDtm?.status === "ready-1m";
+  const canadaHrdemBestAvailableDtmBacked = canadaHrdemDtm?.status === "ready-best-available";
   const missingRasterCellsRawLidarVerified =
     missingCellsWithLidar.length > 0 &&
     missingCellsWithLidar.every((cell) => cell.rawLidarZipAvailability.reachable);
@@ -517,15 +648,22 @@ async function classifySample(sample, { edgeMeters, probeTimeoutMs }) {
       ? "golden-candidate"
       : lidarBcDtmBacked
         ? "bc-lidarbc-dtm-candidate"
-        : missingRasterCellsRawLidarVerified
-          ? "raw-lidar-repair-candidate"
-          : derivedElevationBacked
-            ? "derived-elevation"
-            : "blocked",
+        : canadaHrdemOneMeterDtmBacked
+          ? "canada-hrdem-1m-dtm-candidate"
+          : canadaHrdemBestAvailableDtmBacked
+            ? "canada-hrdem-best-dtm-candidate"
+            : missingRasterCellsRawLidarVerified
+              ? "raw-lidar-repair-candidate"
+              : derivedElevationBacked
+                ? "derived-elevation"
+                : "blocked",
     goldenQualityTerrainCandidate: rasterBacked,
     rasterBacked,
     lidarBcDtmBacked,
     lidarBcDtm,
+    canadaHrdemOneMeterDtmBacked,
+    canadaHrdemBestAvailableDtmBacked,
+    canadaHrdemDtm,
     missingRasterCellsRawLidarVerified,
     derivedElevationBacked,
     cells: verifiedCells.map((cell) => {
@@ -550,6 +688,12 @@ async function classifySample(sample, { edgeMeters, probeTimeoutMs }) {
             ? "LidarBC returned a source-native 1m DTM candidate; Abundance must window and QA the GeoTIFF before this can meet runtime golden terrain."
             : (lidarBcDtm?.reason ??
               "LidarBC DTM was not probed because municipal DEM raster coverage was complete."),
+          canadaHrdemOneMeterDtmBacked
+            ? "Canada HRDEM returned a source-native 1m DTM candidate; Abundance must window and QA the COG before this can meet runtime golden terrain."
+            : canadaHrdemBestAvailableDtmBacked
+              ? "Canada HRDEM returned a best-available DTM candidate below the Kamloops 1m municipal bar; label its resolution honestly."
+              : (canadaHrdemDtm?.reason ??
+                "Canada HRDEM was not probed because a stronger municipal or LidarBC DTM candidate was available."),
           derivedElevationBacked
             ? "Official DEMPoint/DEMBreakline and contour-derived fallback can produce a labelled slice, but not the golden raster bar."
             : "The exact 3 km frame falls outside the municipal derived-elevation fallback extent."
@@ -590,6 +734,12 @@ async function main() {
     goldenCandidate: samples.filter((sample) => sample.goldenQualityTerrainCandidate).length,
     bcLidarbcDtmCandidate: samples.filter((sample) => sample.status === "bc-lidarbc-dtm-candidate")
       .length,
+    canadaHrdemOneMeterDtmCandidate: samples.filter(
+      (sample) => sample.status === "canada-hrdem-1m-dtm-candidate"
+    ).length,
+    canadaHrdemBestAvailableDtmCandidate: samples.filter(
+      (sample) => sample.status === "canada-hrdem-best-dtm-candidate"
+    ).length,
     rawLidarRepairCandidate: samples.filter(
       (sample) => sample.status === "raw-lidar-repair-candidate"
     ).length,
@@ -605,7 +755,8 @@ async function main() {
       demGridLayer: DEM_GRID_LAYER_URL,
       demDownloadBaseUrl: DEM_DOWNLOAD_BASE_URL,
       lidarDownloadBaseUrl: LIDAR_DOWNLOAD_BASE_URL,
-      bcLidarFeatureServerBaseUrl: BC_LIDAR_FEATURE_SERVER_BASE_URL
+      bcLidarFeatureServerBaseUrl: BC_LIDAR_FEATURE_SERVER_BASE_URL,
+      canadaHrdemStacSearchUrl: CANADA_HRDEM_STAC_SEARCH_URL
     },
     edgeMeters: options.edgeMeters,
     probeTimeoutMs: options.probeTimeoutMs,
