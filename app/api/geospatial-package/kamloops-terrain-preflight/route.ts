@@ -114,7 +114,8 @@ async function sourceBackedSuggestion({
   consumerAppId,
   label,
   stepMeters,
-  maxMeters
+  maxMeters,
+  limit
 }: {
   latitude: number;
   longitude: number;
@@ -124,7 +125,9 @@ async function sourceBackedSuggestion({
   label: string;
   stepMeters: number;
   maxMeters: number;
+  limit: number;
 }) {
+  const candidates = [];
   for (const offset of searchOffsets(stepMeters, maxMeters)) {
     const candidate = offsetCoordinate({
       latitude,
@@ -154,7 +157,7 @@ async function sourceBackedSuggestion({
     );
     if (!preflight.sourceBacked) continue;
 
-    return {
+    candidates.push({
       status: "available",
       centerDisclosure: "relative-offset-only",
       offsetMeters: {
@@ -170,6 +173,19 @@ async function sourceBackedSuggestion({
       warnings: [
         "Suggested frame is source-backed for terrain but shifts the 3 km slice center; keep the user parcel boundary as an overlay."
       ]
+    });
+    if (candidates.length >= limit) break;
+  }
+
+  if (candidates.length > 0) {
+    return {
+      ...candidates[0],
+      candidateCount: candidates.length,
+      candidates,
+      warnings: [
+        ...candidates[0].warnings,
+        "Candidate frames prove public municipal source refs only; Abundance must still materialize and QA the DEM mosaic before runtime terrain readiness."
+      ]
     };
   }
 
@@ -178,6 +194,8 @@ async function sourceBackedSuggestion({
     centerDisclosure: "relative-offset-only",
     maxSearchMeters: maxMeters,
     stepMeters,
+    candidateCount: 0,
+    candidates: [],
     warnings: [
       "No source-backed 3 km municipal DEM frame was found within the configured relative-offset search radius."
     ]
@@ -246,7 +264,11 @@ export async function GET(req: NextRequest) {
             stepMeters:
               boundedNumber(req.nextUrl.searchParams.get("suggestionStepMeters"), 100, 1000) ?? 250,
             maxMeters:
-              boundedNumber(req.nextUrl.searchParams.get("suggestionMaxMeters"), 250, 5000) ?? 2500
+              boundedNumber(req.nextUrl.searchParams.get("suggestionMaxMeters"), 250, 5000) ?? 2500,
+            limit:
+              Math.floor(
+                boundedNumber(req.nextUrl.searchParams.get("suggestionLimit"), 1, 16) ?? 6
+              ) || 1
           })
         : null
   });

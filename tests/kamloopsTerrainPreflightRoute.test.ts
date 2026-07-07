@@ -143,7 +143,7 @@ describe("Kamloops terrain preflight route", () => {
 
     const response = await GET(
       new NextRequest(
-        "http://localhost/api/geospatial-package/kamloops-terrain-preflight?lat=50.68&lng=-120.23&suggestion=1&suggestionStepMeters=250&suggestionMaxMeters=250"
+        "http://localhost/api/geospatial-package/kamloops-terrain-preflight?lat=50.68&lng=-120.23&suggestion=1&suggestionStepMeters=250&suggestionMaxMeters=250&suggestionLimit=1"
       )
     );
     const payload = await response.json();
@@ -159,11 +159,13 @@ describe("Kamloops terrain preflight route", () => {
         distanceMeters: 250,
         edgeMeters: 3000,
         gridSize: 257,
+        candidateCount: 1,
         selectedSourceIds: ["kamloops-local-lidar-dtm-1m"],
         downloadableCellCount: 2,
         nonDownloadableCellCount: 0
       }
     });
+    expect(payload.suggestedSourceBackedFrame.candidates).toHaveLength(1);
     expect(payload.suggestedSourceBackedFrame.offsetMeters).toMatchObject({
       north: expect.any(Number),
       east: expect.any(Number)
