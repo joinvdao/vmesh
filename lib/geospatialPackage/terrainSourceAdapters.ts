@@ -150,8 +150,16 @@ const KAMLOOPS_MUNICIPAL_2024_DEM_DOWNLOAD_BASE_URL =
   "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013";
 const KAMLOOPS_MUNICIPAL_2024_LIDAR_DOWNLOAD_BASE_URL =
   "https://maps.kamloops.ca/opendata/Lidar/2024";
+const KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL =
+  "https://maps.kamloops.ca/OpenData/zipfiles/DEMPointBreakSHP.zip";
 const KAMLOOPS_MUNICIPAL_2024_LIDAR_APP_URL =
   "https://kamloops.maps.arcgis.com/apps/webappviewer/index.html?id=6fea67a054a94b45ad2998c0a03d88e7";
+const KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_EXTENT_WGS84 = {
+  west: -120.546437,
+  south: 50.607833,
+  east: -120.025817,
+  north: 50.873614
+};
 
 const SOURCE_NATIVE_TOOL_IDS = new Set([
   "usgs-3dep",
@@ -180,6 +188,21 @@ function formatCoordinate(value: number): string {
 
 function bboxString(bbox: NonNullable<TerrainSourceAdapterPlan["bbox"]>): string {
   return [bbox.west, bbox.south, bbox.east, bbox.north].map(formatCoordinate).join(",");
+}
+
+function bboxContainsBbox({
+  container,
+  target
+}: {
+  container: NonNullable<TerrainSourceAdapterPlan["bbox"]>;
+  target: NonNullable<TerrainSourceAdapterPlan["bbox"]>;
+}): boolean {
+  return (
+    target.west >= container.west &&
+    target.east <= container.east &&
+    target.south >= container.south &&
+    target.north <= container.north
+  );
 }
 
 function estimatedMetersForBbox(bbox: NonNullable<TerrainSourceAdapterPlan["bbox"]>): {
@@ -659,7 +682,7 @@ function kamloopsMunicipalDemCoverageStatus({
   statusOverride?: KamloopsMunicipalDemCoverageStatus;
 }): KamloopsMunicipalDemCoverageStatus {
   if (statusOverride) return statusOverride;
-  if (plan.status === "ready" && downloadable.length > 0 && nonDownloadable.length === 0) {
+  if (plan.status === "ready") {
     return "source-backed";
   }
   if (downloadable.length > 0 && nonDownloadable.length > 0) return "partial";
@@ -1245,17 +1268,42 @@ function createKamloopsLocalLidarSourcePlan(
   const nonDownloadableDemGridTiles = intersectingDemGridTiles.filter(
     (tile) => !isDownloadableKamloopsMunicipalDemGridTile(tile)
   );
+  const pointBreakCoversAoi = bboxContainsBbox({
+    container: KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_EXTENT_WGS84,
+    target: context.bbox
+  });
+  const demGridInputRefs = selectedDemGridTiles.map((selectedDemGridTile) =>
+    buildInputRef({
+      context,
+      kind: "zip-archive",
+      url: selectedDemGridTile.demZipUrl,
+      format: "zip",
+      role: "terrain-source",
+      notes: [
+        `Resolved from the public City of Kamloops DEM Grid as ${selectedDemGridTile.sourceId}.`,
+        `DEM grid CELLNAME ${selectedDemGridTile.cellName}; OBJECTID ${selectedDemGridTile.objectId ?? "unknown"}; PHOTOGRIDLIMITS ${selectedDemGridTile.photoGridLimits ?? "unknown"}.`,
+        `The public LiDAR download app is ${KAMLOOPS_MUNICIPAL_2024_LIDAR_APP_URL}.`,
+        `The matching public LiDAR archive is ${selectedDemGridTile.lidarZipUrl}.`,
+        "This is a deterministic public DEM ZIP source ref, not stored payload data.",
+        "A downstream worker must fetch/window the ESRI Grid DEM, QA no-data and vertical metadata, then emit a runtime terrain raster/heightfield before claiming golden-quality terrain.",
+        "The exact AOI query geometry is intentionally not emitted in this public-safe source-index ref."
+      ]
+    })
+  );
 
   if (nonDownloadableDemGridTiles.length > 0) {
     return blockedPlan({
       context,
       reasons: [
-        `City of Kamloops public DEM Grid intersects ${nonDownloadableDemGridTiles.length} non-downloadable cell(s) for this AOI; full 3 km municipal DTM coverage is not proven.`
+        `City of Kamloops public DEM Grid intersects ${nonDownloadableDemGridTiles.length} non-downloadable cell(s) for this AOI; full 3 km municipal raster DTM coverage is not proven.`
       ],
       warnings: [
         `Non-downloadable DEM grid cells were omitted: ${nonDownloadableDemGridTiles
           .map((tile) => `${tile.cellName} PHOTOGRIDLIMITS ${tile.photoGridLimits ?? "unknown"}`)
           .join(", ")}.`,
+        pointBreakCoversAoi
+          ? `The public DEMPoint/DEMBreakline archive exists at ${KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL}, but it is a point/breakline-derived candidate that must pass support-radius QA before any source-backed DTM claim.`
+          : "The public DEMPoint/DEMBreakline source extent does not fully contain this 3 km AOI.",
         "Fall through to LidarBC/Canada HRDEM or label the AOI as outside full municipal public LiDAR/DEM coverage."
       ]
     });
@@ -1264,24 +1312,7 @@ function createKamloopsLocalLidarSourcePlan(
   if (selectedDemGridTiles.length > 0) {
     return readyPlan({
       context,
-      inputRefs: selectedDemGridTiles.map((selectedDemGridTile) =>
-        buildInputRef({
-          context,
-          kind: "zip-archive",
-          url: selectedDemGridTile.demZipUrl,
-          format: "zip",
-          role: "terrain-source",
-          notes: [
-            `Resolved from the public City of Kamloops DEM Grid as ${selectedDemGridTile.sourceId}.`,
-            `DEM grid CELLNAME ${selectedDemGridTile.cellName}; OBJECTID ${selectedDemGridTile.objectId ?? "unknown"}; PHOTOGRIDLIMITS ${selectedDemGridTile.photoGridLimits ?? "unknown"}.`,
-            `The public LiDAR download app is ${KAMLOOPS_MUNICIPAL_2024_LIDAR_APP_URL}.`,
-            `The matching public LiDAR archive is ${selectedDemGridTile.lidarZipUrl}.`,
-            "This is a deterministic public DEM ZIP source ref, not stored payload data.",
-            "A downstream worker must fetch/window the ESRI Grid DEM, QA no-data and vertical metadata, then emit a runtime terrain raster/heightfield before claiming golden-quality terrain.",
-            "The exact AOI query geometry is intentionally not emitted in this public-safe source-index ref."
-          ]
-        })
-      ),
+      inputRefs: demGridInputRefs,
       warnings: [
         `Run class is dry-run: vmesh resolved ${selectedDemGridTiles.length} public Kamloops municipal DEM ZIP ref(s), but has not fetched LAS/DEM payloads or derived terrain artifacts.`,
         "Do not claim golden-quality terrain until the downstream worker materializes and QA-proves the municipal DTM for this AOI."
@@ -1296,6 +1327,9 @@ function createKamloopsLocalLidarSourcePlan(
         "City of Kamloops public DEM Grid did not return a tile for the selected AOI centroid."
       ],
       warnings: [
+        pointBreakCoversAoi
+          ? `The public DEMPoint/DEMBreakline archive exists at ${KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL}, but it is a point/breakline-derived candidate that must pass support-radius QA before any source-backed DTM claim.`
+          : "The public DEMPoint/DEMBreakline source extent does not fully contain this 3 km AOI.",
         "Fall through to LidarBC/Canada HRDEM or label the AOI as outside municipal public LiDAR/DEM coverage."
       ]
     });
