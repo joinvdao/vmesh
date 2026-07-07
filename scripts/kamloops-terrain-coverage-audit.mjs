@@ -5,6 +5,8 @@ const DEM_GRID_LAYER_URL =
   "https://maps.kamloops.ca/arcgis/rest/services/FeatureDataset/GIS_Administrative_1/MapServer/6";
 const DEM_DOWNLOAD_BASE_URL = "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013";
 const LIDAR_DOWNLOAD_BASE_URL = "https://maps.kamloops.ca/opendata/Lidar/2024";
+const BC_LIDAR_FEATURE_SERVER_BASE_URL =
+  "https://services6.arcgis.com/ubm4tcTYICKBpist/ArcGIS/rest/services/LiDAR_BC_S3_Public/FeatureServer";
 const ELEVATION_VECTOR_EXTENT_WGS84 = {
   west: -120.546437,
   south: 50.607833,
@@ -199,6 +201,24 @@ function queryUrl(bbox) {
   return url.toString();
 }
 
+function lidarBcDtmQueryUrl(bbox) {
+  const url = new URL(`${BC_LIDAR_FEATURE_SERVER_BASE_URL}/5/query`);
+  const centerLongitude = (bbox.west + bbox.east) / 2;
+  const centerLatitude = (bbox.south + bbox.north) / 2;
+  url.searchParams.set("f", "json");
+  url.searchParams.set("where", "1=1");
+  url.searchParams.set(
+    "geometry",
+    `${formatCoordinate(centerLongitude)},${formatCoordinate(centerLatitude)}`
+  );
+  url.searchParams.set("geometryType", "esriGeometryPoint");
+  url.searchParams.set("inSR", "4326");
+  url.searchParams.set("spatialRel", "esriSpatialRelIntersects");
+  url.searchParams.set("outFields", "filename,maptile,path,spacing,year,s3Url,projection");
+  url.searchParams.set("returnGeometry", "false");
+  return url.toString();
+}
+
 function safeCellName(value) {
   if (typeof value !== "string") return null;
   const normalized = value.trim().toUpperCase();
@@ -253,6 +273,77 @@ function parseCells(payload) {
     });
   }
   return cells.sort((left, right) => left.cellName.localeCompare(right.cellName));
+}
+
+function selectLidarBcOneMeterDtm(payload) {
+  if (!payload || typeof payload !== "object" || !Array.isArray(payload.features)) return null;
+  const candidates = [];
+  for (const feature of payload.features) {
+    const attributes =
+      feature &&
+      typeof feature === "object" &&
+      feature.attributes &&
+      typeof feature.attributes === "object"
+        ? feature.attributes
+        : null;
+    if (!attributes) continue;
+
+    const href = typeof attributes.s3Url === "string" ? attributes.s3Url : "";
+    const filename = typeof attributes.filename === "string" ? attributes.filename : "unknown";
+    const spacing = typeof attributes.spacing === "string" ? attributes.spacing.trim() : "";
+    const maptile = typeof attributes.maptile === "string" ? attributes.maptile : filename;
+    const year =
+      typeof attributes.year === "number" && Number.isFinite(attributes.year)
+        ? attributes.year
+        : null;
+    if (!/^https?:\/\//i.test(href)) continue;
+    if (!/1\s*met(re|er)/i.test(spacing) && !/xli1m/i.test(filename)) continue;
+    if (/dsm/i.test(filename)) continue;
+    candidates.push({
+      sourceId: `bc-lidarbc:dtm:${maptile}:${year ?? "unknown"}`,
+      href,
+      filename,
+      spacing: spacing || "1 metre inferred from filename",
+      maptile,
+      year,
+      projection: typeof attributes.projection === "string" ? attributes.projection : null
+    });
+  }
+  return candidates.sort((left, right) => (right.year ?? 0) - (left.year ?? 0))[0] ?? null;
+}
+
+async function probeLidarBcDtm(bbox, timeoutMs) {
+  try {
+    const response = await fetchWithTimeout(
+      lidarBcDtmQueryUrl(bbox),
+      { headers: { Accept: "application/json" } },
+      timeoutMs
+    );
+    if (!response.ok) {
+      return {
+        status: "lookup-failed",
+        source: null,
+        reason: `LidarBC DTM FeatureServer query failed with HTTP ${response.status}.`
+      };
+    }
+    const source = selectLidarBcOneMeterDtm(await response.json());
+    return source
+      ? { status: "ready", source, reason: null }
+      : {
+          status: "not-covered",
+          source: null,
+          reason: "LidarBC DTM FeatureServer did not return a 1m DTM GeoTIFF for this AOI centroid."
+        };
+  } catch (error) {
+    return {
+      status: "lookup-failed",
+      source: null,
+      reason:
+        error instanceof Error
+          ? `LidarBC DTM FeatureServer query failed: ${error.message}.`
+          : "LidarBC DTM FeatureServer query failed."
+    };
+  }
 }
 
 async function verifyDemZip(cell, timeoutMs) {
@@ -413,6 +504,8 @@ async function classifySample(sample, { edgeMeters, probeTimeoutMs }) {
     }))
   );
   const rasterBacked = verifiedCells.length > 0 && missingCells.length === 0;
+  const lidarBcDtm = rasterBacked === false ? await probeLidarBcDtm(bbox, probeTimeoutMs) : null;
+  const lidarBcDtmBacked = lidarBcDtm?.status === "ready";
   const missingRasterCellsRawLidarVerified =
     missingCellsWithLidar.length > 0 &&
     missingCellsWithLidar.every((cell) => cell.rawLidarZipAvailability.reachable);
@@ -422,13 +515,17 @@ async function classifySample(sample, { edgeMeters, probeTimeoutMs }) {
     bbox,
     status: rasterBacked
       ? "golden-candidate"
-      : missingRasterCellsRawLidarVerified
-        ? "raw-lidar-repair-candidate"
-        : derivedElevationBacked
-          ? "derived-elevation"
-          : "blocked",
+      : lidarBcDtmBacked
+        ? "bc-lidarbc-dtm-candidate"
+        : missingRasterCellsRawLidarVerified
+          ? "raw-lidar-repair-candidate"
+          : derivedElevationBacked
+            ? "derived-elevation"
+            : "blocked",
     goldenQualityTerrainCandidate: rasterBacked,
     rasterBacked,
+    lidarBcDtmBacked,
+    lidarBcDtm,
     missingRasterCellsRawLidarVerified,
     derivedElevationBacked,
     cells: verifiedCells.map((cell) => {
@@ -449,6 +546,10 @@ async function classifySample(sample, { edgeMeters, probeTimeoutMs }) {
           missingRasterCellsRawLidarVerified
             ? "Every missing DEM ZIP cell has a reachable public raw LiDAR archive, but a point-cloud-to-DTM worker must materialize and QA it before this can meet the golden terrain bar."
             : "Raw LiDAR ZIP coverage is not verified for every missing DEM raster cell.",
+          lidarBcDtmBacked
+            ? "LidarBC returned a source-native 1m DTM candidate; Abundance must window and QA the GeoTIFF before this can meet runtime golden terrain."
+            : (lidarBcDtm?.reason ??
+              "LidarBC DTM was not probed because municipal DEM raster coverage was complete."),
           derivedElevationBacked
             ? "Official DEMPoint/DEMBreakline and contour-derived fallback can produce a labelled slice, but not the golden raster bar."
             : "The exact 3 km frame falls outside the municipal derived-elevation fallback extent."
@@ -487,6 +588,8 @@ async function main() {
   }
   const counts = {
     goldenCandidate: samples.filter((sample) => sample.goldenQualityTerrainCandidate).length,
+    bcLidarbcDtmCandidate: samples.filter((sample) => sample.status === "bc-lidarbc-dtm-candidate")
+      .length,
     rawLidarRepairCandidate: samples.filter(
       (sample) => sample.status === "raw-lidar-repair-candidate"
     ).length,
@@ -501,7 +604,8 @@ async function main() {
     source: {
       demGridLayer: DEM_GRID_LAYER_URL,
       demDownloadBaseUrl: DEM_DOWNLOAD_BASE_URL,
-      lidarDownloadBaseUrl: LIDAR_DOWNLOAD_BASE_URL
+      lidarDownloadBaseUrl: LIDAR_DOWNLOAD_BASE_URL,
+      bcLidarFeatureServerBaseUrl: BC_LIDAR_FEATURE_SERVER_BASE_URL
     },
     edgeMeters: options.edgeMeters,
     probeTimeoutMs: options.probeTimeoutMs,
