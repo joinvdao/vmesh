@@ -264,6 +264,11 @@ describe("Kamloops terrain preflight route", () => {
       suggestedGoldenQualityFrame: {
         status: "available",
         centerDisclosure: "relative-offset-only",
+        maxSearchMeters: 250,
+        stepMeters: 250,
+        probeLimit: 24,
+        probeTimeoutMs: 3000,
+        probedCandidateCount: 1,
         rasterBacked: true,
         rasterZipVerified: true,
         goldenQualityTerrainCandidate: true,
@@ -280,6 +285,54 @@ describe("Kamloops terrain preflight route", () => {
     expect(gridQueryCount).toBe(2);
     expect(serialized).not.toContain("50.68");
     expect(serialized).not.toContain("-120.23");
+  });
+
+  it("stops nearby frame suggestions at the requested probe budget", async () => {
+    let gridQueryCount = 0;
+    vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
+      const requestUrl = String(url);
+      if (requestUrl.includes("/opendata/DEM/2024_CGVD2013/")) {
+        return new Response(null, { status: 404 });
+      }
+      if (requestUrl.includes("/opendata/Lidar/2024/")) {
+        return new Response(null, { status: 404 });
+      }
+      if (requestUrl.includes("/CityWorks/UtilityBaseMap/MapServer/4/query")) {
+        return new Response(JSON.stringify({ count: 0 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      gridQueryCount += 1;
+      return new Response(JSON.stringify(partialCoverageDemGridResponse), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    });
+
+    const response = await GET(
+      new NextRequest(
+        "http://localhost/api/geospatial-package/kamloops-terrain-preflight?lat=50.68&lng=-120.23&suggestion=1&suggestionStepMeters=250&suggestionMaxMeters=2500&suggestionLimit=4&suggestionProbeLimit=2&suggestionProbeTimeoutMs=750"
+      )
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      status: "blocked",
+      sourceBacked: false,
+      goldenQualityTerrainCandidate: false,
+      suggestedGoldenQualityFrame: {
+        status: "unavailable",
+        maxSearchMeters: 2500,
+        stepMeters: 250,
+        probeLimit: 2,
+        probeTimeoutMs: 750,
+        probedCandidateCount: 2,
+        candidateCount: 0
+      }
+    });
+    expect(gridQueryCount).toBe(3);
   });
 
   it("requires explicit coordinates", async () => {

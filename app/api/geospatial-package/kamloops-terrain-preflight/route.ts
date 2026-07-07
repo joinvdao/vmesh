@@ -13,6 +13,7 @@ import {
 export const dynamic = "force-dynamic";
 
 const SUGGESTION_PROBE_TIMEOUT_MS = 3_000;
+const SUGGESTION_PROBE_LIMIT = 24;
 
 function jsonResponse(body: unknown, status = 200) {
   return NextResponse.json(body, {
@@ -119,6 +120,8 @@ async function goldenQualitySuggestion({
   stepMeters,
   maxMeters,
   limit,
+  probeLimit,
+  probeTimeoutMs,
   kamloopsOperatorTerrainManifest
 }: {
   latitude: number;
@@ -130,10 +133,14 @@ async function goldenQualitySuggestion({
   stepMeters: number;
   maxMeters: number;
   limit: number;
+  probeLimit: number;
+  probeTimeoutMs: number;
   kamloopsOperatorTerrainManifest?: unknown;
 }) {
   const candidates = [];
+  let probedCandidateCount = 0;
   for (const offset of searchOffsets(stepMeters, maxMeters)) {
+    if (probedCandidateCount >= probeLimit) break;
     const candidate = offsetCoordinate({
       latitude,
       longitude,
@@ -141,6 +148,7 @@ async function goldenQualitySuggestion({
       northMeters: offset.northMeters
     });
     if (!isKamloopsMunicipalCoverageCoordinate(candidate)) continue;
+    probedCandidateCount += 1;
 
     const preflight = await createLiveKamloopsMunicipalDemCoveragePreflight(
       {
@@ -161,7 +169,7 @@ async function goldenQualitySuggestion({
       {
         env: process.env,
         kamloopsOperatorTerrainManifest,
-        kamloopsMunicipalDemProbeTimeoutMs: SUGGESTION_PROBE_TIMEOUT_MS
+        kamloopsMunicipalDemProbeTimeoutMs: probeTimeoutMs
       }
     );
     if (!preflight.goldenQualityTerrainCandidate) continue;
@@ -176,6 +184,11 @@ async function goldenQualitySuggestion({
       distanceMeters: offset.distanceMeters,
       edgeMeters,
       gridSize,
+      maxSearchMeters: maxMeters,
+      stepMeters,
+      probeLimit,
+      probeTimeoutMs,
+      probedCandidateCount,
       selectedSourceIds: preflight.selectedSourceIds,
       rasterBacked: preflight.rasterBacked,
       rasterZipVerified: preflight.rasterZipVerified,
@@ -194,6 +207,11 @@ async function goldenQualitySuggestion({
       ...candidates[0],
       candidateCount: candidates.length,
       candidates,
+      maxSearchMeters: maxMeters,
+      stepMeters,
+      probeLimit,
+      probeTimeoutMs,
+      probedCandidateCount,
       warnings: [
         ...candidates[0].warnings,
         "Candidate frames prove public municipal raster refs only; Abundance must still materialize and QA the DEM mosaic before runtime terrain readiness."
@@ -206,6 +224,9 @@ async function goldenQualitySuggestion({
     centerDisclosure: "relative-offset-only",
     maxSearchMeters: maxMeters,
     stepMeters,
+    probeLimit,
+    probeTimeoutMs,
+    probedCandidateCount,
     candidateCount: 0,
     candidates: [],
     warnings: [
@@ -237,6 +258,9 @@ export async function GET(req: NextRequest) {
     centroid: { latitude, longitude },
     edgeMeters
   });
+  const preflightProbeTimeoutMs = Math.floor(
+    boundedNumber(req.nextUrl.searchParams.get("probeTimeoutMs"), 500, 15_000) ?? 0
+  );
   const operatorTerrainManifest = await loadKamloopsOperatorTerrainManifest();
 
   const preflight = await createLiveKamloopsMunicipalDemCoveragePreflight(
@@ -251,7 +275,10 @@ export async function GET(req: NextRequest) {
     },
     {
       env: process.env,
-      kamloopsOperatorTerrainManifest: operatorTerrainManifest.manifest
+      kamloopsOperatorTerrainManifest: operatorTerrainManifest.manifest,
+      ...(preflightProbeTimeoutMs > 0
+        ? { kamloopsMunicipalDemProbeTimeoutMs: preflightProbeTimeoutMs }
+        : {})
     }
   );
 
@@ -273,6 +300,19 @@ export async function GET(req: NextRequest) {
         limit:
           Math.floor(boundedNumber(req.nextUrl.searchParams.get("suggestionLimit"), 1, 16) ?? 6) ||
           1,
+        probeLimit:
+          Math.floor(
+            boundedNumber(req.nextUrl.searchParams.get("suggestionProbeLimit"), 1, 96) ??
+              SUGGESTION_PROBE_LIMIT
+          ) || SUGGESTION_PROBE_LIMIT,
+        probeTimeoutMs:
+          Math.floor(
+            boundedNumber(
+              req.nextUrl.searchParams.get("suggestionProbeTimeoutMs"),
+              500,
+              SUGGESTION_PROBE_TIMEOUT_MS
+            ) ?? SUGGESTION_PROBE_TIMEOUT_MS
+          ) || SUGGESTION_PROBE_TIMEOUT_MS,
         kamloopsOperatorTerrainManifest: operatorTerrainManifest.manifest
       })
     : null;
