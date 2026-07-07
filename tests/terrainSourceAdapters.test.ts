@@ -1443,7 +1443,7 @@ describe("terrain source adapters", () => {
     expect(requests[1]).toContain("/CityWorks/UtilityBaseMap/MapServer/4/query");
   });
 
-  it("uses official Kamloops derived-elevation refs when partial DEM-grid cells are not downloadable", async () => {
+  it("uses official Kamloops DEM ZIP refs plus derived-elevation repair refs when partial DEM-grid cells are not downloadable", async () => {
     const requests: string[] = [];
     const fetchImpl: typeof fetch = async (url) => {
       const requestUrl = String(url);
@@ -1492,20 +1492,32 @@ describe("terrain source adapters", () => {
     expect(plan.status).toBe("ready");
     expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
     expect(plan.toolProfile?.toolId).toBe("kamloops-local-lidar");
-    expect(plan.inputRefs).toHaveLength(2);
+    expect(plan.inputRefs).toHaveLength(3);
     expect(plan.inputRefs[0]).toMatchObject({
+      kind: "zip-archive",
+      format: "zip",
+      role: "terrain-source",
+      url: "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
+    });
+    expect(plan.inputRefs[1]).toMatchObject({
       kind: "zip-archive",
       format: "zip",
       role: "terrain-source",
       url: "https://maps.kamloops.ca/OpenData/zipfiles/DEMPointBreakSHP.zip"
     });
-    expect(plan.inputRefs[1]).toMatchObject({
+    expect(plan.inputRefs[2]).toMatchObject({
       kind: "arcgis-feature-query",
       format: "json",
       role: "terrain-source",
       url: "https://maps.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4"
     });
     expect(plan.warnings.join(" ")).toContain("non-downloadable raster cell");
+    expect(plan.warnings.join(" ")).toContain(
+      "mixed municipal DEM ZIP plus derived-elevation repair"
+    );
+    expect(plan.warnings.join(" ")).toContain(
+      "materialize the verified municipal DEM ZIP cells first"
+    );
     expect(plan.warnings.join(" ")).toContain("point-cloud-to-DTM worker");
     expect(plan.warnings.join(" ")).toContain("Do not label");
     expect(plan.warnings.join(" ")).toContain("1m LiDAR raster");

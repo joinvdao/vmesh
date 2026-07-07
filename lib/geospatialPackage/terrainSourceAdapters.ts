@@ -2215,11 +2215,16 @@ function createKamloopsLocalLidarSourcePlan(
 
   if (nonDownloadableDemGridTiles.length > 0) {
     if (elevationVectorCoversAoi) {
+      const repairInputRefs = [demPointBreakInputRef, contourInputRef];
+      const mixedRasterRepairInputRefs =
+        demGridInputRefs.length > 0 ? [...demGridInputRefs, ...repairInputRefs] : repairInputRefs;
       return readyPlan({
         context,
-        inputRefs: [demPointBreakInputRef, contourInputRef],
+        inputRefs: mixedRasterRepairInputRefs,
         warnings: [
-          `City of Kamloops public DEM Grid intersects ${nonDownloadableDemGridTiles.length} non-downloadable raster cell(s), so VMesh selected the official CityWorks 1m contour layer as the municipal contour-derived DTM rail for this AOI.`,
+          demGridInputRefs.length > 0
+            ? `City of Kamloops public DEM Grid intersects ${selectedDemGridTiles.length} downloadable and ${nonDownloadableDemGridTiles.length} non-downloadable raster cell(s), so VMesh selected a mixed municipal DEM ZIP plus derived-elevation repair rail for this AOI.`
+            : `City of Kamloops public DEM Grid intersects ${nonDownloadableDemGridTiles.length} non-downloadable raster cell(s), so VMesh selected the official CityWorks 1m contour layer as the municipal contour-derived DTM rail for this AOI.`,
           `Non-downloadable DEM grid cells were retained as evidence: ${nonDownloadableDemGridTiles
             .map((tile) => `${tile.cellName} PHOTOGRIDLIMITS ${tile.photoGridLimits ?? "unknown"}`)
             .join(", ")}.`,
@@ -2227,6 +2232,9 @@ function createKamloopsLocalLidarSourcePlan(
             ? "Every non-downloadable DEM raster cell has a verified public raw LiDAR archive; a point-cloud-to-DTM worker could promote this AOI above the contour-derived rail after materialization and QA."
             : "Raw LiDAR ZIP coverage is not verified for every non-downloadable DEM raster cell; keep this AOI on the derived-elevation rail unless another source-native raster is configured.",
           `The public DEMPoint/DEMBreakline archive at ${KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL} is included as a higher-support derived-elevation attempt before contour fallback.`,
+          demGridInputRefs.length > 0
+            ? "Abundance should materialize the verified municipal DEM ZIP cells first, then use public DEMPoint/DEMBreakline or contour repair only for gaps."
+            : "Abundance should materialize the public DEMPoint/DEMBreakline rail first, then use contour repair if support is too sparse.",
           "Run class is dry-run: vmesh resolved public source refs only; Abundance must materialize and QA the contour-derived heightfield before runtime terrain readiness.",
           "Do not label the contour-derived output as a 1m LiDAR raster; it is official municipal elevation-derived terrain."
         ]
@@ -2908,8 +2916,7 @@ function isDeferrableKamloopsDerivedElevationPlan(plan: TerrainSourceAdapterPlan
   return (
     plan.status === "ready" &&
     plan.selectedSource?.id === "kamloops-local-lidar-dtm-1m" &&
-    plan.inputRefs.some(isKamloopsDerivedElevationRef) &&
-    !plan.inputRefs.some(isKamloopsSourceNativeRasterRef)
+    plan.inputRefs.some(isKamloopsDerivedElevationRef)
   );
 }
 

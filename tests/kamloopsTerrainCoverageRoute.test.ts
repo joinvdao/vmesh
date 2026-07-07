@@ -196,7 +196,7 @@ describe("Kamloops terrain coverage route", () => {
       },
       summary: {
         sourceBackedCount: 2,
-        rasterBackedCount: 1,
+        rasterBackedCount: 2,
         goldenQualityCandidateCount: 1,
         partialCount: 0,
         blockedCount: 0
@@ -218,7 +218,7 @@ describe("Kamloops terrain coverage route", () => {
         id: "partial-cell",
         status: "source-backed",
         sourceBacked: true,
-        rasterBacked: false,
+        rasterBacked: true,
         derivedElevationBacked: true,
         goldenQualityTerrainCandidate: false,
         downloadableCellCount: 1,
