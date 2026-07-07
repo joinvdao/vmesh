@@ -160,6 +160,24 @@ const kamloopsDemGridResponse = {
     }
   ]
 };
+const kamloopsPartialDemGridResponse = {
+  features: [
+    {
+      attributes: {
+        OBJECTID: 42,
+        CELLNAME: "5156B",
+        PHOTOGRIDLIMITS: "YES"
+      }
+    },
+    {
+      attributes: {
+        OBJECTID: 43,
+        CELLNAME: "5156D",
+        PHOTOGRIDLIMITS: "NO"
+      }
+    }
+  ]
+};
 
 afterEach(() => {
   delete process.env.VMESH_KAMLOOPS_LOCAL_LIDAR_MODE;
@@ -863,6 +881,44 @@ describe("terrain source adapters", () => {
           aoi: {
             centroid: { latitude: 50.64, longitude: -120.26 },
             label: "Kamloops public-safe fallback AOI"
+          },
+          layers: ["terrain"]
+        }
+      },
+      { env: {}, fetchImpl }
+    );
+
+    expect(plan.status).toBe("ready");
+    expect(plan.selectedSource?.id).toBe("bc-lidarbc");
+    expect(requests).toHaveLength(2);
+    expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
+    expect(requests[1]).toContain("/FeatureServer/5/query");
+  });
+
+  it("falls through from partial Kamloops municipal DEM-grid coverage instead of overclaiming a 3 km DTM", async () => {
+    const requests: string[] = [];
+    const fetchImpl: typeof fetch = async (url) => {
+      const requestUrl = String(url);
+      requests.push(requestUrl);
+      if (requestUrl.includes("/FeatureDataset/GIS_Administrative_1/MapServer/6/query")) {
+        return new Response(JSON.stringify(kamloopsPartialDemGridResponse), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      return new Response(JSON.stringify(lidarBcOneMeterDemResponse), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+
+    const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
+      {
+        request: {
+          aoi: {
+            centroid: { latitude: 50.68, longitude: -120.23 },
+            label: "Kamloops partial public-safe AOI"
           },
           layers: ["terrain"]
         }

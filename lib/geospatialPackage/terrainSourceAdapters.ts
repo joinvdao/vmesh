@@ -571,6 +571,12 @@ function selectKamloopsMunicipalDemGridTiles(value: unknown): KamloopsMunicipalD
   return candidates.sort((left, right) => left.cellName.localeCompare(right.cellName));
 }
 
+function isDownloadableKamloopsMunicipalDemGridTile(
+  tile: KamloopsMunicipalDemGridSelection
+): boolean {
+  return tile.photoGridLimits?.trim().toUpperCase() === "YES";
+}
+
 function selectUsgsLpcDsmSource(
   value: unknown,
   targetResolutionMeters = 1
@@ -1018,9 +1024,30 @@ function createKamloopsLocalLidarSourcePlan(
     });
   }
 
-  const selectedDemGridTiles = context.options.kamloopsMunicipalDemGridResponse
+  const intersectingDemGridTiles = context.options.kamloopsMunicipalDemGridResponse
     ? selectKamloopsMunicipalDemGridTiles(context.options.kamloopsMunicipalDemGridResponse)
     : [];
+  const selectedDemGridTiles = intersectingDemGridTiles.filter(
+    isDownloadableKamloopsMunicipalDemGridTile
+  );
+  const nonDownloadableDemGridTiles = intersectingDemGridTiles.filter(
+    (tile) => !isDownloadableKamloopsMunicipalDemGridTile(tile)
+  );
+
+  if (nonDownloadableDemGridTiles.length > 0) {
+    return blockedPlan({
+      context,
+      reasons: [
+        `City of Kamloops public DEM Grid intersects ${nonDownloadableDemGridTiles.length} non-downloadable cell(s) for this AOI; full 3 km municipal DTM coverage is not proven.`
+      ],
+      warnings: [
+        `Non-downloadable DEM grid cells were omitted: ${nonDownloadableDemGridTiles
+          .map((tile) => `${tile.cellName} PHOTOGRIDLIMITS ${tile.photoGridLimits ?? "unknown"}`)
+          .join(", ")}.`,
+        "Fall through to LidarBC/Canada HRDEM or label the AOI as outside full municipal public LiDAR/DEM coverage."
+      ]
+    });
+  }
 
   if (selectedDemGridTiles.length > 0) {
     return readyPlan({
