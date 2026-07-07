@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -12,6 +15,8 @@ import {
 export const dynamic = "force-dynamic";
 
 const SUGGESTION_PROBE_TIMEOUT_MS = 3_000;
+const KAMLOOPS_OPERATOR_TERRAIN_MANIFEST_RELATIVE_PATH =
+  "config/operator-sources/kamloops-terrain.manifest.json";
 
 function jsonResponse(body: unknown, status = 200) {
   return NextResponse.json(body, {
@@ -44,6 +49,51 @@ function parseConsumer(value: unknown): string {
 
 function parseBoolean(value: unknown) {
   return value === true || value === "true" || value === "1" || value === "yes";
+}
+
+async function loadKamloopsOperatorTerrainManifest() {
+  const manifestPath = path.join(process.cwd(), KAMLOOPS_OPERATOR_TERRAIN_MANIFEST_RELATIVE_PATH);
+  try {
+    const raw = await readFile(manifestPath, "utf8");
+    return {
+      manifest: JSON.parse(raw) as unknown,
+      evidence: {
+        status: "loaded" as const,
+        relativePath: KAMLOOPS_OPERATOR_TERRAIN_MANIFEST_RELATIVE_PATH,
+        pathDisclosure: "relative-conventional-path-only" as const,
+        warnings: [] as string[]
+      }
+    };
+  } catch (error) {
+    const code = error && typeof error === "object" && "code" in error ? String(error.code) : null;
+    if (code === "ENOENT") {
+      return {
+        manifest: undefined,
+        evidence: {
+          status: "absent" as const,
+          relativePath: KAMLOOPS_OPERATOR_TERRAIN_MANIFEST_RELATIVE_PATH,
+          pathDisclosure: "relative-conventional-path-only" as const,
+          warnings: [
+            "No operator terrain manifest is present; preflight will use public DEM-grid and derived-elevation rails only."
+          ]
+        }
+      };
+    }
+
+    return {
+      manifest: undefined,
+      evidence: {
+        status: "invalid" as const,
+        relativePath: KAMLOOPS_OPERATOR_TERRAIN_MANIFEST_RELATIVE_PATH,
+        pathDisclosure: "relative-conventional-path-only" as const,
+        warnings: [
+          error instanceof Error
+            ? `Operator terrain manifest could not be read or parsed: ${error.message}`
+            : "Operator terrain manifest could not be read or parsed."
+        ]
+      }
+    };
+  }
 }
 
 function offsetCoordinate({
@@ -117,7 +167,8 @@ async function goldenQualitySuggestion({
   label,
   stepMeters,
   maxMeters,
-  limit
+  limit,
+  kamloopsOperatorTerrainManifest
 }: {
   latitude: number;
   longitude: number;
@@ -128,6 +179,7 @@ async function goldenQualitySuggestion({
   stepMeters: number;
   maxMeters: number;
   limit: number;
+  kamloopsOperatorTerrainManifest?: unknown;
 }) {
   const candidates = [];
   for (const offset of searchOffsets(stepMeters, maxMeters)) {
@@ -157,6 +209,7 @@ async function goldenQualitySuggestion({
       },
       {
         env: process.env,
+        kamloopsOperatorTerrainManifest,
         kamloopsMunicipalDemProbeTimeoutMs: SUGGESTION_PROBE_TIMEOUT_MS
       }
     );
@@ -233,6 +286,7 @@ export async function GET(req: NextRequest) {
     centroid: { latitude, longitude },
     edgeMeters
   });
+  const operatorTerrainManifest = await loadKamloopsOperatorTerrainManifest();
 
   const preflight = await createLiveKamloopsMunicipalDemCoveragePreflight(
     {
@@ -244,7 +298,10 @@ export async function GET(req: NextRequest) {
         offline: true
       }
     },
-    { env: process.env }
+    {
+      env: process.env,
+      kamloopsOperatorTerrainManifest: operatorTerrainManifest.manifest
+    }
   );
 
   const shouldSuggest =
@@ -264,7 +321,8 @@ export async function GET(req: NextRequest) {
           boundedNumber(req.nextUrl.searchParams.get("suggestionMaxMeters"), 250, 5000) ?? 2500,
         limit:
           Math.floor(boundedNumber(req.nextUrl.searchParams.get("suggestionLimit"), 1, 16) ?? 6) ||
-          1
+          1,
+        kamloopsOperatorTerrainManifest: operatorTerrainManifest.manifest
       })
     : null;
 
@@ -281,6 +339,7 @@ export async function GET(req: NextRequest) {
       gridSize,
       parcelBoundaryRole: "overlay-only"
     },
+    operatorTerrainManifest: operatorTerrainManifest.evidence,
     suggestedGoldenQualityFrame,
     suggestedSourceBackedFrame: suggestedGoldenQualityFrame
   });

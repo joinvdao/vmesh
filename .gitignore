@@ -40,5 +40,9 @@ agent-bootstrap-prompt/
 # local private ticket folder
 .tickets
 
+# operator-local source indexes
+config/operator-sources/*.json
+!config/operator-sources/*.example.json
+
 # Vercel
 .vercel/

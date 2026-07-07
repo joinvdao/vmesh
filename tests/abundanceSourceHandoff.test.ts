@@ -172,10 +172,7 @@ describe("Abundance source handoff", () => {
     const fetchImpl: typeof fetch = async (url) => {
       const requestUrl = String(url);
       requests.push(requestUrl);
-      if (
-        requestUrl.includes("FeatureDataset/GIS_Administrative_1/MapServer/6/query") ||
-        requestUrl.includes("LiDAR_BC_S3_Public")
-      ) {
+      if (requestUrl.includes("LiDAR_BC_S3_Public")) {
         return new Response(JSON.stringify(EMPTY_FEATURES), {
           status: 200,
           headers: { "Content-Type": "application/json" }
@@ -191,8 +188,8 @@ describe("Abundance source handoff", () => {
     const handoff = await createLiveAbundanceSourceHandoff(
       {
         aoi: {
-          centroid: { latitude: 50.64, longitude: -120.26 },
-          label: "Kamloops public-safe neighbour"
+          centroid: { latitude: 50.32, longitude: -122.8 },
+          label: "BC public-safe HRDEM fallback sample"
         },
         segments: ["terrain_elevation", "access_infrastructure"],
         consumerAppId: "building-abundance"
@@ -201,9 +198,8 @@ describe("Abundance source handoff", () => {
     );
     const terrainLayer = handoff.layers.find((layer) => layer.layerId === "terrain");
 
-    expect(requests[0]).toContain("FeatureDataset/GIS_Administrative_1/MapServer/6/query");
-    expect(requests[1]).toContain("LiDAR_BC_S3_Public");
-    expect(requests[2]).toBe("https://datacube.services.geo.ca/stac/api/search");
+    expect(requests[0]).toContain("LiDAR_BC_S3_Public");
+    expect(requests[1]).toBe("https://datacube.services.geo.ca/stac/api/search");
     expect(handoff.terrain.selectedSourceIds).toEqual(["canada-hrdem"]);
     expect(terrainLayer?.selectedSourceIds).toEqual(["canada-hrdem"]);
     expect(handoff.terrainAdapterPlans[0]).toMatchObject({
@@ -255,9 +251,12 @@ describe("Abundance source handoff", () => {
     expect(handoff.terrainAdapterPlans[0].inputRefs[0].notes.join(" ")).toContain(
       "DEM grid CELLNAME 5156B"
     );
-    expect(requests).toHaveLength(1);
+    expect(requests).toHaveLength(2);
     expect(requests[0]).toContain("FeatureDataset/GIS_Administrative_1/MapServer/6/query");
     expect(requests[0]).toContain("geometryType=esriGeometryEnvelope");
+    expect(requests[1]).toBe(
+      "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
+    );
     const geometry = new URL(requests[0]).searchParams.get("geometry")?.split(",").map(Number);
     expect(geometry).toHaveLength(4);
     if (!geometry) throw new Error("Expected Kamloops DEM query geometry.");

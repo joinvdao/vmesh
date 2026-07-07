@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   abundanceSourceSliceBoundsFromCentroid,
+  createLiveKamloopsMunicipalDemCoveragePreflight,
   createLiveNorthAmericaDsmSourceAdapterPlan,
   createLiveNorthAmericaDtmSourceAdapterPlan,
   createLiveTerrainSourceAdapterPlan,
@@ -973,6 +974,177 @@ describe("terrain source adapters", () => {
     });
     expect(plan.inputRefs[0].url).toContain("terrain.example.test/kamloops/");
     expect(plan.inputRefs[0].notes.join(" ")).toContain("Abundance must window");
+  });
+
+  it("resolves a Kamloops operator terrain manifest before public catalog fetches", async () => {
+    const fetchImpl: typeof fetch = async () => {
+      throw new Error("operator manifest-backed Kamloops DTM should not need a catalog fetch");
+    };
+    const aoi = kamloopsThreeKmAoi(50.64, -120.26, "Kamloops public-safe manifest-covered AOI");
+
+    const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
+      {
+        request: {
+          aoi,
+          layers: ["terrain"]
+        }
+      },
+      {
+        env: {},
+        fetchImpl,
+        kamloopsOperatorTerrainManifest: {
+          schemaVersion: "vmesh-kamloops-operator-terrain-source-manifest-v1",
+          sources: [
+            {
+              id: "kamloops-municipal-dtm-cog-fixture",
+              sourceId: "kamloops-local-lidar-dtm-1m",
+              role: "bare-earth-dtm",
+              resolutionMeters: 1,
+              crs: "EPSG:26910",
+              verticalDatum: "CGVD2013",
+              coverage: {
+                west: -120.55,
+                south: 50.6,
+                east: -120.02,
+                north: 50.88
+              },
+              source: {
+                urlTemplate:
+                  "https://terrain.example.test/kamloops/municipal-dtm-1m.cog.tif?bbox={bbox}&package={packageId}"
+              },
+              qa: {
+                sourceNativeRaster: true,
+                coverageStatus: "contains-aoi",
+                maxNoDataRatio: 0
+              }
+            }
+          ]
+        }
+      }
+    );
+
+    expect(plan.status).toBe("ready");
+    expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
+    expect(plan.toolProfile?.toolId).toBe("kamloops-local-lidar");
+    expect(plan.inputRefs[0]).toMatchObject({
+      kind: "direct-geotiff",
+      format: "cog",
+      provider: "City of Kamloops municipal LiDAR/DEM Open Data",
+      groundModelRole: "bare-earth-dtm",
+      targetResolutionMeters: 1
+    });
+    expect(plan.inputRefs[0].url).toContain("terrain.example.test/kamloops/");
+    expect(plan.inputRefs[0].url).toContain("bbox=");
+    expect(plan.inputRefs[0].notes.join(" ")).toContain("operator terrain manifest");
+    expect(plan.inputRefs[0].notes.join(" ")).toContain("Abundance must window");
+  });
+
+  it("marks a manifest-backed Kamloops preflight as a golden terrain candidate", async () => {
+    const fetchImpl: typeof fetch = async () => {
+      throw new Error(
+        "operator manifest-backed Kamloops preflight should not need a catalog fetch"
+      );
+    };
+
+    const preflight = await createLiveKamloopsMunicipalDemCoveragePreflight(
+      {
+        request: {
+          aoi: kamloopsThreeKmAoi(50.64, -120.26, "Manifest-backed Kamloops AOI"),
+          layers: ["terrain"],
+          preferredSourceIds: ["kamloops-local-lidar-dtm-1m"],
+          offline: true
+        }
+      },
+      {
+        env: {},
+        fetchImpl,
+        kamloopsOperatorTerrainManifest: {
+          schemaVersion: "vmesh-kamloops-operator-terrain-source-manifest-v1",
+          sources: [
+            {
+              sourceId: "kamloops-local-lidar-dtm-1m",
+              role: "bare-earth-dtm",
+              resolutionMeters: 1,
+              crs: "EPSG:26910",
+              verticalDatum: "CGVD2013",
+              coverage: {
+                west: -120.55,
+                south: 50.6,
+                east: -120.02,
+                north: 50.88
+              },
+              source: {
+                url: "https://terrain.example.test/kamloops/municipal-dtm-1m.cog.tif"
+              },
+              qa: {
+                sourceNativeRaster: true,
+                coverageStatus: "contains-aoi",
+                maxNoDataRatio: 0
+              }
+            }
+          ]
+        }
+      }
+    );
+
+    expect(preflight).toMatchObject({
+      status: "source-backed",
+      sourceBacked: true,
+      rasterBacked: true,
+      rasterSourceVerified: true,
+      derivedElevationBacked: false,
+      goldenQualityTerrainCandidate: true,
+      selectedSourceIds: ["kamloops-local-lidar-dtm-1m"],
+      inputRefKinds: ["direct-geotiff"]
+    });
+    expect(preflight.rasterZipVerified).toBe(false);
+    expect(preflight.goldenQualityBlockers).toEqual([]);
+  });
+
+  it("fails a Kamloops operator terrain manifest closed when the source is not a 1m DTM", async () => {
+    const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
+      {
+        request: {
+          aoi: kamloopsThreeKmAoi(50.64, -120.26, "Bad manifest AOI"),
+          layers: ["terrain"]
+        }
+      },
+      {
+        env: {},
+        fetchImpl: async () =>
+          new Response(JSON.stringify({ features: [] }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          }),
+        kamloopsOperatorTerrainManifest: {
+          schemaVersion: "vmesh-kamloops-operator-terrain-source-manifest-v1",
+          sourceId: "kamloops-local-lidar-dtm-1m",
+          role: "surface-dsm",
+          resolutionMeters: 5,
+          crs: "EPSG:26910",
+          verticalDatum: "CGVD2013",
+          coverage: {
+            west: -120.55,
+            south: 50.6,
+            east: -120.02,
+            north: 50.88
+          },
+          source: {
+            url: "https://terrain.example.test/kamloops/surface-dsm-5m.tif"
+          },
+          qa: {
+            sourceNativeRaster: true,
+            coverageStatus: "contains-aoi",
+            maxNoDataRatio: 0
+          }
+        }
+      }
+    );
+
+    expect(plan.status).toBe("blocked");
+    expect(plan.blockedReasons.join(" ")).toContain("role is not bare-earth-dtm");
+    expect(plan.blockedReasons.join(" ")).toContain("resolution must be <= 1m");
+    expect(plan.inputRefs).toEqual([]);
   });
 
   it("resolves Kamloops municipal public DEM-grid coverage before BC/Canada fallbacks", async () => {

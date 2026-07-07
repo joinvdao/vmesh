@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "vmesh-kamloops-operator-terrain-source-manifest-v1",
+  "sources": [
+    {
+      "id": "kamloops-municipal-dtm-cog-example",
+      "sourceId": "kamloops-local-lidar-dtm-1m",
+      "label": "Kamloops municipal DTM normalized COG example",
+      "role": "bare-earth-dtm",
+      "resolutionMeters": 1,
+      "crs": "EPSG:26910",
+      "verticalDatum": "CGVD2013",
+      "sourceRelease": "City of Kamloops municipal DTM normalized COG mosaic",
+      "attribution": "City of Kamloops",
+      "license": "Open Government Licence - Kamloops; attribution required.",
+      "coverage": {
+        "west": -120.55,
+        "south": 50.6,
+        "east": -120.02,
+        "north": 50.88
+      },
+      "source": {
+        "urlTemplate": "https://terrain.example.invalid/kamloops/municipal-dtm-1m-cog.tif?bbox={bbox}&package={packageId}"
+      },
+      "qa": {
+        "sourceNativeRaster": true,
+        "coverageStatus": "contains-aoi",
+        "maxNoDataRatio": 0
+      },
+      "warnings": [
+        "Example only. Copy to kamloops-terrain.manifest.json and replace the source URL with a real public-safe HTTPS COG or AOI-clipped GeoTIFF endpoint."
+      ]
+    }
+  ]
+}

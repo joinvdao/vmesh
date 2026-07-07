@@ -75,6 +75,7 @@ export interface TerrainSourceAdapterOptions {
   canadaHrdemStacSearchResponse?: unknown;
   kamloopsLocalLidarGeoTiffUrl?: string;
   kamloopsLocalLidarGeoTiffUrlTemplate?: string;
+  kamloopsOperatorTerrainManifest?: unknown;
   kamloopsMunicipalDemGridResponse?: unknown;
   kamloopsMunicipalDemGridBaseUrl?: string;
   kamloopsMunicipalDemZipAvailability?: Record<string, KamloopsMunicipalDemZipAvailability>;
@@ -128,6 +129,39 @@ export interface TerrainSourceAdapterPlan {
   blockedReasons: string[];
   warnings: string[];
 }
+
+export interface KamloopsOperatorTerrainManifestSource {
+  id?: string;
+  sourceId?: "kamloops-local-lidar-dtm-1m";
+  label?: string;
+  role?: "bare-earth-dtm" | "surface-dsm" | "generic-dem" | "unknown";
+  resolutionMeters?: number;
+  crs?: string;
+  verticalDatum?: string;
+  sourceRelease?: string;
+  attribution?: string;
+  license?: string;
+  coverage?: NonNullable<TerrainSourceAdapterPlan["bbox"]>;
+  source?: {
+    url?: string;
+    urlTemplate?: string;
+  };
+  qa?: {
+    sourceNativeRaster?: boolean;
+    coverageStatus?: "contains-aoi" | "partial" | "unknown";
+    maxNoDataRatio?: number;
+  };
+  warnings?: string[];
+}
+
+export type KamloopsOperatorTerrainManifest =
+  | {
+      schemaVersion: "vmesh-kamloops-operator-terrain-source-manifest-v1";
+      sources?: KamloopsOperatorTerrainManifestSource[];
+    }
+  | (KamloopsOperatorTerrainManifestSource & {
+      schemaVersion: "vmesh-kamloops-operator-terrain-source-manifest-v1";
+    });
 
 interface SourceAdapterContext {
   plan: GeospatialPackagePlan;
@@ -437,6 +471,200 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+function bboxFromUnknown(value: unknown): NonNullable<TerrainSourceAdapterPlan["bbox"]> | null {
+  if (!isRecord(value)) return null;
+  const west = typeof value.west === "number" && Number.isFinite(value.west) ? value.west : null;
+  const south =
+    typeof value.south === "number" && Number.isFinite(value.south) ? value.south : null;
+  const east = typeof value.east === "number" && Number.isFinite(value.east) ? value.east : null;
+  const north =
+    typeof value.north === "number" && Number.isFinite(value.north) ? value.north : null;
+  if (west === null || south === null || east === null || north === null) return null;
+  if (west >= east || south >= north) return null;
+  return { west, south, east, north };
+}
+
+function kamloopsOperatorManifestSources(value: unknown): KamloopsOperatorTerrainManifestSource[] {
+  if (!isRecord(value)) return [];
+  if (value.schemaVersion !== "vmesh-kamloops-operator-terrain-source-manifest-v1") return [];
+  if (Array.isArray(value.sources)) {
+    return value.sources
+      .filter(isRecord)
+      .map((source) => source as KamloopsOperatorTerrainManifestSource);
+  }
+  return [value as KamloopsOperatorTerrainManifestSource];
+}
+
+function isPublicHttpsRasterRef(value: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== "https:") return false;
+  const host = url.hostname.toLowerCase();
+  if (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "::1" ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host)
+  ) {
+    return false;
+  }
+
+  const normalized = url.toString().toLowerCase();
+  const pathname = url.pathname.toLowerCase();
+  return (
+    /\.(tif|tiff)$/i.test(pathname) ||
+    normalized.includes("format=tiff") ||
+    normalized.includes("format=image/tiff") ||
+    pathname.endsWith("/imageserver/exportimage")
+  );
+}
+
+function validateKamloopsOperatorTerrainSource({
+  context,
+  source
+}: {
+  context: SourceAdapterContext;
+  source: KamloopsOperatorTerrainManifestSource;
+}):
+  | { ok: true; url: string; coverage: NonNullable<TerrainSourceAdapterPlan["bbox"]> }
+  | {
+      ok: false;
+      reasons: string[];
+    } {
+  const reasons: string[] = [];
+  const sourceId = source.sourceId ?? "kamloops-local-lidar-dtm-1m";
+  const coverage = bboxFromUnknown(source.coverage);
+  const resolutionMeters =
+    typeof source.resolutionMeters === "number" && Number.isFinite(source.resolutionMeters)
+      ? source.resolutionMeters
+      : null;
+  const sourceUrl = source.source?.url;
+  const sourceUrlTemplate = source.source?.urlTemplate;
+
+  if (sourceId !== "kamloops-local-lidar-dtm-1m") {
+    reasons.push("Operator terrain manifest sourceId is not kamloops-local-lidar-dtm-1m.");
+  }
+  if (source.role !== "bare-earth-dtm") {
+    reasons.push("Operator terrain manifest source role is not bare-earth-dtm.");
+  }
+  if (resolutionMeters === null || resolutionMeters <= 0 || resolutionMeters > 1) {
+    reasons.push(
+      "Operator terrain manifest resolution must be <= 1m for golden-quality Kamloops DTM."
+    );
+  }
+  if (!source.crs || !source.crs.trim()) {
+    reasons.push("Operator terrain manifest source is missing CRS.");
+  }
+  if (!source.verticalDatum || !source.verticalDatum.trim()) {
+    reasons.push("Operator terrain manifest source is missing vertical datum.");
+  }
+  if (!coverage) {
+    reasons.push("Operator terrain manifest source has invalid coverage bounds.");
+  } else if (!bboxContainsBbox({ container: coverage, target: context.bbox })) {
+    reasons.push("Operator terrain manifest source does not fully cover the requested 3 km frame.");
+  }
+  if (source.qa?.sourceNativeRaster !== true) {
+    reasons.push("Operator terrain manifest sourceNativeRaster QA must be true.");
+  }
+  if (source.qa?.coverageStatus !== "contains-aoi") {
+    reasons.push("Operator terrain manifest QA coverageStatus must be contains-aoi.");
+  }
+  if (
+    typeof source.qa?.maxNoDataRatio === "number" &&
+    Number.isFinite(source.qa.maxNoDataRatio) &&
+    source.qa.maxNoDataRatio > 0.01
+  ) {
+    reasons.push(
+      "Operator terrain manifest maxNoDataRatio exceeds the 1% golden-quality threshold."
+    );
+  }
+
+  let expandedUrl = "";
+  try {
+    expandedUrl =
+      configuredSourceUrl({
+        context,
+        url: sourceUrl,
+        urlTemplate: sourceUrlTemplate,
+        missingReason:
+          "Kamloops operator terrain manifest requires a public-safe HTTPS GeoTIFF/COG URL or URL template."
+      }) ?? "";
+  } catch (error) {
+    reasons.push(
+      error instanceof Error ? error.message : "Operator terrain manifest URL is invalid."
+    );
+  }
+  if (!expandedUrl) {
+    reasons.push("Operator terrain manifest source is missing a raster URL or URL template.");
+  } else if (!isPublicHttpsRasterRef(expandedUrl)) {
+    reasons.push(
+      "Operator terrain manifest source ref must be a public-safe HTTPS GeoTIFF/COG or ImageServer exportImage URL."
+    );
+  }
+
+  if (reasons.length > 0 || !coverage) return { ok: false, reasons };
+  return { ok: true, url: expandedUrl, coverage };
+}
+
+function createKamloopsOperatorTerrainManifestPlan(
+  context: SourceAdapterContext
+): TerrainSourceAdapterPlan | null {
+  const manifestSources = kamloopsOperatorManifestSources(
+    context.options.kamloopsOperatorTerrainManifest
+  );
+  if (manifestSources.length === 0) return null;
+
+  const rejectedReasons: string[] = [];
+  for (const source of manifestSources) {
+    const validation = validateKamloopsOperatorTerrainSource({ context, source });
+    if (!validation.ok) {
+      rejectedReasons.push(...validation.reasons);
+      continue;
+    }
+
+    const resolutionMeters = source.resolutionMeters ?? context.toolProfile.targetResolutionMeters;
+    return readyPlan({
+      context,
+      runClass: "configured",
+      inputRefs: [
+        buildInputRef({
+          context,
+          kind: inferConfiguredKind(validation.url),
+          url: validation.url,
+          format: inferConfiguredFormat(validation.url),
+          targetResolutionMeters: resolutionMeters,
+          notes: [
+            `Resolved from operator terrain manifest source ${source.id ?? source.sourceId ?? "kamloops-local-lidar-dtm-1m"}.`,
+            `Manifest coverage fully contains this ${Math.round(estimatedMetersForBbox(context.bbox).widthMeters)}m x ${Math.round(estimatedMetersForBbox(context.bbox).heightMeters)}m source-slice frame.`,
+            `Manifest declares ${resolutionMeters}m bare-earth DTM, ${source.crs}, ${source.verticalDatum}.`,
+            "VMesh is indexing this source ref only; Abundance must window the raster live for the selected coordinate, prove non-no-data coverage, and retain QA artifacts.",
+            "Do not emit local paths, signed URLs, private source-pack payload refs, or raw raster payloads in public-safe responses."
+          ]
+        })
+      ],
+      warnings: [
+        "Run class is configured: vmesh resolved an operator terrain manifest source ref, but did not fetch or retain terrain artifacts.",
+        ...(source.warnings ?? [])
+      ]
+    });
+  }
+
+  return blockedPlan({
+    context,
+    reasons: Array.from(new Set(rejectedReasons)),
+    warnings: [
+      "A Kamloops operator terrain manifest was present, but no source entry could safely cover this exact 3 km frame.",
+      "VMesh will not claim golden-quality terrain from an incomplete, derived, or non-public-safe manifest source."
+    ]
+  });
+}
+
 function createBcLidarFeatureServerQueryUrl({
   bbox,
   role,
@@ -561,6 +789,7 @@ export interface KamloopsMunicipalDemCoveragePreflight {
   sourceBacked: boolean;
   rasterBacked: boolean;
   rasterZipVerified: boolean;
+  rasterSourceVerified: boolean;
   derivedElevationBacked: boolean;
   contourDerived: boolean;
   pointBreakDerived: boolean;
@@ -852,14 +1081,15 @@ export function createKamloopsMunicipalDemCoveragePreflight(
   );
   const rasterBacked = usesDemZipRail || usesDirectRasterRail;
   const rasterZipVerified =
-    rasterBacked &&
+    usesDemZipRail &&
     downloadable.length > 0 &&
     downloadable.every((cell) => cell.rasterZipStatus === "verified");
+  const rasterSourceVerified = usesDirectRasterRail || rasterZipVerified;
   const derivedElevationBacked = usesPointBreakDerivedRail || usesContourDerivedRail;
   const goldenQualityTerrainCandidate =
     status === "source-backed" &&
     rasterBacked &&
-    rasterZipVerified &&
+    rasterSourceVerified &&
     !derivedElevationBacked &&
     nonDownloadable.length === 0;
   const goldenQualityBlockers = [
@@ -869,7 +1099,7 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     !rasterBacked
       ? "No materializable municipal raster DEM/DTM ref was selected for this exact 3 km slice."
       : null,
-    rasterBacked && !rasterZipVerified
+    usesDemZipRail && !rasterZipVerified
       ? "Selected municipal raster DEM refs were not all verified reachable by public URL probe."
       : null,
     usesPointBreakDerivedRail
@@ -889,6 +1119,7 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     sourceBacked: status === "source-backed",
     rasterBacked,
     rasterZipVerified,
+    rasterSourceVerified,
     derivedElevationBacked,
     contourDerived: usesContourDerivedRail,
     pointBreakDerived: usesPointBreakDerivedRail,
@@ -945,6 +1176,19 @@ export async function createLiveKamloopsMunicipalDemCoveragePreflight(
 
   const fetchImpl = options.fetchImpl ?? fetch;
   const kamloopsProbeTimeoutMs = options.kamloopsMunicipalDemProbeTimeoutMs ?? 15_000;
+
+  if (
+    initialPlan.status === "ready" &&
+    initialPlan.toolProfile?.toolId === "kamloops-local-lidar" &&
+    initialPlan.inputRefs.some(
+      (inputRef) =>
+        inputRef.kind === "direct-geotiff" ||
+        inputRef.kind === "s3-cog" ||
+        inputRef.kind === "arcgis-image-export"
+    )
+  ) {
+    return createKamloopsMunicipalDemCoveragePreflight(preflightInput, { features: [] }, options);
+  }
 
   try {
     const response = await fetchWithTimeout(
@@ -1430,6 +1674,9 @@ function createCanadaHrdemSourcePlan(context: SourceAdapterContext): TerrainSour
 function createKamloopsLocalLidarSourcePlan(
   context: SourceAdapterContext
 ): TerrainSourceAdapterPlan {
+  const operatorManifestPlan = createKamloopsOperatorTerrainManifestPlan(context);
+  if (operatorManifestPlan) return operatorManifestPlan;
+
   const configuredUrl =
     context.options.kamloopsLocalLidarGeoTiffUrl ??
     context.options.env?.VMESH_KAMLOOPS_LOCAL_LIDAR_GEOTIFF_URL;
