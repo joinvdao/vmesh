@@ -1396,14 +1396,16 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     nonDownloadable.every((cell) => cell.rawLidarZipStatus === "verified");
   const derivedElevationBacked = usesPointBreakDerivedRail || usesContourDerivedRail;
   const derivedElevationSupport = derivedElevationBacked ? "unknown" : "not-required";
+  const runtimeStatus = status === "source-backed" && derivedElevationBacked ? "partial" : status;
+  const runtimeSourceBacked = runtimeStatus === "source-backed";
   const goldenQualityTerrainCandidate =
-    status === "source-backed" &&
+    runtimeSourceBacked &&
     rasterBacked &&
     rasterSourceVerified &&
     !derivedElevationBacked &&
     nonDownloadable.length === 0;
   const goldenQualityBlockers = [
-    status !== "source-backed"
+    !runtimeSourceBacked
       ? "Kamloops municipal source refs are not source-backed for this exact 3 km slice."
       : null,
     !rasterBacked
@@ -1428,8 +1430,8 @@ export function createKamloopsMunicipalDemCoveragePreflight(
 
   return {
     schemaVersion: "vmesh-kamloops-municipal-dem-coverage-preflight-v1",
-    status,
-    sourceBacked: status === "source-backed",
+    status: runtimeStatus,
+    sourceBacked: runtimeSourceBacked,
     rasterBacked,
     rasterZipVerified,
     rasterSourceVerified,
@@ -1447,7 +1449,7 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     role: "bare-earth-dtm",
     resolutionMeters: 1,
     selectedSourceIds:
-      status === "source-backed" && plan.selectedSource?.id ? [plan.selectedSource.id] : [],
+      runtimeSourceBacked && plan.selectedSource?.id ? [plan.selectedSource.id] : [],
     inputRefCount: plan.inputRefs.length,
     inputRefKinds,
     cells: {
@@ -1458,25 +1460,24 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     blockedReasons: plan.blockedReasons,
     goldenQualityBlockers,
     warnings: plan.warnings,
-    nextActions:
-      status === "source-backed"
-        ? derivedElevationBacked
-          ? [
-              "Call the Abundance site-runtime-pack route in sourcePackMode=required for this coordinate.",
-              missingRasterCellsRawLidarVerified
-                ? "A raw-LiDAR-to-DTM worker could promote the missing raster cell(s), because every missing public DEM cell has a verified public raw LiDAR ZIP archive."
-                : "If raw LiDAR ZIPs are verified for every missing DEM raster cell, queue a point-cloud-to-DTM worker before claiming golden-quality terrain.",
-              "The worker must attempt DEMPoint/DEMBreakline or contour-derived interpolation, QA support distances, and preserve derived-elevation warnings before claiming runtime terrain readiness.",
-              "Do not label this path as a 1m LiDAR raster DEM ZIP; it is official municipal derived-elevation terrain."
-            ]
-          : [
-              "Call the Abundance site-runtime-pack route in sourcePackMode=required for this coordinate.",
-              "The worker must still fetch/window each DEM ZIP and prove full non-no-data coverage before claiming runtime terrain readiness."
-            ]
-        : [
-            "Do not claim golden-quality terrain for this exact centered 3 km slice.",
-            "Offer fallback visual terrain, pick another center, or add another official DTM source for the missing cells."
+    nextActions: runtimeSourceBacked
+      ? derivedElevationBacked
+        ? [
+            "Call the Abundance site-runtime-pack route in sourcePackMode=required for this coordinate.",
+            missingRasterCellsRawLidarVerified
+              ? "A raw-LiDAR-to-DTM worker could promote the missing raster cell(s), because every missing public DEM cell has a verified public raw LiDAR ZIP archive."
+              : "If raw LiDAR ZIPs are verified for every missing DEM raster cell, queue a point-cloud-to-DTM worker before claiming golden-quality terrain.",
+            "The worker must attempt DEMPoint/DEMBreakline or contour-derived interpolation, QA support distances, and preserve derived-elevation warnings before claiming runtime terrain readiness.",
+            "Do not label this path as a 1m LiDAR raster DEM ZIP; it is official municipal derived-elevation terrain."
           ]
+        : [
+            "Call the Abundance site-runtime-pack route in sourcePackMode=required for this coordinate.",
+            "The worker must still fetch/window each DEM ZIP and prove full non-no-data coverage before claiming runtime terrain readiness."
+          ]
+      : [
+          "Do not claim golden-quality terrain for this exact centered 3 km slice.",
+          "Offer fallback visual terrain, pick another center, or add another official DTM source for the missing cells."
+        ]
   };
 }
 
@@ -1487,16 +1488,35 @@ function withLiveDerivedElevationSupport(
     | { status: "unsupported"; count: number }
     | { status: "unknown"; reason: string }
 ): KamloopsMunicipalDemCoveragePreflight {
-  if (!preflight.derivedElevationBacked || preflight.rasterBacked) return preflight;
+  if (!preflight.derivedElevationBacked) return preflight;
 
   if (contourSupport.status === "supported") {
+    const goldenQualityBlockers = preflight.goldenQualityBlockers.filter(
+      (blocker) =>
+        !blocker.startsWith(
+          "Kamloops municipal source refs are not source-backed for this exact 3 km slice."
+        )
+    );
+
     return {
       ...preflight,
+      status: "source-backed",
+      sourceBacked: true,
+      selectedSourceIds: [preflight.terrainSourceId],
       derivedElevationSupport: "supported",
       contourSupportFeatureCount: contourSupport.count,
+      goldenQualityBlockers,
       warnings: [
         ...preflight.warnings,
         `City of Kamloops contour support probe found ${contourSupport.count} contour feature(s) for this exact 3 km AOI.`
+      ],
+      nextActions: [
+        "Call the Abundance site-runtime-pack route in sourcePackMode=required for this coordinate.",
+        preflight.missingRasterCellsRawLidarVerified
+          ? "A raw-LiDAR-to-DTM worker could promote the missing raster cell(s), because every missing public DEM cell has a verified public raw LiDAR ZIP archive."
+          : "The worker must use official DEMPoint/DEMBreakline or contour-derived interpolation for cells without a verified raster DEM ZIP.",
+        "The worker must QA support distances and preserve derived-elevation warnings before claiming runtime terrain readiness.",
+        "Do not label this path as a 1m LiDAR raster DEM ZIP; it is official municipal derived-elevation terrain."
       ]
     };
   }
@@ -1505,6 +1525,25 @@ function withLiveDerivedElevationSupport(
     contourSupport.status === "unsupported"
       ? "City of Kamloops municipal derived-elevation rail is not source-backed for this exact 3 km AOI because the official 1m contour support probe returned zero features."
       : contourSupport.reason;
+
+  if (preflight.rasterBacked) {
+    return {
+      ...preflight,
+      status: "partial",
+      sourceBacked: false,
+      selectedSourceIds: [],
+      derivedElevationSupport: contourSupport.status === "unknown" ? "unknown" : "unsupported",
+      contourSupportFeatureCount:
+        contourSupport.status === "unsupported" ? contourSupport.count : null,
+      goldenQualityBlockers: [...preflight.goldenQualityBlockers, reason],
+      warnings: [...preflight.warnings, reason],
+      nextActions: [
+        "Do not claim golden-quality terrain for this exact centered 3 km slice.",
+        "Abundance may attempt the mixed municipal DEM/derived-elevation rail, but auto mode must fall back to labelled visual terrain if runtime repair QA fails.",
+        "Offer fallback visual terrain, pick another center, or add another official DTM source for the missing cells."
+      ]
+    };
+  }
 
   return {
     ...preflight,
@@ -1588,8 +1627,7 @@ export async function createLiveKamloopsMunicipalDemCoveragePreflight(
 
     if (
       options.verifyKamloopsMunicipalContourSupport !== false &&
-      withIndexedWarning.derivedElevationBacked &&
-      !withIndexedWarning.rasterBacked
+      withIndexedWarning.derivedElevationBacked
     ) {
       const contourSupport = await verifyKamloopsMunicipalContourSupport({
         bbox: initialPlan.bbox!,
@@ -1668,8 +1706,7 @@ export async function createLiveKamloopsMunicipalDemCoveragePreflight(
 
     if (
       options.verifyKamloopsMunicipalContourSupport !== false &&
-      preflight.derivedElevationBacked &&
-      !preflight.rasterBacked
+      preflight.derivedElevationBacked
     ) {
       const contourSupport = await verifyKamloopsMunicipalContourSupport({
         bbox: initialPlan.bbox,

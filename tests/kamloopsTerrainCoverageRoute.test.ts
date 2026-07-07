@@ -220,6 +220,8 @@ describe("Kamloops terrain coverage route", () => {
         sourceBacked: true,
         rasterBacked: true,
         derivedElevationBacked: true,
+        derivedElevationSupport: "supported",
+        contourSupportFeatureCount: 12,
         goldenQualityTerrainCandidate: false,
         downloadableCellCount: 1,
         nonDownloadableCellCount: 1,

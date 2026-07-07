@@ -144,8 +144,8 @@ describe("Kamloops terrain preflight route", () => {
       missingRasterCellsRawLidarVerified: true,
       rawLidarDtmMaterializerReady: false,
       derivedElevationBacked: true,
-      derivedElevationSupport: "unknown",
-      contourSupportFeatureCount: null,
+      derivedElevationSupport: "supported",
+      contourSupportFeatureCount: 42,
       contourDerived: true,
       pointBreakDerived: true,
       goldenQualityTerrainCandidate: false,
@@ -168,10 +168,62 @@ describe("Kamloops terrain preflight route", () => {
     );
     expect(payload.goldenQualityBlockers.join(" ")).toContain("DEMPoint/DEMBreakline-derived");
     expect(payload.goldenQualityBlockers.join(" ")).toContain("contour-derived");
+    expect(payload.goldenQualityBlockers.join(" ")).not.toContain(
+      "source refs are not source-backed"
+    );
     expect(payload.nextActions.join(" ")).toContain("derived-elevation");
     expect(payload.nextActions.join(" ")).toContain("raw-LiDAR-to-DTM worker");
     expect(payload.nextActions.join(" ")).toContain("not label this path as a 1m LiDAR raster");
     expect(payload.suggestedSourceBackedFrame).toBeNull();
+  });
+
+  it("keeps mixed municipal DEM plus repair rail partial when contour support cannot be proven", async () => {
+    vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
+      const requestUrl = String(url);
+      if (requestUrl.includes("/opendata/DEM/2024_CGVD2013/")) {
+        return new Response(null, {
+          status: requestUrl.includes("DEM_CGVD2013_5156D.zip") ? 404 : 200
+        });
+      }
+      if (requestUrl.includes("/opendata/Lidar/2024/")) {
+        return new Response(null, {
+          status: requestUrl.includes("5156D.zip") ? 200 : 404
+        });
+      }
+      if (requestUrl.includes("/CityWorks/UtilityBaseMap/MapServer/4/query")) {
+        return new Response(JSON.stringify({ error: "service unavailable" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      return new Response(JSON.stringify(partialCoverageDemGridResponse), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    });
+
+    const response = await GET(
+      new NextRequest(
+        "http://localhost/api/geospatial-package/kamloops-terrain-preflight?lat=50.68&lng=-120.23"
+      )
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      status: "partial",
+      sourceBacked: false,
+      rasterBacked: true,
+      missingRasterCellsRawLidarVerified: true,
+      derivedElevationBacked: true,
+      derivedElevationSupport: "unknown",
+      contourSupportFeatureCount: null,
+      goldenQualityTerrainCandidate: false,
+      selectedSourceIds: []
+    });
+    expect(payload.goldenQualityBlockers.join(" ")).toContain("non-downloadable");
+    expect(payload.warnings.join(" ")).toContain("contour support probe failed");
+    expect(payload.nextActions.join(" ")).toContain("auto mode must fall back");
   });
 
   it("blocks derived municipal preflight when the exact slice has no contour support", async () => {
@@ -261,6 +313,8 @@ describe("Kamloops terrain preflight route", () => {
       sourceBacked: true,
       rasterBacked: true,
       derivedElevationBacked: true,
+      derivedElevationSupport: "supported",
+      contourSupportFeatureCount: 42,
       goldenQualityTerrainCandidate: false,
       inputRefKinds: ["zip-archive", "arcgis-feature-query"],
       suggestedGoldenQualityFrame: {

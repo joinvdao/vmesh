@@ -167,6 +167,8 @@ async function classifySample({
     sourceBacked: preflight.sourceBacked,
     rasterBacked: preflight.rasterBacked,
     derivedElevationBacked: preflight.derivedElevationBacked,
+    derivedElevationSupport: preflight.derivedElevationSupport,
+    contourSupportFeatureCount: preflight.contourSupportFeatureCount,
     goldenQualityTerrainCandidate: preflight.goldenQualityTerrainCandidate,
     downloadableCellCount: preflight.cells.downloadable.length,
     nonDownloadableCellCount: preflight.cells.nonDownloadable.length,
