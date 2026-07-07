@@ -40,6 +40,150 @@ function parseConsumer(value: unknown): string {
   return sanitizeConsumerAppId(value);
 }
 
+function parseBoolean(value: unknown) {
+  return value === true || value === "true" || value === "1" || value === "yes";
+}
+
+function offsetCoordinate({
+  latitude,
+  longitude,
+  eastMeters,
+  northMeters
+}: {
+  latitude: number;
+  longitude: number;
+  eastMeters: number;
+  northMeters: number;
+}) {
+  const metersPerDegreeLat = 111_320;
+  const metersPerDegreeLng = Math.max(
+    12_000,
+    metersPerDegreeLat * Math.cos((latitude * Math.PI) / 180)
+  );
+  return {
+    latitude: latitude + northMeters / metersPerDegreeLat,
+    longitude: longitude + eastMeters / metersPerDegreeLng
+  };
+}
+
+function isKamloopsMunicipalCoverageCoordinate({
+  latitude,
+  longitude
+}: {
+  latitude: number;
+  longitude: number;
+}) {
+  return latitude >= 50.45 && latitude <= 50.85 && longitude >= -120.75 && longitude <= -120.0;
+}
+
+function searchOffsets(stepMeters: number, maxMeters: number) {
+  const offsets: Array<{ eastMeters: number; northMeters: number; distanceMeters: number }> = [];
+  for (let radius = stepMeters; radius <= maxMeters; radius += stepMeters) {
+    for (const [eastUnit, northUnit] of [
+      [0, 1],
+      [1, 0],
+      [0, -1],
+      [-1, 0],
+      [1, 1],
+      [1, -1],
+      [-1, -1],
+      [-1, 1]
+    ]) {
+      const eastMeters = eastUnit * radius;
+      const northMeters = northUnit * radius;
+      offsets.push({
+        eastMeters,
+        northMeters,
+        distanceMeters: Math.round(Math.hypot(eastMeters, northMeters))
+      });
+    }
+  }
+  return offsets.sort(
+    (left, right) =>
+      left.distanceMeters - right.distanceMeters ||
+      left.northMeters - right.northMeters ||
+      left.eastMeters - right.eastMeters
+  );
+}
+
+async function sourceBackedSuggestion({
+  latitude,
+  longitude,
+  edgeMeters,
+  gridSize,
+  consumerAppId,
+  label,
+  stepMeters,
+  maxMeters
+}: {
+  latitude: number;
+  longitude: number;
+  edgeMeters: number;
+  gridSize: number;
+  consumerAppId: string;
+  label: string;
+  stepMeters: number;
+  maxMeters: number;
+}) {
+  for (const offset of searchOffsets(stepMeters, maxMeters)) {
+    const candidate = offsetCoordinate({
+      latitude,
+      longitude,
+      eastMeters: offset.eastMeters,
+      northMeters: offset.northMeters
+    });
+    if (!isKamloopsMunicipalCoverageCoordinate(candidate)) continue;
+
+    const preflight = await createLiveKamloopsMunicipalDemCoveragePreflight(
+      {
+        request: {
+          aoi: {
+            bounds: abundanceSourceSliceBoundsFromCentroid({
+              centroid: candidate,
+              edgeMeters
+            }),
+            label
+          },
+          consumerAppId,
+          layers: ["terrain"],
+          preferredSourceIds: ["kamloops-local-lidar-dtm-1m"],
+          offline: true
+        }
+      },
+      { env: process.env }
+    );
+    if (!preflight.sourceBacked) continue;
+
+    return {
+      status: "available",
+      centerDisclosure: "relative-offset-only",
+      offsetMeters: {
+        east: offset.eastMeters,
+        north: offset.northMeters
+      },
+      distanceMeters: offset.distanceMeters,
+      edgeMeters,
+      gridSize,
+      selectedSourceIds: preflight.selectedSourceIds,
+      downloadableCellCount: preflight.cells.downloadable.length,
+      nonDownloadableCellCount: preflight.cells.nonDownloadable.length,
+      warnings: [
+        "Suggested frame is source-backed for terrain but shifts the 3 km slice center; keep the user parcel boundary as an overlay."
+      ]
+    };
+  }
+
+  return {
+    status: "unavailable",
+    centerDisclosure: "relative-offset-only",
+    maxSearchMeters: maxMeters,
+    stepMeters,
+    warnings: [
+      "No source-backed 3 km municipal DEM frame was found within the configured relative-offset search radius."
+    ]
+  };
+}
+
 export async function GET(req: NextRequest) {
   const latitude = boundedNumber(req.nextUrl.searchParams.get("lat"), -90, 90);
   const longitude = boundedNumber(req.nextUrl.searchParams.get("lng"), -180, 180);
@@ -56,6 +200,9 @@ export async function GET(req: NextRequest) {
   const label = sanitizeTextLabel(
     req.nextUrl.searchParams.get("label") ?? "Kamloops terrain preflight"
   );
+  const consumerAppId = parseConsumer(
+    req.nextUrl.searchParams.get("consumer") ?? req.nextUrl.searchParams.get("consumerAppId")
+  );
   const bounds = abundanceSourceSliceBoundsFromCentroid({
     centroid: { latitude, longitude },
     edgeMeters
@@ -65,9 +212,7 @@ export async function GET(req: NextRequest) {
     {
       request: {
         aoi: { bounds, label },
-        consumerAppId: parseConsumer(
-          req.nextUrl.searchParams.get("consumer") ?? req.nextUrl.searchParams.get("consumerAppId")
-        ),
+        consumerAppId,
         layers: ["terrain"],
         preferredSourceIds: ["kamloops-local-lidar-dtm-1m"],
         offline: true
@@ -88,6 +233,21 @@ export async function GET(req: NextRequest) {
       edgeMeters,
       gridSize,
       parcelBoundaryRole: "overlay-only"
-    }
+    },
+    suggestedSourceBackedFrame:
+      parseBoolean(req.nextUrl.searchParams.get("suggestion")) && !preflight.sourceBacked
+        ? await sourceBackedSuggestion({
+            latitude,
+            longitude,
+            edgeMeters,
+            gridSize,
+            consumerAppId,
+            label,
+            stepMeters:
+              boundedNumber(req.nextUrl.searchParams.get("suggestionStepMeters"), 100, 1000) ?? 250,
+            maxMeters:
+              boundedNumber(req.nextUrl.searchParams.get("suggestionMaxMeters"), 250, 5000) ?? 2500
+          })
+        : null
   });
 }

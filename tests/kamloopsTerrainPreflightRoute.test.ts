@@ -123,6 +123,54 @@ describe("Kamloops terrain preflight route", () => {
     ).toEqual(["5156D"]);
     expect(payload.blockedReasons.join(" ")).toContain("non-downloadable");
     expect(payload.nextActions.join(" ")).toContain("Do not claim golden-quality terrain");
+    expect(payload.suggestedSourceBackedFrame).toBeNull();
+  });
+
+  it("can suggest a nearby source-backed frame using a relative offset only", async () => {
+    let requestCount = 0;
+    vi.stubGlobal("fetch", async () => {
+      requestCount += 1;
+      return new Response(
+        JSON.stringify(
+          requestCount === 1 ? partialCoverageDemGridResponse : fullCoverageDemGridResponse
+        ),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    });
+
+    const response = await GET(
+      new NextRequest(
+        "http://localhost/api/geospatial-package/kamloops-terrain-preflight?lat=50.68&lng=-120.23&suggestion=1&suggestionStepMeters=250&suggestionMaxMeters=250"
+      )
+    );
+    const payload = await response.json();
+    const serialized = JSON.stringify(payload);
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      status: "partial",
+      sourceBacked: false,
+      suggestedSourceBackedFrame: {
+        status: "available",
+        centerDisclosure: "relative-offset-only",
+        distanceMeters: 250,
+        edgeMeters: 3000,
+        gridSize: 257,
+        selectedSourceIds: ["kamloops-local-lidar-dtm-1m"],
+        downloadableCellCount: 2,
+        nonDownloadableCellCount: 0
+      }
+    });
+    expect(payload.suggestedSourceBackedFrame.offsetMeters).toMatchObject({
+      north: expect.any(Number),
+      east: expect.any(Number)
+    });
+    expect(requestCount).toBe(2);
+    expect(serialized).not.toContain("50.68");
+    expect(serialized).not.toContain("-120.23");
   });
 
   it("requires explicit coordinates", async () => {
