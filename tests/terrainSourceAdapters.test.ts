@@ -1401,7 +1401,7 @@ describe("terrain source adapters", () => {
     expect(requests[1]).toContain("/CityWorks/UtilityBaseMap/MapServer/4/query");
   });
 
-  it("blocks Kamloops derived-elevation refs when the exact AOI has no contour support", async () => {
+  it("keeps Kamloops DEMPoint/Breakline refs ready when the exact AOI has no contour support", async () => {
     const requests: string[] = [];
     const fetchImpl: typeof fetch = async (url) => {
       const requestUrl = String(url);
@@ -1433,11 +1433,18 @@ describe("terrain source adapters", () => {
       { env: {}, fetchImpl }
     );
 
-    expect(plan.status).toBe("blocked");
+    expect(plan.status).toBe("ready");
     expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
-    expect(plan.inputRefs).toEqual([]);
-    expect(plan.blockedReasons.join(" ")).toContain("zero features");
-    expect(plan.warnings.join(" ")).toContain("support probe finds source elevation samples");
+    expect(plan.inputRefs).toHaveLength(2);
+    expect(plan.inputRefs[0].url).toBe(
+      "https://maps.kamloops.ca/OpenData/zipfiles/DEMPointBreakSHP.zip"
+    );
+    expect(plan.inputRefs[1].url).toBe(
+      "https://maps.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4"
+    );
+    expect(plan.blockedReasons).toEqual([]);
+    expect(plan.warnings.join(" ")).toContain("DEMPoint/DEMBreakline archive extent");
+    expect(plan.warnings.join(" ")).toContain("reject sparse/no-data output");
     expect(requests).toHaveLength(2);
     expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
     expect(requests[1]).toContain("/CityWorks/UtilityBaseMap/MapServer/4/query");
@@ -1534,6 +1541,80 @@ describe("terrain source adapters", () => {
       "https://maps.kamloops.ca/opendata/Lidar/2024/5156D.zip"
     ]);
     expect(requests[6]).toContain("/CityWorks/UtilityBaseMap/MapServer/4/query");
+  });
+
+  it("falls back to the public alternate Kamloops contour host when the canonical host fails", async () => {
+    const requests: string[] = [];
+    const fetchImpl: typeof fetch = async (url) => {
+      const requestUrl = String(url);
+      requests.push(requestUrl);
+      if (requestUrl.includes("/FeatureDataset/GIS_Administrative_1/MapServer/6/query")) {
+        return new Response(JSON.stringify(kamloopsPartialDemGridResponse), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      if (requestUrl.includes("/opendata/DEM/2024_CGVD2013/")) {
+        return new Response(null, {
+          status: requestUrl.includes("DEM_CGVD2013_5156D.zip") ? 404 : 200
+        });
+      }
+
+      if (requestUrl.includes("/opendata/Lidar/2024/")) {
+        return new Response(null, { status: 404 });
+      }
+
+      if (
+        requestUrl.startsWith(
+          "https://maps.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4/query"
+        )
+      ) {
+        return new Response(JSON.stringify({ error: { message: "primary unavailable" } }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      if (
+        requestUrl.startsWith(
+          "https://gis-ws-qv01.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4/query"
+        )
+      ) {
+        return new Response(JSON.stringify({ count: 21 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      throw new Error(`unexpected Kamloops contour fallback request: ${requestUrl}`);
+    };
+
+    const plan = await createLiveTerrainSourceAdapterPlan(
+      {
+        request: {
+          aoi: kamloopsThreeKmAoi(50.68, -120.23, "Kamloops contour fallback AOI"),
+          layers: ["terrain"],
+          preferredSourceIds: ["kamloops-local-lidar-dtm-1m"]
+        }
+      },
+      { env: {}, fetchImpl }
+    );
+
+    expect(plan.status).toBe("ready");
+    expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
+    expect(plan.warnings.join(" ")).toContain("gis-ws-qv01.kamloops.ca");
+    expect(plan.warnings.join(" ")).toContain("contour support probe found 21");
+    expect(requests).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "https://maps.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4/query"
+        ),
+        expect.stringContaining(
+          "https://gis-ws-qv01.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4/query"
+        )
+      ])
+    );
   });
 
   it("trusts verified Kamloops DEM ZIP reachability over stale PhotoGrid limits", async () => {

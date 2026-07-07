@@ -152,6 +152,9 @@ describe("Kamloops terrain coverage route", () => {
           status: requestUrl.includes("DEM_CGVD2013_5357D.zip") ? 404 : 200
         });
       }
+      if (requestUrl.includes("/opendata/Lidar/2024/")) {
+        return new Response(null, { status: 404 });
+      }
       if (requestUrl.includes("/CityWorks/UtilityBaseMap/MapServer/4/query")) {
         return new Response(JSON.stringify({ count: 12 }), {
           status: 200,
@@ -208,6 +211,9 @@ describe("Kamloops terrain coverage route", () => {
         status: "source-backed",
         sourceBacked: true,
         rasterBacked: true,
+        rasterZipVerified: true,
+        rasterSourceVerified: true,
+        rawLidarDtmMaterializerReady: false,
         derivedElevationBacked: false,
         goldenQualityTerrainCandidate: true,
         downloadableCellCount: 2,
@@ -219,6 +225,12 @@ describe("Kamloops terrain coverage route", () => {
         status: "source-backed",
         sourceBacked: true,
         rasterBacked: true,
+        rasterZipVerified: true,
+        rasterSourceVerified: true,
+        rawLidarArchiveBacked: false,
+        rawLidarZipVerified: false,
+        missingRasterCellsRawLidarVerified: false,
+        rawLidarDtmMaterializerReady: false,
         derivedElevationBacked: true,
         derivedElevationSupport: "supported",
         contourSupportFeatureCount: 12,

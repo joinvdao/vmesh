@@ -195,6 +195,10 @@ const KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL =
   "https://maps.kamloops.ca/OpenData/zipfiles/DEMPointBreakSHP.zip";
 const KAMLOOPS_MUNICIPAL_CONTOUR_1M_LAYER_URL =
   "https://maps.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4";
+const KAMLOOPS_MUNICIPAL_CONTOUR_1M_LAYER_FALLBACK_URLS = [
+  KAMLOOPS_MUNICIPAL_CONTOUR_1M_LAYER_URL,
+  "https://gis-ws-qv01.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4"
+] as const;
 const KAMLOOPS_MUNICIPAL_2024_LIDAR_APP_URL =
   "https://kamloops.maps.arcgis.com/apps/webappviewer/index.html?id=6fea67a054a94b45ad2998c0a03d88e7";
 const KAMLOOPS_MUNICIPAL_ELEVATION_VECTOR_EXTENT_WGS84 = {
@@ -1243,59 +1247,66 @@ async function verifyKamloopsMunicipalContourSupport({
   fetchImpl: typeof fetch;
   timeoutMs: number;
 }): Promise<
-  | { status: "supported"; count: number }
-  | { status: "unsupported"; count: number }
+  | { status: "supported"; count: number; warnings?: string[] }
+  | { status: "unsupported"; count: number; warnings?: string[] }
   | { status: "unknown"; reason: string }
 > {
-  try {
-    const response = await fetchWithTimeout(
-      fetchImpl,
-      createKamloopsMunicipalContourSupportCountQueryUrl({ bbox }),
-      { headers: { Accept: "application/json" } },
-      timeoutMs
-    );
-    if (!response.ok) {
-      return {
-        status: "unknown",
-        reason: `City of Kamloops contour support probe failed with HTTP ${response.status}.`
-      };
-    }
+  const failures: string[] = [];
 
-    const payload = (await response.json()) as unknown;
-    if (!isRecord(payload)) {
-      return {
-        status: "unknown",
-        reason: "City of Kamloops contour support probe returned a non-object payload."
-      };
-    }
-    if (isRecord(payload.error)) {
-      const message =
-        typeof payload.error.message === "string" ? payload.error.message : "ArcGIS query error";
-      return {
-        status: "unknown",
-        reason: `City of Kamloops contour support probe failed: ${message}.`
-      };
-    }
+  for (const baseUrl of KAMLOOPS_MUNICIPAL_CONTOUR_1M_LAYER_FALLBACK_URLS) {
+    try {
+      const response = await fetchWithTimeout(
+        fetchImpl,
+        createKamloopsMunicipalContourSupportCountQueryUrl({ bbox, baseUrl }),
+        { headers: { Accept: "application/json" } },
+        timeoutMs
+      );
+      if (!response.ok) {
+        failures.push(`HTTP ${response.status} from ${new URL(baseUrl).hostname}`);
+        continue;
+      }
 
-    const count =
-      typeof payload.count === "number" && Number.isFinite(payload.count) ? payload.count : null;
-    if (count === null) {
-      return {
-        status: "unknown",
-        reason: "City of Kamloops contour support probe did not return a count."
-      };
-    }
+      const payload = (await response.json()) as unknown;
+      if (!isRecord(payload)) {
+        failures.push(`non-object payload from ${new URL(baseUrl).hostname}`);
+        continue;
+      }
+      if (isRecord(payload.error)) {
+        const message =
+          typeof payload.error.message === "string" ? payload.error.message : "ArcGIS query error";
+        failures.push(`${message} from ${new URL(baseUrl).hostname}`);
+        continue;
+      }
 
-    return count > 0 ? { status: "supported", count } : { status: "unsupported", count };
-  } catch (error) {
-    return {
-      status: "unknown",
-      reason:
+      const count =
+        typeof payload.count === "number" && Number.isFinite(payload.count) ? payload.count : null;
+      if (count === null) {
+        failures.push(`missing count from ${new URL(baseUrl).hostname}`);
+        continue;
+      }
+
+      const warnings =
+        failures.length > 0
+          ? [
+              `City of Kamloops contour support probe used ${new URL(baseUrl).hostname} after ${failures.join("; ")}.`
+            ]
+          : undefined;
+      return count > 0
+        ? { status: "supported", count, warnings }
+        : { status: "unsupported", count, warnings };
+    } catch (error) {
+      failures.push(
         error instanceof Error
-          ? `City of Kamloops contour support probe failed: ${error.message}.`
-          : "City of Kamloops contour support probe failed."
-    };
+          ? `${error.message} from ${new URL(baseUrl).hostname}`
+          : `request failed from ${new URL(baseUrl).hostname}`
+      );
+    }
   }
+
+  return {
+    status: "unknown",
+    reason: `City of Kamloops contour support probe failed: ${failures.join("; ")}.`
+  };
 }
 
 function kamloopsMunicipalDemPreflightInput(
@@ -1484,13 +1495,16 @@ export function createKamloopsMunicipalDemCoveragePreflight(
 function withLiveDerivedElevationSupport(
   preflight: KamloopsMunicipalDemCoveragePreflight,
   contourSupport:
-    | { status: "supported"; count: number }
-    | { status: "unsupported"; count: number }
+    | { status: "supported"; count: number; warnings?: string[] }
+    | { status: "unsupported"; count: number; warnings?: string[] }
     | { status: "unknown"; reason: string }
 ): KamloopsMunicipalDemCoveragePreflight {
   if (!preflight.derivedElevationBacked) return preflight;
 
-  if (contourSupport.status === "supported") {
+  const pointBreakExtentSupported =
+    preflight.pointBreakDerived && contourSupport.status === "unsupported";
+
+  if (contourSupport.status === "supported" || pointBreakExtentSupported) {
     const goldenQualityBlockers = preflight.goldenQualityBlockers.filter(
       (blocker) =>
         !blocker.startsWith(
@@ -1508,7 +1522,10 @@ function withLiveDerivedElevationSupport(
       goldenQualityBlockers,
       warnings: [
         ...preflight.warnings,
-        `City of Kamloops contour support probe found ${contourSupport.count} contour feature(s) for this exact 3 km AOI.`
+        ...(contourSupport.warnings ?? []),
+        pointBreakExtentSupported
+          ? "City of Kamloops contour support probe returned zero features, but the official DEMPoint/DEMBreakline archive extent contains this exact 3 km AOI; VMesh is using that derived-elevation source rail with QA-required worker warnings."
+          : `City of Kamloops contour support probe found ${contourSupport.count} contour feature(s) for this exact 3 km AOI.`
       ],
       nextActions: [
         "Call the Abundance site-runtime-pack route in sourcePackMode=required for this coordinate.",
@@ -1516,7 +1533,9 @@ function withLiveDerivedElevationSupport(
           ? "A raw-LiDAR-to-DTM worker could promote the missing raster cell(s), because every missing public DEM cell has a verified public raw LiDAR ZIP archive."
           : "The worker must use official DEMPoint/DEMBreakline or contour-derived interpolation for cells without a verified raster DEM ZIP.",
         "The worker must QA support distances and preserve derived-elevation warnings before claiming runtime terrain readiness.",
-        "Do not label this path as a 1m LiDAR raster DEM ZIP; it is official municipal derived-elevation terrain."
+        pointBreakExtentSupported
+          ? "DEMPoint/DEMBreakline extent support is not enough by itself for runtime readiness; the GIS worker must inspect features, interpolate, and reject sparse/no-data output."
+          : "Do not label this path as a 1m LiDAR raster DEM ZIP; it is official municipal derived-elevation terrain."
       ]
     };
   }
@@ -2633,6 +2652,22 @@ export async function createLiveTerrainSourceAdapterPlan(
         timeoutMs: kamloopsProbeTimeoutMs
       });
 
+      if (
+        contourSupport.status === "unsupported" &&
+        planWithFallbackWarning.inputRefs.some(
+          (inputRef) => inputRef.url === KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL
+        )
+      ) {
+        return {
+          ...planWithFallbackWarning,
+          warnings: [
+            ...planWithFallbackWarning.warnings,
+            ...(contourSupport.warnings ?? []),
+            "City of Kamloops contour support probe returned zero features, but the official DEMPoint/DEMBreakline archive extent contains this exact 3 km AOI; Abundance may attempt the derived-elevation rail and must reject sparse/no-data output during QA."
+          ]
+        };
+      }
+
       if (contourSupport.status === "unsupported") {
         return {
           ...planWithFallbackWarning,
@@ -2654,6 +2689,7 @@ export async function createLiveTerrainSourceAdapterPlan(
           ...planWithFallbackWarning,
           warnings: [
             ...planWithFallbackWarning.warnings,
+            ...(contourSupport.warnings ?? []),
             `City of Kamloops contour support probe found ${contourSupport.count} contour feature(s) for this exact 3 km AOI; Abundance must still materialize and QA the derived DTM before runtime readiness.`
           ]
         };

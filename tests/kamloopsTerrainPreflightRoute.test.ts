@@ -226,7 +226,7 @@ describe("Kamloops terrain preflight route", () => {
     expect(payload.nextActions.join(" ")).toContain("auto mode must fall back");
   });
 
-  it("blocks derived municipal preflight when the exact slice has no contour support", async () => {
+  it("keeps derived municipal preflight source-backed when DEMPoint/Breakline extent covers the exact slice", async () => {
     vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
       const requestUrl = String(url);
       if (requestUrl.includes("/opendata/DEM/2024_CGVD2013/")) {
@@ -256,17 +256,17 @@ describe("Kamloops terrain preflight route", () => {
 
     expect(response.status).toBe(200);
     expect(payload).toMatchObject({
-      status: "blocked",
-      sourceBacked: false,
+      status: "source-backed",
+      sourceBacked: true,
       rasterBacked: false,
       derivedElevationBacked: true,
-      derivedElevationSupport: "unsupported",
+      derivedElevationSupport: "supported",
       contourSupportFeatureCount: 0,
-      selectedSourceIds: [],
+      selectedSourceIds: ["kamloops-local-lidar-dtm-1m"],
       goldenQualityTerrainCandidate: false
     });
-    expect(payload.blockedReasons.join(" ")).toContain("zero features");
-    expect(payload.nextActions.join(" ")).toContain("fallback visual terrain");
+    expect(payload.warnings.join(" ")).toContain("DEMPoint/DEMBreakline archive extent");
+    expect(payload.nextActions.join(" ")).toContain("reject sparse/no-data output");
   });
 
   it("suggests a nearby golden-quality frame when the exact slice is derived-only", async () => {
@@ -375,8 +375,8 @@ describe("Kamloops terrain preflight route", () => {
 
     expect(response.status).toBe(200);
     expect(payload).toMatchObject({
-      status: "blocked",
-      sourceBacked: false,
+      status: "source-backed",
+      sourceBacked: true,
       goldenQualityTerrainCandidate: false,
       suggestedGoldenQualityFrame: {
         status: "unavailable",
