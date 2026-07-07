@@ -137,7 +137,11 @@ const USGS_3DEP_LPC_INDEX_QUERY_URL =
 const BC_LIDAR_FEATURE_SERVER_BASE_URL =
   "https://services6.arcgis.com/ubm4tcTYICKBpist/ArcGIS/rest/services/LiDAR_BC_S3_Public/FeatureServer";
 const KAMLOOPS_MUNICIPAL_DEM_GRID_LAYER_URL =
-  "https://maps.kamloops.ca/arcgis/rest/services/OpenData/OpenDataAdminCad/MapServer/25";
+  "https://maps.kamloops.ca/arcgis/rest/services/FeatureDataset/GIS_Administrative_1/MapServer/6";
+const KAMLOOPS_MUNICIPAL_2024_DEM_DOWNLOAD_BASE_URL =
+  "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013";
+const KAMLOOPS_MUNICIPAL_2024_LIDAR_DOWNLOAD_BASE_URL =
+  "https://maps.kamloops.ca/opendata/Lidar/2024";
 const KAMLOOPS_MUNICIPAL_2024_LIDAR_APP_URL =
   "https://kamloops.maps.arcgis.com/apps/webappviewer/index.html?id=6fea67a054a94b45ad2998c0a03d88e7";
 
@@ -432,17 +436,17 @@ function createKamloopsMunicipalDemGridQueryUrl({
   bbox: NonNullable<TerrainSourceAdapterPlan["bbox"]>;
   baseUrl?: string;
 }): string {
-  const centerLongitude = (bbox.west + bbox.east) / 2;
-  const centerLatitude = (bbox.south + bbox.north) / 2;
   const url = new URL(`${baseUrl.replace(/\/$/, "")}/query`);
 
   url.searchParams.set("f", "json");
   url.searchParams.set("where", "1=1");
   url.searchParams.set(
     "geometry",
-    `${formatCoordinate(centerLongitude)},${formatCoordinate(centerLatitude)}`
+    `${formatCoordinate(bbox.west)},${formatCoordinate(bbox.south)},${formatCoordinate(
+      bbox.east
+    )},${formatCoordinate(bbox.north)}`
   );
-  url.searchParams.set("geometryType", "esriGeometryPoint");
+  url.searchParams.set("geometryType", "esriGeometryEnvelope");
   url.searchParams.set("inSR", "4326");
   url.searchParams.set("spatialRel", "esriSpatialRelIntersects");
   url.searchParams.set("outFields", "OBJECTID,CELLNAME,PHOTOGRIDLIMITS");
@@ -485,6 +489,8 @@ interface KamloopsMunicipalDemGridSelection {
   objectId: number | null;
   cellName: string;
   photoGridLimits: string | null;
+  demZipUrl: string;
+  lidarZipUrl: string;
 }
 
 function createUsgsLpcSourceIndexQueryUrl({
@@ -525,10 +531,21 @@ function isPublicHttpUrl(value: string): boolean {
   return /^https?:\/\//i.test(value);
 }
 
-function selectKamloopsMunicipalDemGridTile(
-  value: unknown
-): KamloopsMunicipalDemGridSelection | null {
-  if (!isRecord(value) || !Array.isArray(value.features)) return null;
+function safeKamloopsCellName(value: string): string | null {
+  const normalized = value.trim().toUpperCase();
+  return /^[A-Z0-9_-]+$/.test(normalized) ? normalized : null;
+}
+
+function kamloopsMunicipalDemZipUrl(cellName: string): string {
+  return `${KAMLOOPS_MUNICIPAL_2024_DEM_DOWNLOAD_BASE_URL}/DEM_CGVD2013_${cellName}.zip`;
+}
+
+function kamloopsMunicipalLidarZipUrl(cellName: string): string {
+  return `${KAMLOOPS_MUNICIPAL_2024_LIDAR_DOWNLOAD_BASE_URL}/${cellName}.zip`;
+}
+
+function selectKamloopsMunicipalDemGridTiles(value: unknown): KamloopsMunicipalDemGridSelection[] {
+  if (!isRecord(value) || !Array.isArray(value.features)) return [];
 
   const candidates: KamloopsMunicipalDemGridSelection[] = [];
 
@@ -537,18 +554,21 @@ function selectKamloopsMunicipalDemGridTile(
     const attributes = isRecord(feature.attributes) ? feature.attributes : null;
     if (!attributes) continue;
 
-    const cellName = stringAttr(attributes.CELLNAME);
+    const rawCellName = stringAttr(attributes.CELLNAME);
+    const cellName = rawCellName ? safeKamloopsCellName(rawCellName) : null;
     if (!cellName) continue;
 
     candidates.push({
       sourceId: `kamloops-municipal-dem-grid:${cellName}`,
       objectId: numberAttr(attributes.OBJECTID),
       cellName,
-      photoGridLimits: stringAttr(attributes.PHOTOGRIDLIMITS)
+      photoGridLimits: stringAttr(attributes.PHOTOGRIDLIMITS),
+      demZipUrl: kamloopsMunicipalDemZipUrl(cellName),
+      lidarZipUrl: kamloopsMunicipalLidarZipUrl(cellName)
     });
   }
 
-  return candidates.sort((left, right) => left.cellName.localeCompare(right.cellName))[0] ?? null;
+  return candidates.sort((left, right) => left.cellName.localeCompare(right.cellName));
 }
 
 function selectUsgsLpcDsmSource(
@@ -998,34 +1018,33 @@ function createKamloopsLocalLidarSourcePlan(
     });
   }
 
-  const selectedDemGridTile = context.options.kamloopsMunicipalDemGridResponse
-    ? selectKamloopsMunicipalDemGridTile(context.options.kamloopsMunicipalDemGridResponse)
-    : null;
+  const selectedDemGridTiles = context.options.kamloopsMunicipalDemGridResponse
+    ? selectKamloopsMunicipalDemGridTiles(context.options.kamloopsMunicipalDemGridResponse)
+    : [];
 
-  if (selectedDemGridTile) {
+  if (selectedDemGridTiles.length > 0) {
     return readyPlan({
       context,
-      inputRefs: [
+      inputRefs: selectedDemGridTiles.map((selectedDemGridTile) =>
         buildInputRef({
           context,
-          kind: "source-index-required",
-          url:
-            context.options.kamloopsMunicipalDemGridBaseUrl ??
-            KAMLOOPS_MUNICIPAL_DEM_GRID_LAYER_URL,
-          format: "json",
-          role: "source-index",
+          kind: "zip-archive",
+          url: selectedDemGridTile.demZipUrl,
+          format: "zip",
+          role: "terrain-source",
           notes: [
             `Resolved from the public City of Kamloops DEM Grid as ${selectedDemGridTile.sourceId}.`,
             `DEM grid CELLNAME ${selectedDemGridTile.cellName}; OBJECTID ${selectedDemGridTile.objectId ?? "unknown"}; PHOTOGRIDLIMITS ${selectedDemGridTile.photoGridLimits ?? "unknown"}.`,
             `The public LiDAR download app is ${KAMLOOPS_MUNICIPAL_2024_LIDAR_APP_URL}.`,
-            "This proves public municipal source coverage, not a fetched terrain payload.",
-            "A production worker must resolve the matching LAS/DEM tile download, derive or window a bare-earth DTM, QA no-data and vertical metadata, then emit a runtime terrain raster/heightfield.",
+            `The matching public LiDAR archive is ${selectedDemGridTile.lidarZipUrl}.`,
+            "This is a deterministic public DEM ZIP source ref, not stored payload data.",
+            "A downstream worker must fetch/window the ESRI Grid DEM, QA no-data and vertical metadata, then emit a runtime terrain raster/heightfield before claiming golden-quality terrain.",
             "The exact AOI query geometry is intentionally not emitted in this public-safe source-index ref."
           ]
         })
-      ],
+      ),
       warnings: [
-        "Run class is dry-run: vmesh resolved a public Kamloops municipal DEM-grid cell, but has not fetched LAS/DEM payloads or derived terrain artifacts.",
+        `Run class is dry-run: vmesh resolved ${selectedDemGridTiles.length} public Kamloops municipal DEM ZIP ref(s), but has not fetched LAS/DEM payloads or derived terrain artifacts.`,
         "Do not claim golden-quality terrain until the downstream worker materializes and QA-proves the municipal DTM for this AOI."
       ]
     });

@@ -225,10 +225,12 @@ terrain. LidarBC is also represented as separate DTM/DSM source IDs
 (`bc-lidarbc` and `bc-lidarbc-dsm`) and resolves official 1 metre GeoTIFF refs
 from the LidarBC ArcGIS FeatureServer indexes. Kamloops uses the compatibility
 source id `kamloops-local-lidar-dtm-1m` for the public City of Kamloops
-municipal DEM/LiDAR rail: the live resolver queries the public DEM Grid layer,
-records the selected grid cell, and leaves exact AOI query geometry out of
-public-safe artifacts. A downstream worker still has to resolve the matching
-LAS/DEM download and derive or window a QA-proven DTM before Abundance can claim
+municipal DEM/LiDAR rail: the live resolver queries the public DEM Grid layer
+for the requested slice envelope, records the intersecting grid cells, derives
+the matching public 2024 DEM ZIP source refs, and leaves exact AOI query
+geometry out of public-safe artifacts. A
+downstream worker still has to fetch/window the ESRI Grid DEM and QA a
+source-backed terrain payload before Abundance can claim
 golden-quality terrain. Mapterhorn and Mapzen remain useful renderer fallbacks,
 not upstream terrain truth for generated packages.
 

@@ -206,10 +206,10 @@ Rose already has a strong retained source pack and should not be described as de
 VMesh now models the golden-quality Kamloops terrain handoff as
 `kamloops-local-lidar-dtm-1m`: a compatibility id for the public City of
 Kamloops municipal DEM/LiDAR source rail. VMesh first resolves the public DEM
-Grid layer and selected grid cell, then downstream workers must resolve the
-matching LAS/DEM download, derive or window a bare-earth DTM, prove non-no-data
-AOI coverage, preserve CRS/vertical datum/resolution, and retain public-safe QA
-artifacts before a neighbour pack can claim golden-quality terrain. Optional
+Grid layer for the requested slice envelope and selected grid cells, then emits
+the deterministic public 2024 DEM ZIP source refs. Downstream workers must fetch/window the ESRI Grid DEMs, prove
+non-no-data AOI coverage, preserve CRS/vertical datum/resolution, and retain
+public-safe QA artifacts before a neighbour pack can claim golden-quality terrain. Optional
 configured GeoTIFF/COG URL templates are deployment accelerators, not the source
 of truth. Airbus/private imagery remains separate from this public terrain path.
 

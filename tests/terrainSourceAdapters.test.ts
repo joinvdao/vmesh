@@ -154,7 +154,7 @@ const kamloopsDemGridResponse = {
     {
       attributes: {
         OBJECTID: 42,
-        CELLNAME: "5156",
+        CELLNAME: "5156B",
         PHOTOGRIDLIMITS: "YES"
       }
     }
@@ -818,21 +818,25 @@ describe("terrain source adapters", () => {
     expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
     expect(plan.toolProfile?.toolId).toBe("kamloops-local-lidar");
     expect(plan.inputRefs[0]).toMatchObject({
-      kind: "source-index-required",
-      format: "json",
-      role: "source-index",
+      kind: "zip-archive",
+      format: "zip",
+      role: "terrain-source",
       provider: "City of Kamloops municipal LiDAR/DEM Open Data",
       groundModelRole: "bare-earth-dtm",
       targetResolutionMeters: 1
     });
     expect(plan.inputRefs[0].url).toBe(
-      "https://maps.kamloops.ca/arcgis/rest/services/OpenData/OpenDataAdminCad/MapServer/25"
+      "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
     );
-    expect(plan.inputRefs[0].notes.join(" ")).toContain("DEM grid CELLNAME 5156");
+    expect(plan.inputRefs[0].notes.join(" ")).toContain("DEM grid CELLNAME 5156B");
+    expect(plan.inputRefs[0].notes.join(" ")).toContain(
+      "https://maps.kamloops.ca/opendata/Lidar/2024/5156B.zip"
+    );
     expect(plan.inputRefs[0].notes.join(" ")).toContain("not emitted");
     expect(requests).toHaveLength(1);
-    expect(requests[0]).toContain("/OpenDataAdminCad/MapServer/25/query");
-    expect(requests[0]).toContain("geometry=-120.26%2C50.64");
+    expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
+    expect(requests[0]).toContain("geometryType=esriGeometryEnvelope");
+    expect(requests[0]).toMatch(/geometry=-120\.[0-9]+%2C50\.[0-9]+%2C-120\.[0-9]+%2C50\.[0-9]+/);
   });
 
   it("falls through from uncovered Kamloops municipal grid to public BC LidarBC", async () => {
@@ -840,7 +844,7 @@ describe("terrain source adapters", () => {
     const fetchImpl: typeof fetch = async (url) => {
       const requestUrl = String(url);
       requests.push(requestUrl);
-      if (requestUrl.includes("/OpenDataAdminCad/MapServer/25/query")) {
+      if (requestUrl.includes("/FeatureDataset/GIS_Administrative_1/MapServer/6/query")) {
         return new Response(JSON.stringify(emptyCoverageResponse), {
           status: 200,
           headers: { "Content-Type": "application/json" }
@@ -869,7 +873,7 @@ describe("terrain source adapters", () => {
     expect(plan.status).toBe("ready");
     expect(plan.selectedSource?.id).toBe("bc-lidarbc");
     expect(requests).toHaveLength(2);
-    expect(requests[0]).toContain("/OpenDataAdminCad/MapServer/25/query");
+    expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
     expect(requests[1]).toContain("/FeatureServer/5/query");
   });
 

@@ -13,7 +13,7 @@ const KAMLOOPS_DEM_GRID_RESPONSE = {
     {
       attributes: {
         OBJECTID: 42,
-        CELLNAME: "5156",
+        CELLNAME: "5156B",
         PHOTOGRIDLIMITS: "YES"
       }
     }
@@ -173,7 +173,7 @@ describe("Abundance source handoff", () => {
       const requestUrl = String(url);
       requests.push(requestUrl);
       if (
-        requestUrl.includes("OpenDataAdminCad/MapServer/25/query") ||
+        requestUrl.includes("FeatureDataset/GIS_Administrative_1/MapServer/6/query") ||
         requestUrl.includes("LiDAR_BC_S3_Public")
       ) {
         return new Response(JSON.stringify(EMPTY_FEATURES), {
@@ -201,7 +201,7 @@ describe("Abundance source handoff", () => {
     );
     const terrainLayer = handoff.layers.find((layer) => layer.layerId === "terrain");
 
-    expect(requests[0]).toContain("OpenDataAdminCad/MapServer/25/query");
+    expect(requests[0]).toContain("FeatureDataset/GIS_Administrative_1/MapServer/6/query");
     expect(requests[1]).toContain("LiDAR_BC_S3_Public");
     expect(requests[2]).toBe("https://datacube.services.geo.ca/stac/api/search");
     expect(handoff.terrain.selectedSourceIds).toEqual(["canada-hrdem"]);
@@ -247,14 +247,16 @@ describe("Abundance source handoff", () => {
       toolProfile: { toolId: "kamloops-local-lidar" }
     });
     expect(handoff.terrainAdapterPlans[0].inputRefs[0]).toMatchObject({
-      kind: "source-index-required",
-      role: "source-index"
+      kind: "zip-archive",
+      role: "terrain-source",
+      format: "zip",
+      url: "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
     });
     expect(handoff.terrainAdapterPlans[0].inputRefs[0].notes.join(" ")).toContain(
-      "DEM grid CELLNAME 5156"
+      "DEM grid CELLNAME 5156B"
     );
     expect(requests).toHaveLength(1);
-    expect(requests[0]).toContain("OpenDataAdminCad/MapServer/25/query");
+    expect(requests[0]).toContain("FeatureDataset/GIS_Administrative_1/MapServer/6/query");
     expect(handoff.warnings.join(" ")).toContain("source refs and recipes");
   });
 

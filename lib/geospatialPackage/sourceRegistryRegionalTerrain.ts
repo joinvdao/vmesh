@@ -71,7 +71,7 @@ const REGIONAL_TERRAIN_SOURCES: RegionalTerrainSource[] = [
     resolution:
       "1m-class source where public municipal LiDAR/DEM tile coverage and worker QA prove it",
     sourceUrl:
-      "https://maps.kamloops.ca/arcgis/rest/services/OpenData/OpenDataAdminCad/MapServer/25",
+      "https://maps.kamloops.ca/arcgis/rest/services/FeatureDataset/GIS_Administrative_1/MapServer/6",
     attribution: "City of Kamloops",
     license: "Open Government Licence - Kamloops",
     notes:

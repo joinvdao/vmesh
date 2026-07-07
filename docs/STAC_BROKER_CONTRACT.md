@@ -76,13 +76,13 @@ For a LidarBC coordinate, vmesh should hide ArcGIS layer quirks from the consume
 For the Kamloops/Rose golden-quality terrain path, vmesh returns
 `kamloops-local-lidar-dtm-1m` as a compatibility id for the public City of
 Kamloops municipal DEM/LiDAR rail when the coordinate is inside the municipal
-coverage area. The default live resolver queries the public DEM Grid layer,
-records the selected grid cell, and leaves exact AOI query geometry out of
+coverage area. The default live resolver queries the public DEM Grid layer for
+the requested slice envelope, records the intersecting grid cells, emits the
+deterministic public 2024 DEM ZIP source refs, and leaves exact AOI query geometry out of
 public-safe artifacts. Optional configured GeoTIFF/COG URL templates may short
 cut production deployments, but they are not the source of truth. This is still
-an index handoff, not payload storage: downstream workers must resolve the
-matching LAS/DEM download, fetch/window/QA the source, and publish only
-public-safe derived package artifacts.
+an index handoff, not payload storage: downstream workers must fetch/window/QA
+the ESRI Grid DEM sources and publish only public-safe derived package artifacts.
 
 For unsupported regions, vmesh should expose fallback/global terrain as
 fallback/generic context so downstream apps can keep a coherent visual style.
