@@ -79,7 +79,9 @@ export interface TerrainSourceAdapterOptions {
   kamloopsMunicipalDemGridResponse?: unknown;
   kamloopsMunicipalDemGridBaseUrl?: string;
   kamloopsMunicipalDemZipAvailability?: Record<string, KamloopsMunicipalDemZipAvailability>;
+  kamloopsMunicipalLidarZipAvailability?: Record<string, KamloopsMunicipalDemZipAvailability>;
   verifyKamloopsMunicipalDemZipUrls?: boolean;
+  verifyKamloopsMunicipalLidarZipUrls?: boolean;
   kamloopsMunicipalDemProbeTimeoutMs?: number;
   bcLidarGeoTiffUrl?: string;
   bcLidarGeoTiffUrlTemplate?: string;
@@ -781,6 +783,9 @@ export interface KamloopsMunicipalDemCoverageCell {
   rasterZipStatus: "verified" | "missing" | "unchecked";
   demZipHttpStatus: number | null;
   demZipContentLengthBytes: number | null;
+  rawLidarZipStatus: "verified" | "missing" | "unchecked";
+  lidarZipHttpStatus: number | null;
+  lidarZipContentLengthBytes: number | null;
 }
 
 export interface KamloopsMunicipalDemCoveragePreflight {
@@ -790,6 +795,10 @@ export interface KamloopsMunicipalDemCoveragePreflight {
   rasterBacked: boolean;
   rasterZipVerified: boolean;
   rasterSourceVerified: boolean;
+  rawLidarArchiveBacked: boolean;
+  rawLidarZipVerified: boolean;
+  missingRasterCellsRawLidarVerified: boolean;
+  rawLidarDtmMaterializerReady: false;
   derivedElevationBacked: boolean;
   contourDerived: boolean;
   pointBreakDerived: boolean;
@@ -896,6 +905,13 @@ function kamloopsMunicipalDemZipAvailabilityForTile(
   return availability?.[tile.cellName] ?? availability?.[tile.demZipUrl];
 }
 
+function kamloopsMunicipalLidarZipAvailabilityForTile(
+  tile: KamloopsMunicipalDemGridSelection,
+  availability: Record<string, KamloopsMunicipalDemZipAvailability> | undefined
+): KamloopsMunicipalDemZipAvailability | undefined {
+  return availability?.[tile.cellName] ?? availability?.[tile.lidarZipUrl];
+}
+
 function isDownloadableKamloopsMunicipalDemGridTile(
   tile: KamloopsMunicipalDemGridSelection,
   availability?: Record<string, KamloopsMunicipalDemZipAvailability>
@@ -907,9 +923,11 @@ function isDownloadableKamloopsMunicipalDemGridTile(
 
 function publicKamloopsMunicipalDemCoverageCell(
   tile: KamloopsMunicipalDemGridSelection,
-  availability?: Record<string, KamloopsMunicipalDemZipAvailability>
+  availability?: Record<string, KamloopsMunicipalDemZipAvailability>,
+  lidarAvailability?: Record<string, KamloopsMunicipalDemZipAvailability>
 ): KamloopsMunicipalDemCoverageCell {
   const verified = kamloopsMunicipalDemZipAvailabilityForTile(tile, availability);
+  const lidarVerified = kamloopsMunicipalLidarZipAvailabilityForTile(tile, lidarAvailability);
   return {
     sourceId: tile.sourceId,
     cellName: tile.cellName,
@@ -918,7 +936,14 @@ function publicKamloopsMunicipalDemCoverageCell(
     downloadable: isDownloadableKamloopsMunicipalDemGridTile(tile, availability),
     rasterZipStatus: verified ? (verified.reachable ? "verified" : "missing") : "unchecked",
     demZipHttpStatus: verified?.status ?? null,
-    demZipContentLengthBytes: verified?.contentLengthBytes ?? null
+    demZipContentLengthBytes: verified?.contentLengthBytes ?? null,
+    rawLidarZipStatus: lidarVerified
+      ? lidarVerified.reachable
+        ? "verified"
+        : "missing"
+      : "unchecked",
+    lidarZipHttpStatus: lidarVerified?.status ?? null,
+    lidarZipContentLengthBytes: lidarVerified?.contentLengthBytes ?? null
   };
 }
 
@@ -943,11 +968,13 @@ async function fetchWithTimeout(
 async function verifyKamloopsMunicipalDemZipAvailability({
   tiles,
   fetchImpl,
-  timeoutMs
+  timeoutMs,
+  urlForTile = (tile) => tile.demZipUrl
 }: {
   tiles: KamloopsMunicipalDemGridSelection[];
   fetchImpl: typeof fetch;
   timeoutMs: number;
+  urlForTile?: (tile: KamloopsMunicipalDemGridSelection) => string;
 }): Promise<Record<string, KamloopsMunicipalDemZipAvailability>> {
   async function probeUrl(url: string): Promise<KamloopsMunicipalDemZipAvailability> {
     const attempts: RequestInit[] = [
@@ -991,7 +1018,7 @@ async function verifyKamloopsMunicipalDemZipAvailability({
 
   const entries = await Promise.all(
     tiles.map(async (tile) => {
-      return [tile.cellName, await probeUrl(tile.demZipUrl)] as const;
+      return [tile.cellName, await probeUrl(urlForTile(tile))] as const;
     })
   );
 
@@ -1041,13 +1068,18 @@ export function createKamloopsMunicipalDemCoveragePreflight(
 ): KamloopsMunicipalDemCoveragePreflight {
   const preflightInput = kamloopsMunicipalDemPreflightInput(input);
   const zipAvailability = options.kamloopsMunicipalDemZipAvailability;
+  const lidarZipAvailability = options.kamloopsMunicipalLidarZipAvailability;
   const tiles = selectKamloopsMunicipalDemGridTiles(demGridResponse);
   const downloadable = tiles
     .filter((tile) => isDownloadableKamloopsMunicipalDemGridTile(tile, zipAvailability))
-    .map((tile) => publicKamloopsMunicipalDemCoverageCell(tile, zipAvailability));
+    .map((tile) =>
+      publicKamloopsMunicipalDemCoverageCell(tile, zipAvailability, lidarZipAvailability)
+    );
   const nonDownloadable = tiles
     .filter((tile) => !isDownloadableKamloopsMunicipalDemGridTile(tile, zipAvailability))
-    .map((tile) => publicKamloopsMunicipalDemCoverageCell(tile, zipAvailability));
+    .map((tile) =>
+      publicKamloopsMunicipalDemCoverageCell(tile, zipAvailability, lidarZipAvailability)
+    );
   const plan = createTerrainSourceAdapterPlan(preflightInput, {
     ...options,
     kamloopsMunicipalDemGridResponse: demGridResponse
@@ -1082,6 +1114,13 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     downloadable.length > 0 &&
     downloadable.every((cell) => cell.rasterZipStatus === "verified");
   const rasterSourceVerified = usesDirectRasterRail || rasterZipVerified;
+  const allCells = [...downloadable, ...nonDownloadable];
+  const rawLidarArchiveBacked =
+    allCells.length > 0 && allCells.every((cell) => cell.rawLidarZipStatus === "verified");
+  const rawLidarZipVerified = rawLidarArchiveBacked;
+  const missingRasterCellsRawLidarVerified =
+    nonDownloadable.length > 0 &&
+    nonDownloadable.every((cell) => cell.rawLidarZipStatus === "verified");
   const derivedElevationBacked = usesPointBreakDerivedRail || usesContourDerivedRail;
   const goldenQualityTerrainCandidate =
     status === "source-backed" &&
@@ -1105,6 +1144,9 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     usesContourDerivedRail
       ? "Selected terrain includes contour-derived elevation evidence, not a 1m raster DEM ZIP."
       : null,
+    !rasterSourceVerified && missingRasterCellsRawLidarVerified
+      ? "Missing municipal DEM raster cells have reachable public raw LiDAR ZIP archives, but no point-cloud-to-DTM materializer has proven runtime terrain for this route yet."
+      : null,
     nonDownloadable.length > 0
       ? `The exact 3 km slice intersects ${nonDownloadable.length} public DEM grid cell(s) marked non-downloadable.`
       : null
@@ -1117,6 +1159,10 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     rasterBacked,
     rasterZipVerified,
     rasterSourceVerified,
+    rawLidarArchiveBacked,
+    rawLidarZipVerified,
+    missingRasterCellsRawLidarVerified,
+    rawLidarDtmMaterializerReady: false,
     derivedElevationBacked,
     contourDerived: usesContourDerivedRail,
     pointBreakDerived: usesPointBreakDerivedRail,
@@ -1141,6 +1187,9 @@ export function createKamloopsMunicipalDemCoveragePreflight(
         ? derivedElevationBacked
           ? [
               "Call the Abundance site-runtime-pack route in sourcePackMode=required for this coordinate.",
+              missingRasterCellsRawLidarVerified
+                ? "A raw-LiDAR-to-DTM worker could promote the missing raster cell(s), because every missing public DEM cell has a verified public raw LiDAR ZIP archive."
+                : "If raw LiDAR ZIPs are verified for every missing DEM raster cell, queue a point-cloud-to-DTM worker before claiming golden-quality terrain.",
               "The worker must attempt DEMPoint/DEMBreakline or contour-derived interpolation, QA support distances, and preserve derived-elevation warnings before claiming runtime terrain readiness.",
               "Do not label this path as a 1m LiDAR raster DEM ZIP; it is official municipal derived-elevation terrain."
             ]
@@ -1223,10 +1272,28 @@ export async function createLiveKamloopsMunicipalDemCoveragePreflight(
             fetchImpl,
             timeoutMs: kamloopsProbeTimeoutMs
           });
+    const tilesMissingDemRaster = tiles.filter(
+      (tile) => !isDownloadableKamloopsMunicipalDemGridTile(tile, zipAvailability)
+    );
+    const lidarZipAvailability =
+      options.verifyKamloopsMunicipalLidarZipUrls === false
+        ? options.kamloopsMunicipalLidarZipAvailability
+        : tilesMissingDemRaster.length > 0
+          ? {
+              ...(options.kamloopsMunicipalLidarZipAvailability ?? {}),
+              ...(await verifyKamloopsMunicipalDemZipAvailability({
+                tiles: tilesMissingDemRaster,
+                fetchImpl,
+                timeoutMs: kamloopsProbeTimeoutMs,
+                urlForTile: (tile) => tile.lidarZipUrl
+              }))
+            }
+          : options.kamloopsMunicipalLidarZipAvailability;
 
     return createKamloopsMunicipalDemCoveragePreflight(preflightInput, demGridResponse, {
       ...options,
-      kamloopsMunicipalDemZipAvailability: zipAvailability
+      kamloopsMunicipalDemZipAvailability: zipAvailability,
+      kamloopsMunicipalLidarZipAvailability: lidarZipAvailability
     });
   } catch (error) {
     return {
@@ -1712,6 +1779,15 @@ function createKamloopsLocalLidarSourcePlan(
         context.options.kamloopsMunicipalDemZipAvailability
       )
   );
+  const rawLidarVerifiedForMissingDemTiles =
+    nonDownloadableDemGridTiles.length > 0 &&
+    nonDownloadableDemGridTiles.every(
+      (tile) =>
+        kamloopsMunicipalLidarZipAvailabilityForTile(
+          tile,
+          context.options.kamloopsMunicipalLidarZipAvailability
+        )?.reachable === true
+    );
   const elevationVectorCoversAoi = bboxContainsBbox({
     container: KAMLOOPS_MUNICIPAL_ELEVATION_VECTOR_EXTENT_WGS84,
     target: context.bbox
@@ -1771,6 +1847,9 @@ function createKamloopsLocalLidarSourcePlan(
           `Non-downloadable DEM grid cells were retained as evidence: ${nonDownloadableDemGridTiles
             .map((tile) => `${tile.cellName} PHOTOGRIDLIMITS ${tile.photoGridLimits ?? "unknown"}`)
             .join(", ")}.`,
+          rawLidarVerifiedForMissingDemTiles
+            ? "Every non-downloadable DEM raster cell has a verified public raw LiDAR archive; a point-cloud-to-DTM worker could promote this AOI above the contour-derived rail after materialization and QA."
+            : "Raw LiDAR ZIP coverage is not verified for every non-downloadable DEM raster cell; keep this AOI on the derived-elevation rail unless another source-native raster is configured.",
           `The public DEMPoint/DEMBreakline archive at ${KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL} is included as a higher-support derived-elevation attempt before contour fallback.`,
           "Run class is dry-run: vmesh resolved public source refs only; Abundance must materialize and QA the contour-derived heightfield before runtime terrain readiness.",
           "Do not label the contour-derived output as a 1m LiDAR raster; it is official municipal elevation-derived terrain."
@@ -2111,10 +2190,28 @@ export async function createLiveTerrainSourceAdapterPlan(
               fetchImpl,
               timeoutMs: kamloopsProbeTimeoutMs
             });
+      const tilesMissingDemRaster = tiles.filter(
+        (tile) => !isDownloadableKamloopsMunicipalDemGridTile(tile, zipAvailability)
+      );
+      const lidarZipAvailability =
+        options.verifyKamloopsMunicipalLidarZipUrls === false
+          ? options.kamloopsMunicipalLidarZipAvailability
+          : tilesMissingDemRaster.length > 0
+            ? {
+                ...(options.kamloopsMunicipalLidarZipAvailability ?? {}),
+                ...(await verifyKamloopsMunicipalDemZipAvailability({
+                  tiles: tilesMissingDemRaster,
+                  fetchImpl,
+                  timeoutMs: kamloopsProbeTimeoutMs,
+                  urlForTile: (tile) => tile.lidarZipUrl
+                }))
+              }
+            : options.kamloopsMunicipalLidarZipAvailability;
       return createTerrainSourceAdapterPlan(input, {
         ...options,
         kamloopsMunicipalDemGridResponse: demGridResponse,
-        kamloopsMunicipalDemZipAvailability: zipAvailability
+        kamloopsMunicipalDemZipAvailability: zipAvailability,
+        kamloopsMunicipalLidarZipAvailability: lidarZipAvailability
       });
     }
 

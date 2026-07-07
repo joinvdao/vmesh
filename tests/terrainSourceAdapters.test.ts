@@ -1277,6 +1277,12 @@ describe("terrain source adapters", () => {
         });
       }
 
+      if (requestUrl.includes("/opendata/Lidar/2024/")) {
+        return new Response(null, {
+          status: requestUrl.includes("5156D.zip") ? 200 : 404
+        });
+      }
+
       throw new Error(
         "municipal derived-elevation fallback should avoid provincial fallback fetches"
       );
@@ -1309,16 +1315,20 @@ describe("terrain source adapters", () => {
       url: "https://maps.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4"
     });
     expect(plan.warnings.join(" ")).toContain("non-downloadable raster cell");
+    expect(plan.warnings.join(" ")).toContain("point-cloud-to-DTM worker");
     expect(plan.warnings.join(" ")).toContain("Do not label");
     expect(plan.warnings.join(" ")).toContain("1m LiDAR raster");
-    expect(requests).toHaveLength(5);
+    expect(requests).toHaveLength(6);
     expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
     expect(requests[1]).toBe(
       "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
     );
-    expect(requests.slice(2)).toEqual(
-      Array(3).fill("https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156D.zip")
-    );
+    expect(requests.slice(2)).toEqual([
+      ...Array(3).fill(
+        "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156D.zip"
+      ),
+      "https://maps.kamloops.ca/opendata/Lidar/2024/5156D.zip"
+    ]);
   });
 
   it("trusts verified Kamloops DEM ZIP reachability over stale PhotoGrid limits", async () => {

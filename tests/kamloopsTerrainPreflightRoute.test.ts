@@ -110,6 +110,11 @@ describe("Kamloops terrain preflight route", () => {
           status: requestUrl.includes("DEM_CGVD2013_5156D.zip") ? 404 : 200
         });
       }
+      if (requestUrl.includes("/opendata/Lidar/2024/")) {
+        return new Response(null, {
+          status: requestUrl.includes("5156D.zip") ? 200 : 404
+        });
+      }
       return new Response(JSON.stringify(partialCoverageDemGridResponse), {
         status: 200,
         headers: { "Content-Type": "application/json" }
@@ -128,6 +133,10 @@ describe("Kamloops terrain preflight route", () => {
       status: "source-backed",
       sourceBacked: true,
       rasterBacked: false,
+      rawLidarArchiveBacked: false,
+      rawLidarZipVerified: false,
+      missingRasterCellsRawLidarVerified: true,
+      rawLidarDtmMaterializerReady: false,
       derivedElevationBacked: true,
       contourDerived: true,
       pointBreakDerived: true,
@@ -141,10 +150,16 @@ describe("Kamloops terrain preflight route", () => {
     expect(
       payload.cells.nonDownloadable.map((cell: { cellName: string }) => cell.cellName)
     ).toEqual(["5156D"]);
+    expect(payload.cells.nonDownloadable[0]).toMatchObject({
+      rawLidarZipStatus: "verified",
+      lidarZipHttpStatus: 200
+    });
     expect(payload.warnings.join(" ")).toContain("non-downloadable raster cell");
     expect(payload.goldenQualityBlockers.join(" ")).toContain("DEMPoint/DEMBreakline-derived");
     expect(payload.goldenQualityBlockers.join(" ")).toContain("contour-derived");
+    expect(payload.goldenQualityBlockers.join(" ")).toContain("raw LiDAR ZIP archives");
     expect(payload.nextActions.join(" ")).toContain("derived-elevation");
+    expect(payload.nextActions.join(" ")).toContain("raw-LiDAR-to-DTM worker");
     expect(payload.nextActions.join(" ")).toContain("not label this path as a 1m LiDAR raster");
     expect(payload.suggestedSourceBackedFrame).toBeNull();
   });
@@ -157,6 +172,9 @@ describe("Kamloops terrain preflight route", () => {
         return new Response(null, {
           status: requestUrl.includes("DEM_CGVD2013_5156D.zip") ? 404 : 200
         });
+      }
+      if (requestUrl.includes("/opendata/Lidar/2024/")) {
+        return new Response(null, { status: 404 });
       }
       gridQueryCount += 1;
       return new Response(

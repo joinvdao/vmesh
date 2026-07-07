@@ -4,6 +4,7 @@ import path from "node:path";
 const DEM_GRID_LAYER_URL =
   "https://maps.kamloops.ca/arcgis/rest/services/FeatureDataset/GIS_Administrative_1/MapServer/6";
 const DEM_DOWNLOAD_BASE_URL = "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013";
+const LIDAR_DOWNLOAD_BASE_URL = "https://maps.kamloops.ca/opendata/Lidar/2024";
 const ELEVATION_VECTOR_EXTENT_WGS84 = {
   west: -120.546437,
   south: 50.607833,
@@ -208,7 +209,12 @@ function demZipUrl(cellName) {
   return `${DEM_DOWNLOAD_BASE_URL}/DEM_CGVD2013_${cellName}.zip`;
 }
 
+function lidarZipUrl(cellName) {
+  return `${LIDAR_DOWNLOAD_BASE_URL}/${cellName}.zip`;
+}
+
 const demZipAvailabilityCache = new Map();
+const lidarZipAvailabilityCache = new Map();
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 20_000) {
   const controller = new AbortController();
@@ -242,7 +248,8 @@ function parseCells(payload) {
       cellName,
       photoGridLimits:
         typeof attributes.PHOTOGRIDLIMITS === "string" ? attributes.PHOTOGRIDLIMITS : null,
-      demZipUrl: demZipUrl(cellName)
+      demZipUrl: demZipUrl(cellName),
+      lidarZipUrl: lidarZipUrl(cellName)
     });
   }
   return cells.sort((left, right) => left.cellName.localeCompare(right.cellName));
@@ -257,7 +264,23 @@ async function verifyDemZip(cell, timeoutMs) {
   return promise;
 }
 
+async function verifyLidarZip(cell, timeoutMs) {
+  const cached = lidarZipAvailabilityCache.get(cell.lidarZipUrl);
+  if (cached) return cached;
+
+  const promise = verifyArchiveUrlUncached(cell.lidarZipUrl, timeoutMs);
+  lidarZipAvailabilityCache.set(cell.lidarZipUrl, promise);
+  return promise;
+}
+
 async function verifyDemZipUncached(cell, timeoutMs) {
+  return {
+    ...(await verifyArchiveUrlUncached(cell.demZipUrl, timeoutMs)),
+    catalogPhotoGridLimits: cell.photoGridLimits ?? null
+  };
+}
+
+async function verifyArchiveUrlUncached(url, timeoutMs) {
   const attempts = [
     { method: "HEAD", headers: { Accept: "application/zip,*/*" } },
     { method: "GET", headers: { Accept: "application/zip,*/*", Range: "bytes=0-0" } }
@@ -265,7 +288,7 @@ async function verifyDemZipUncached(cell, timeoutMs) {
   let lastStatus = null;
   for (const attempt of attempts) {
     try {
-      const response = await fetchWithTimeout(cell.demZipUrl, attempt, timeoutMs);
+      const response = await fetchWithTimeout(url, attempt, timeoutMs);
       lastStatus = response.status;
       const contentLength = Number(response.headers.get("content-length") ?? "");
       const contentRange = response.headers.get("content-range") ?? "";
@@ -280,8 +303,7 @@ async function verifyDemZipUncached(cell, timeoutMs) {
               ? contentLength
               : rangeSize
                 ? Number(rangeSize)
-                : null,
-          catalogPhotoGridLimits: cell.photoGridLimits ?? null
+                : null
         };
       }
     } catch {
@@ -291,8 +313,7 @@ async function verifyDemZipUncached(cell, timeoutMs) {
   return {
     reachable: false,
     status: lastStatus,
-    contentLengthBytes: null,
-    catalogPhotoGridLimits: cell.photoGridLimits ?? null
+    contentLengthBytes: null
   };
 }
 
@@ -385,26 +406,49 @@ async function classifySample(sample, { edgeMeters, probeTimeoutMs }) {
   );
 
   const missingCells = verifiedCells.filter((cell) => !cell.demZipAvailability.reachable);
+  const missingCellsWithLidar = await Promise.all(
+    missingCells.map(async (cell) => ({
+      ...cell,
+      rawLidarZipAvailability: await verifyLidarZip(cell, probeTimeoutMs)
+    }))
+  );
   const rasterBacked = verifiedCells.length > 0 && missingCells.length === 0;
+  const missingRasterCellsRawLidarVerified =
+    missingCellsWithLidar.length > 0 &&
+    missingCellsWithLidar.every((cell) => cell.rawLidarZipAvailability.reachable);
   const derivedElevationBacked = bboxContains(ELEVATION_VECTOR_EXTENT_WGS84, bbox);
   return {
     ...sample,
     bbox,
     status: rasterBacked
       ? "golden-candidate"
-      : derivedElevationBacked
-        ? "derived-elevation"
-        : "blocked",
+      : missingRasterCellsRawLidarVerified
+        ? "raw-lidar-repair-candidate"
+        : derivedElevationBacked
+          ? "derived-elevation"
+          : "blocked",
     goldenQualityTerrainCandidate: rasterBacked,
     rasterBacked,
+    missingRasterCellsRawLidarVerified,
     derivedElevationBacked,
-    cells: verifiedCells,
+    cells: verifiedCells.map((cell) => {
+      const lidarProbe = missingCellsWithLidar.find((item) => item.cellName === cell.cellName);
+      return lidarProbe
+        ? {
+            ...cell,
+            rawLidarZipAvailability: lidarProbe.rawLidarZipAvailability
+          }
+        : cell;
+    }),
     blockers: rasterBacked
       ? []
       : [
           missingCells.length > 0
             ? `Missing or non-downloadable DEM ZIP cells: ${missingCells.map((cell) => cell.cellName).join(", ")}.`
             : "No DEM Grid cells intersected this exact 3 km frame.",
+          missingRasterCellsRawLidarVerified
+            ? "Every missing DEM ZIP cell has a reachable public raw LiDAR archive, but a point-cloud-to-DTM worker must materialize and QA it before this can meet the golden terrain bar."
+            : "Raw LiDAR ZIP coverage is not verified for every missing DEM raster cell.",
           derivedElevationBacked
             ? "Official DEMPoint/DEMBreakline and contour-derived fallback can produce a labelled slice, but not the golden raster bar."
             : "The exact 3 km frame falls outside the municipal derived-elevation fallback extent."
@@ -443,6 +487,9 @@ async function main() {
   }
   const counts = {
     goldenCandidate: samples.filter((sample) => sample.goldenQualityTerrainCandidate).length,
+    rawLidarRepairCandidate: samples.filter(
+      (sample) => sample.status === "raw-lidar-repair-candidate"
+    ).length,
     derivedElevation: samples.filter((sample) => sample.status === "derived-elevation").length,
     blocked: samples.filter(
       (sample) => sample.status === "blocked" || sample.status === "lookup-failed"
@@ -453,7 +500,8 @@ async function main() {
     generatedAt: new Date().toISOString(),
     source: {
       demGridLayer: DEM_GRID_LAYER_URL,
-      demDownloadBaseUrl: DEM_DOWNLOAD_BASE_URL
+      demDownloadBaseUrl: DEM_DOWNLOAD_BASE_URL,
+      lidarDownloadBaseUrl: LIDAR_DOWNLOAD_BASE_URL
     },
     edgeMeters: options.edgeMeters,
     probeTimeoutMs: options.probeTimeoutMs,
