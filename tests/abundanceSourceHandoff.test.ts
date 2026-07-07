@@ -78,6 +78,15 @@ describe("Abundance source handoff", () => {
       "landcover",
       "vegetation"
     ]);
+    expect(handoff.sourceRanking.schemaVersion).toBe("vmesh-source-ranking-v1");
+    expect(handoff.sourceRanking.layerDecisions.map((decision) => decision.layerId)).toEqual([
+      "terrain",
+      "contours",
+      "roads",
+      "buildings",
+      "landcover",
+      "vegetation"
+    ]);
     expect(handoff.warnings.join(" ")).toContain("not raw GIS payloads");
   });
 
@@ -121,6 +130,43 @@ describe("Abundance source handoff", () => {
       requiredWorker: "abundance"
     });
     expect(buildingsLayer?.warnings.join(" ")).toContain("Do not synthesize building footprints");
+
+    const terrainDecision = handoff.sourceRanking.layerDecisions.find(
+      (decision) => decision.layerId === "terrain"
+    );
+    const buildingsDecision = handoff.sourceRanking.layerDecisions.find(
+      (decision) => decision.layerId === "buildings"
+    );
+    const roadsDecision = handoff.sourceRanking.layerDecisions.find(
+      (decision) => decision.layerId === "roads"
+    );
+
+    expect(
+      terrainDecision?.candidates.find((candidate) => candidate.sourceId === "bc-lidarbc")
+    ).toMatchObject({
+      rank: 2,
+      dataType: "terrain",
+      sourceSubType: "bare-earth-dtm"
+    });
+    expect(
+      buildingsDecision?.candidates.find(
+        (candidate) => candidate.sourceId === "overture-maps-geoparquet"
+      )
+    ).toMatchObject({
+      rank: 2,
+      dataType: "buildings",
+      sourceSubType: "building-footprint"
+    });
+    expect(
+      buildingsDecision?.candidates.find(
+        (candidate) => candidate.sourceId === "openstreetmap-pbf-extracts"
+      )
+    ).toMatchObject({ rank: 3 });
+    expect(
+      roadsDecision?.candidates.find(
+        (candidate) => candidate.sourceId === "overture-maps-geoparquet"
+      )
+    ).toMatchObject({ rank: 2, dataType: "roads" });
   });
 
   it("keeps parcel/property layers blocked when no reviewed source refs exist", () => {
@@ -251,6 +297,16 @@ describe("Abundance source handoff", () => {
     expect(handoff.terrainAdapterPlans[0].inputRefs[0].notes.join(" ")).toContain(
       "DEM grid CELLNAME 5156B"
     );
+    expect(
+      handoff.sourceRanking.layerDecisions
+        .find((decision) => decision.layerId === "terrain")
+        ?.candidates.find((candidate) => candidate.sourceId === "kamloops-local-lidar-dtm-1m")
+    ).toMatchObject({
+      selected: true,
+      rank: 2,
+      accessMode: "official-download-archive",
+      processingCost: "medium"
+    });
     expect(requests).toHaveLength(2);
     expect(requests[0]).toContain("FeatureDataset/GIS_Administrative_1/MapServer/6/query");
     expect(requests[0]).toContain("geometryType=esriGeometryEnvelope");
@@ -308,6 +364,16 @@ describe("Abundance source handoff", () => {
     expect(handoff.terrainAdapterPlans[0].inputRefs[0].url).toContain(
       "terrain.example.test/kamloops/"
     );
+    expect(
+      handoff.sourceRanking.layerDecisions
+        .find((decision) => decision.layerId === "terrain")
+        ?.candidates.find((candidate) => candidate.sourceId === "kamloops-local-lidar-dtm-1m")
+    ).toMatchObject({
+      selected: true,
+      rank: 1,
+      accessMode: "source-native-cog-or-geotiff",
+      processingCost: "low"
+    });
     expect(handoff.warnings.join(" ")).toContain("source refs and recipes");
   });
 
@@ -334,6 +400,15 @@ describe("Abundance source handoff", () => {
     expect(handoff.terrainAdapterPlans[0]).toMatchObject({
       status: "blocked",
       selectedSource: { id: "mapterhorn-pmtiles-terrain" }
+    });
+    expect(
+      handoff.sourceRanking.layerDecisions
+        .find((decision) => decision.layerId === "terrain")
+        ?.candidates.find((candidate) => candidate.sourceId === "mapterhorn-pmtiles-terrain")
+    ).toMatchObject({
+      rank: 8,
+      confidenceTier: "fallback",
+      workerAction: "fallback visual terrain/context only; do not claim source truth"
     });
     expect(handoff.gaps.join(" ")).toContain("fallback visual/generic terrain only");
   });

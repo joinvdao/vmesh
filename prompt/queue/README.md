@@ -42,6 +42,7 @@ Machine-readable queue: `prompt/queue/vmesh-land-intelligence-queue.json`.
 | 026   | `026-vector-mask-source-pack-proof.md`                 | queued               | Prove vector and mask source-pack generation.                   |
 | 027   | `027-anywhere-capability-tiers.md`                     | queued               | Define honest worldwide capability tiers and fallback policy.   |
 | 028   | `028-end-to-end-seam-proof-matrix.md`                  | queued               | End-to-end public-safe proof matrix across regions.             |
+| 029   | `029-layer-specific-source-ranking.md`                 | done                 | Deterministic per-layer source ranking for every data type.     |
 
 ## Current Critical Path
 
@@ -68,6 +69,9 @@ readiness artifacts. This is not a live-provider proof.
 4. `028-end-to-end-seam-proof-matrix.md` - public-safe matrix proving VMesh
    resolver -> Abundance source pack -> runtime-pack input across USA, BC,
    Canada non-BC, England, Scotland, and a generic fallback region.
+5. `029-layer-specific-source-ranking.md` - deterministic 1-10 ranking ladders
+   per source type so terrain, buildings, roads, water, soils, ecology,
+   imagery, climate, parcels, and field boundaries are scored in their own way.
 
 ## North Star
 

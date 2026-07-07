@@ -28,7 +28,8 @@
     "vmesh:025",
     "vmesh:026",
     "vmesh:027",
-    "vmesh:028"
+    "vmesh:028",
+    "vmesh:029"
   ],
   "nextRecommended": ["vmesh:025", "vmesh:026", "vmesh:028"],
   "tracks": [
@@ -328,6 +329,22 @@
         "Public-safe VMesh resolver samples through Abundance source-pack/runtime-pack artifacts.",
         "Live provider execution for terrain, vectors, masks, and imagery where source coverage exists.",
         "Capability-tier matrix across USA, BC, Canada non-BC, England, Scotland, and generic fallback samples."
+      ]
+    },
+    {
+      "id": "vmesh:029",
+      "phase": 29,
+      "slug": "layer-specific-source-ranking",
+      "status": "done",
+      "promptPath": "prompt/queue/029-layer-specific-source-ranking.md",
+      "track": "land-intelligence-core",
+      "dependsOn": ["vmesh:013", "vmesh:017", "vmesh:018", "vmesh:019"],
+      "deliverable": "Deterministic 1-10 source-ranking sidecar across terrain, buildings, roads, water, hydrology, soils, landcover, ecology/vegetation, imagery, climate, parcels, and field-boundaries, exposed in the Abundance handoff.",
+      "gates": [
+        "source-ranking targeted Vitest",
+        "Abundance handoff/resolver targeted Vitest",
+        "npx tsc --noEmit",
+        "npm run privacy:check"
       ]
     }
   ],

@@ -12,6 +12,7 @@ export * from "@/lib/geospatialPackage/plannerUtils";
 export * from "@/lib/geospatialPackage/security";
 export * from "@/lib/geospatialPackage/sentinelSrWorkflow";
 export * from "@/lib/geospatialPackage/sourceRegistry";
+export * from "@/lib/geospatialPackage/sourceRanking";
 export * from "@/lib/geospatialPackage/terrainSourceAdapters";
 export * from "@/lib/geospatialPackage/terrainSourceProofs";
 export * from "@/lib/geospatialPackage/terrainWorker";

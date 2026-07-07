@@ -7,6 +7,7 @@ import type {
 import type { BuildingPackageWorkerHandoff } from "@/lib/geospatialPackage/buildingPackageWorker";
 import type { TerrainSourceAdapterPlan } from "@/lib/geospatialPackage/terrainSourceAdapters";
 import type { PackageArtifactKind, PackageLayerId } from "@/lib/geospatialPackage/types";
+import type { SourceRankingReport } from "@/lib/geospatialPackage/sourceRanking";
 
 export const ABUNDANCE_SOURCE_HANDOFF_SCHEMA_VERSION = "vmesh-abundance-source-handoff-v1";
 
@@ -124,6 +125,7 @@ export interface AbundanceSourceHandoff {
     }>;
   };
   coverageEvidence: BaGeospatialPackage["coverage"];
+  sourceRanking: SourceRankingReport;
   baPackage: BaGeospatialPackage;
   layers: AbundanceSourceHandoffLayer[];
   terrainAdapterPlans: TerrainSourceAdapterPlan[];

@@ -34,12 +34,28 @@ this handoff.
 - `terrain`: selected and rejected terrain source ids with source role,
   resolution, confidence, and selected flag.
 - `coverageEvidence`: copied from the BA reviewed package.
+- `sourceRanking`: `vmesh-source-ranking-v1` sidecar with layer-specific
+  1-10 source-quality decisions, selected/rejected candidates, access mode,
+  processing cost, confidence tier, warnings, blockers, and worker action.
 - `baPackage`: the reviewed `vmesh-ba-geospatial-package-v1`.
 - `layers`: per-layer execution contract.
 - `terrainAdapterPlans`: source-native terrain adapter plans where supported.
 - `buildingWorkerHandoff`: `vmesh-building-package-worker-v1` when buildings
   are requested.
 - `warnings`, `gaps`, `nextActions`.
+
+## Source Ranking Contract
+
+`sourceRanking` is deterministic source-selection metadata. Rank `1` is best
+and rank `10` is worst, but each layer has its own ladder: terrain prefers
+source-native official DTM rasters, buildings prefer official/Overture/OSM
+footprints, roads prefer official/Overture/OSM centerlines, soils and ecology
+prefer official surveys or source-specific context, and Mapterhorn/Mapzen remain
+generic terrain fallback.
+
+Ranks do not claim that payloads already exist. Abundance must still execute the
+recipe, materialize payloads, QA coverage/resolution/role, and preserve
+provenance before generating source packs or runtime packs.
 
 ## Layer Contract
 

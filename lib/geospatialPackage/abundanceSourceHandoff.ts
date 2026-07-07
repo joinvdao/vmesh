@@ -18,6 +18,8 @@ import {
   type TerrainSourceAdapterOptions,
   type TerrainSourceAdapterPlan
 } from "@/lib/geospatialPackage/terrainSourceAdapters";
+import { getGeospatialSourceRegistry } from "@/lib/geospatialPackage/sourceRegistry";
+import { createSourceRanking } from "@/lib/geospatialPackage/sourceRanking";
 import {
   parcelBoundaryContext,
   publicBuildingWorkerHandoff
@@ -386,6 +388,12 @@ function terrainSummary(baPackage: BaGeospatialPackage): AbundanceSourceHandoff[
   };
 }
 
+function selectedSourceIdsByLayer(layers: AbundanceSourceHandoffLayer[]) {
+  return Object.fromEntries(
+    layers.map((layer) => [layer.layerId, layer.selectedSourceIds])
+  ) as Partial<Record<PackageLayerId, string[]>>;
+}
+
 export function createAbundanceSourceHandoff(
   input: AbundanceSourceHandoffRequest,
   options: AbundanceSourceHandoffOptions = {}
@@ -426,6 +434,13 @@ export function createAbundanceSourceHandoff(
   const gaps = Array.from(
     new Set([...baPackage.gaps, ...handoffLayers.flatMap((layer) => layer.gaps)])
   );
+  const sourceRanking = createSourceRanking({
+    layerIds: layers,
+    registrySources: getGeospatialSourceRegistry(),
+    sourceRecords: baPackage.sourceRecords,
+    selectedSourceIdsByLayer: selectedSourceIdsByLayer(handoffLayers),
+    terrainAdapterPlans
+  });
 
   return {
     schemaVersion: ABUNDANCE_SOURCE_HANDOFF_SCHEMA_VERSION,
@@ -462,6 +477,7 @@ export function createAbundanceSourceHandoff(
     },
     terrain: terrainSummary(baPackage),
     coverageEvidence: baPackage.coverage,
+    sourceRanking,
     baPackage,
     layers: handoffLayers,
     terrainAdapterPlans,
