@@ -159,7 +159,13 @@ function parseLiveTerrain(value: unknown) {
 }
 
 async function buildHandoff(input: AbundanceSourceHandoffRequest, liveTerrain = false) {
-  if (liveTerrain) return createLiveAbundanceSourceHandoff(input);
+  if (liveTerrain) {
+    return createLiveAbundanceSourceHandoff(input, {
+      terrainSourceAdapterOptions: {
+        requireSourcePixelCoverage: true
+      }
+    });
+  }
   return createAbundanceSourceHandoff(input);
 }
 

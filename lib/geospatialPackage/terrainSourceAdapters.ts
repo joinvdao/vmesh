@@ -16,6 +16,8 @@ import type {
   GeospatialSourceCandidate
 } from "@/lib/geospatialPackage/types";
 import {
+  BC_LIDARBC_TERRAIN_PROVIDER,
+  CANADA_HRDEM_TERRAIN_PROVIDER,
   createCanadaHrdemStacSearchBody,
   createUsgs3depOneMeterCoverageQueryUrl,
   isBritishColumbiaTerrainSourceCoordinate,
@@ -25,6 +27,10 @@ import {
   selectCanadaHrdemStacAsset,
   type TerrainSourcePreviewRole
 } from "@/lib/terrainSourcePreview";
+import {
+  probeTerrainCogCoordinate,
+  type TerrainCogProbeWorkerResult
+} from "@/lib/terrainSourceProbeWorker";
 
 export type TerrainSourceAdapterKind =
   | "arcgis-image-export"
@@ -74,6 +80,8 @@ export interface TerrainSourceAdapterOptions {
   bcLidarGeoTiffUrlTemplate?: string;
   bcLidarFeatureServerResponse?: unknown;
   bcLidarFeatureServerBaseUrl?: string;
+  requireSourcePixelCoverage?: boolean;
+  terrainCogCoordinateProbe?: typeof probeTerrainCogCoordinate;
 }
 
 export interface TerrainSourceInputRef {
@@ -1520,6 +1528,79 @@ function northAmericaDsmCandidateSourceIds(coordinate: {
   return sourceIds;
 }
 
+function cogProbeProviderForToolId(toolId: string | null | undefined) {
+  if (toolId === "bc-lidarbc" || toolId === "bc-lidarbc-dsm") {
+    return BC_LIDARBC_TERRAIN_PROVIDER;
+  }
+  if (
+    toolId === "canada-hrdem" ||
+    toolId === "canada-hrdem-best-dtm" ||
+    toolId === "canada-hrdem-dsm"
+  ) {
+    return CANADA_HRDEM_TERRAIN_PROVIDER;
+  }
+  return null;
+}
+
+function terrainPlanCoordinate(plan: TerrainSourceAdapterPlan) {
+  if (!plan.bbox) return null;
+  return {
+    latitude: (plan.bbox.south + plan.bbox.north) / 2,
+    longitude: (plan.bbox.west + plan.bbox.east) / 2
+  };
+}
+
+function probeFailureReason(probe: TerrainCogProbeWorkerResult) {
+  const reasons = Array.isArray(probe.reasons) ? probe.reasons.filter(Boolean) : [];
+  return reasons.length > 0
+    ? reasons.join(" ")
+    : "Source COG pixel coverage probe did not prove valid terrain pixels.";
+}
+
+async function requireSourcePixelCoverageForPlan(
+  plan: TerrainSourceAdapterPlan,
+  options: TerrainSourceAdapterOptions
+): Promise<TerrainSourceAdapterPlan> {
+  if (!options.requireSourcePixelCoverage || plan.status !== "ready") return plan;
+
+  const providerId = cogProbeProviderForToolId(plan.toolProfile?.toolId);
+  const coordinate = terrainPlanCoordinate(plan);
+  if (!providerId || !coordinate || !plan.toolProfile) return plan;
+
+  const role = terrainPreviewRoleForToolProfile(plan.toolProfile);
+  const probe = await (options.terrainCogCoordinateProbe ?? probeTerrainCogCoordinate)({
+    providerId,
+    coordinate,
+    role,
+    allowTwoMeterFallback:
+      plan.toolProfile.toolId === "canada-hrdem-best-dtm" ||
+      plan.selectedSource?.id === "canada-hrdem-best-dtm"
+  });
+  if (probe.status === "covered") {
+    return {
+      ...plan,
+      warnings: [
+        ...plan.warnings,
+        `Source pixel coverage probe proved ${providerId} ${role.toUpperCase()} valid terrain pixels for the AOI centroid.`
+      ]
+    };
+  }
+
+  return {
+    ...plan,
+    status: "blocked",
+    inputRefs: [],
+    blockedReasons: [
+      ...plan.blockedReasons,
+      `${providerId} ${role.toUpperCase()} source pixel coverage probe failed: ${probeFailureReason(probe)}`
+    ],
+    warnings: [
+      ...plan.warnings,
+      "VMesh retained this source as index evidence only; Abundance must not claim heightfield-ready terrain from it for this AOI."
+    ]
+  };
+}
+
 async function createLiveNorthAmericaSourceAdapterPlan({
   input,
   options,
@@ -1554,9 +1635,10 @@ async function createLiveNorthAmericaSourceAdapterPlan({
       },
       options
     );
+    const verifiedPlan = await requireSourcePixelCoverageForPlan(plan, options);
 
-    if (plan.status === "ready") return plan;
-    blockedPlans.push(plan);
+    if (verifiedPlan.status === "ready") return verifiedPlan;
+    blockedPlans.push(verifiedPlan);
   }
 
   const fallback =

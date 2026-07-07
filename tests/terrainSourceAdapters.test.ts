@@ -772,6 +772,161 @@ describe("terrain source adapters", () => {
     expect(requests[0]).toContain("/FeatureServer/5/query");
   });
 
+  it("keeps a live LidarBC DTM candidate only after required source pixel proof covers the AOI", async () => {
+    const requests: string[] = [];
+    const probes: Array<{
+      providerId: string;
+      role: string;
+      allowTwoMeterFallback: boolean | undefined;
+    }> = [];
+    const fetchImpl: typeof fetch = async (url) => {
+      requests.push(String(url));
+      return new Response(JSON.stringify(lidarBcOneMeterDemResponse), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+
+    const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
+      {
+        request: {
+          aoi: {
+            centroid: { latitude: 49.2827, longitude: -123.1207 },
+            label: "Vancouver public-safe AOI"
+          },
+          layers: ["terrain"]
+        }
+      },
+      {
+        env: {},
+        fetchImpl,
+        requireSourcePixelCoverage: true,
+        terrainCogCoordinateProbe: async (probeOptions) => {
+          probes.push({
+            providerId: probeOptions.providerId,
+            role: probeOptions.role,
+            allowTwoMeterFallback: probeOptions.allowTwoMeterFallback
+          });
+          return {
+            runClass: "live-proof",
+            providerId: probeOptions.providerId,
+            role: probeOptions.role,
+            groundModelRole: "bare-earth-dtm",
+            status: "covered",
+            resolutionMeters: 1,
+            coverageSourceIds: ["bc-lidarbc:dtm:092g025_3_4_2:2025"],
+            sourceAsset: null,
+            renderedArtifact: null,
+            reasons: []
+          };
+        }
+      }
+    );
+
+    expect(plan.status).toBe("ready");
+    expect(plan.selectedSource?.id).toBe("bc-lidarbc");
+    expect(requests).toHaveLength(1);
+    expect(probes).toEqual([
+      {
+        providerId: "bc-lidarbc",
+        role: "dtm",
+        allowTwoMeterFallback: false
+      }
+    ]);
+    expect(plan.warnings.join(" ")).toContain("Source pixel coverage probe proved");
+  });
+
+  it("blocks live BC and HRDEM DTM candidates when required source pixel proof finds no valid terrain pixels", async () => {
+    const requests: string[] = [];
+    const probes: Array<{
+      providerId: string;
+      role: string;
+      allowTwoMeterFallback: boolean | undefined;
+    }> = [];
+    const fetchImpl: typeof fetch = async (url) => {
+      const requestUrl = String(url);
+      requests.push(requestUrl);
+      if (requestUrl.includes("/FeatureServer/5/query")) {
+        return new Response(JSON.stringify(lidarBcOneMeterDemResponse), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      if (requestUrl.includes("/3DEPElevationIndex/MapServer/1/query")) {
+        return new Response(JSON.stringify(emptyCoverageResponse), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      return new Response(JSON.stringify(canadaHrdemOneMeterStac), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+
+    const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
+      {
+        request: {
+          aoi: {
+            centroid: { latitude: 49.2827, longitude: -123.1207 },
+            label: "Vancouver public-safe AOI"
+          },
+          layers: ["terrain"]
+        }
+      },
+      {
+        env: {},
+        fetchImpl,
+        requireSourcePixelCoverage: true,
+        terrainCogCoordinateProbe: async (probeOptions) => {
+          probes.push({
+            providerId: probeOptions.providerId,
+            role: probeOptions.role,
+            allowTwoMeterFallback: probeOptions.allowTwoMeterFallback
+          });
+          return {
+            runClass: "live-proof",
+            providerId: probeOptions.providerId,
+            role: probeOptions.role,
+            groundModelRole: "bare-earth-dtm",
+            status: "blocked",
+            resolutionMeters: null,
+            coverageSourceIds: [],
+            sourceAsset: null,
+            renderedArtifact: null,
+            reasons: ["sampled window contains no valid pixels"]
+          };
+        }
+      }
+    );
+
+    expect(plan.status).toBe("blocked");
+    expect(plan.inputRefs).toHaveLength(0);
+    expect(requests).toHaveLength(4);
+    expect(probes).toEqual([
+      {
+        providerId: "bc-lidarbc",
+        role: "dtm",
+        allowTwoMeterFallback: false
+      },
+      {
+        providerId: "canada-hrdem",
+        role: "dtm",
+        allowTwoMeterFallback: false
+      },
+      {
+        providerId: "canada-hrdem",
+        role: "dtm",
+        allowTwoMeterFallback: true
+      }
+    ]);
+    expect(plan.blockedReasons.join(" ")).toContain("source pixel coverage probe failed");
+    expect(plan.blockedReasons.join(" ")).toContain("sampled window contains no valid pixels");
+    expect(plan.warnings.join(" ")).toContain("must not claim heightfield-ready terrain");
+    expect(plan.warnings.join(" ")).toContain("No official USA/Canada DTM source adapter");
+  });
+
   it("resolves configured Kamloops municipal DTM override before public catalog fetches", async () => {
     const fetchImpl: typeof fetch = async () => {
       throw new Error("configured Kamloops municipal DTM should not need a catalog fetch");
