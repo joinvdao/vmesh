@@ -1,7 +1,13 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { POST } from "@/app/api/geospatial-package/kamloops-terrain-coverage/route";
+
+const ORIGINAL_CWD = process.cwd();
 
 const fullCoverageDemGridResponse = {
   features: [
@@ -53,9 +59,90 @@ function jsonRequest(body: unknown) {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  process.chdir(ORIGINAL_CWD);
 });
 
 describe("Kamloops terrain coverage route", () => {
+  it("uses the operator manifest before probing public DEM grid cells", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "vmesh-kamloops-manifest-"));
+    await mkdir(path.join(tempRoot, "config", "operator-sources"), { recursive: true });
+    await writeFile(
+      path.join(tempRoot, "config", "operator-sources", "kamloops-terrain.manifest.json"),
+      JSON.stringify({
+        schemaVersion: "vmesh-kamloops-operator-terrain-source-manifest-v1",
+        sources: [
+          {
+            id: "kamloops-municipal-dtm-cog-route-fixture",
+            sourceId: "kamloops-local-lidar-dtm-1m",
+            role: "bare-earth-dtm",
+            resolutionMeters: 1,
+            crs: "EPSG:26910",
+            verticalDatum: "CGVD2013",
+            coverage: {
+              west: -121,
+              south: 50,
+              east: -120,
+              north: 51
+            },
+            qa: {
+              sourceNativeRaster: true,
+              coverageStatus: "contains-aoi",
+              maxNoDataRatio: 0
+            },
+            source: {
+              url: "https://terrain.example.test/kamloops/municipal-dtm-1m.cog.tif"
+            }
+          }
+        ]
+      })
+    );
+    process.chdir(tempRoot);
+
+    const fetchImpl = vi.fn(async () => {
+      throw new Error("manifest-backed coverage should not call the public DEM grid");
+    });
+    vi.stubGlobal("fetch", fetchImpl);
+
+    try {
+      const response = await POST(
+        jsonRequest({
+          samples: [{ id: "manifest-covered", lat: 50.64, lng: -120.26 }],
+          consumer: "abundance"
+        })
+      );
+      const payload = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(fetchImpl).not.toHaveBeenCalled();
+      expect(payload.operatorTerrainManifest).toMatchObject({
+        status: "loaded",
+        pathDisclosure: "relative-conventional-path-only"
+      });
+      expect(payload.summary).toMatchObject({
+        sourceBackedCount: 1,
+        rasterBackedCount: 1,
+        goldenQualityCandidateCount: 1,
+        blockedCount: 0
+      });
+      expect(payload.samples).toEqual([
+        expect.objectContaining({
+          id: "manifest-covered",
+          status: "source-backed",
+          sourceBacked: true,
+          rasterBacked: true,
+          derivedElevationBacked: false,
+          goldenQualityTerrainCandidate: true,
+          downloadableCellCount: 0,
+          nonDownloadableCellCount: 0,
+          selectedSourceIds: ["kamloops-local-lidar-dtm-1m"]
+        })
+      ]);
+    } finally {
+      process.chdir(ORIGINAL_CWD);
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it("classifies a batch of candidate centers without echoing coordinates", async () => {
     let gridQueryCount = 0;
     vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {

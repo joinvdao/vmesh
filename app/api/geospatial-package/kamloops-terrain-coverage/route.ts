@@ -5,6 +5,7 @@ import {
   ABUNDANCE_SOURCE_HANDOFF_DEFAULT_GRID_SIZE,
   abundanceSourceSliceBoundsFromCentroid,
   createLiveKamloopsMunicipalDemCoveragePreflight,
+  loadKamloopsOperatorTerrainManifest,
   sanitizeConsumerAppId,
   sanitizeTextLabel
 } from "@/lib/geospatialPackage";
@@ -89,13 +90,15 @@ async function classifySample({
   index,
   edgeMeters,
   gridSize,
-  consumerAppId
+  consumerAppId,
+  kamloopsOperatorTerrainManifest
 }: {
   sample: BatchSample;
   index: number;
   edgeMeters: number;
   gridSize: number;
   consumerAppId: string;
+  kamloopsOperatorTerrainManifest?: unknown;
 }) {
   const id = safeSampleId(sample.id, index);
   const latitude = boundedNumber(sample.lat ?? sample.latitude, -90, 90);
@@ -155,7 +158,7 @@ async function classifySample({
         offline: true
       }
     },
-    { env: process.env }
+    { env: process.env, kamloopsOperatorTerrainManifest }
   );
 
   return {
@@ -204,6 +207,7 @@ export async function POST(req: NextRequest) {
   const gridSize =
     boundedNumber(body.gridSize, 17, 2049) ?? ABUNDANCE_SOURCE_HANDOFF_DEFAULT_GRID_SIZE;
   const consumerAppId = parseConsumer(body.consumer ?? body.consumerAppId);
+  const operatorTerrainManifest = await loadKamloopsOperatorTerrainManifest();
   const samples = await Promise.all(
     body.samples.map((sample, index) =>
       classifySample({
@@ -211,7 +215,8 @@ export async function POST(req: NextRequest) {
         index,
         edgeMeters,
         gridSize,
-        consumerAppId
+        consumerAppId,
+        kamloopsOperatorTerrainManifest: operatorTerrainManifest.manifest
       })
     )
   );
@@ -241,6 +246,7 @@ export async function POST(req: NextRequest) {
       exactCoordinatesEchoed: false,
       callerOwnedSampleIdsOnly: true
     },
+    operatorTerrainManifest: operatorTerrainManifest.evidence,
     summary: {
       sourceBackedCount,
       rasterBackedCount,
