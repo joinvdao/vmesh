@@ -45,6 +45,7 @@
     "terrain:usgs-lpc-asset-manifest": "python scripts/terrain-usgs-lpc-asset-manifest.py",
     "terrain:usgs-lpc-dsm-render": "python scripts/terrain-usgs-lpc-dsm-render.py",
     "terrain:coverage-matrix": "node scripts/terrain-source-coverage-matrix.mjs",
+    "terrain:kamloops-audit": "node scripts/kamloops-terrain-coverage-audit.mjs",
     "terrain:country-sample-live-proof": "node scripts/terrain-source-country-sample-live-proof.mjs",
     "terrain:route-live-proof": "node scripts/terrain-source-route-live-proof.mjs",
     "terrain:viewer-live-proof": "node scripts/terrain-source-viewer-live-proof.mjs",

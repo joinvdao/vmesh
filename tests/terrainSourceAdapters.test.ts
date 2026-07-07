@@ -1017,10 +1017,13 @@ describe("terrain source adapters", () => {
       "https://maps.kamloops.ca/opendata/Lidar/2024/5156B.zip"
     );
     expect(plan.inputRefs[0].notes.join(" ")).toContain("not emitted");
-    expect(requests).toHaveLength(1);
+    expect(requests).toHaveLength(2);
     expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
     expect(requests[0]).toContain("geometryType=esriGeometryEnvelope");
     expect(requests[0]).toMatch(/geometry=-120\.[0-9]+%2C50\.[0-9]+%2C-120\.[0-9]+%2C50\.[0-9]+/);
+    expect(requests[1]).toBe(
+      "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
+    );
   });
 
   it("uses official Kamloops derived-elevation refs when the municipal DEM grid has no raster cells", async () => {
@@ -1085,6 +1088,10 @@ describe("terrain source adapters", () => {
         });
       }
 
+      if (requestUrl.includes("/opendata/DEM/2024_CGVD2013/")) {
+        return new Response(null, { status: 200 });
+      }
+
       throw new Error(
         "municipal derived-elevation fallback should avoid provincial fallback fetches"
       );
@@ -1119,8 +1126,11 @@ describe("terrain source adapters", () => {
     expect(plan.warnings.join(" ")).toContain("non-downloadable raster cell");
     expect(plan.warnings.join(" ")).toContain("Do not label");
     expect(plan.warnings.join(" ")).toContain("1m LiDAR raster");
-    expect(requests).toHaveLength(1);
+    expect(requests).toHaveLength(2);
     expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
+    expect(requests[1]).toBe(
+      "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
+    );
   });
 
   it("resolves an ambiguous border-box Canada DTM chain by blocking USGS then selecting HRDEM", async () => {

@@ -1,0 +1,386 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+
+const DEM_GRID_LAYER_URL =
+  "https://maps.kamloops.ca/arcgis/rest/services/FeatureDataset/GIS_Administrative_1/MapServer/6";
+const DEM_DOWNLOAD_BASE_URL = "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013";
+const ELEVATION_VECTOR_EXTENT_WGS84 = {
+  west: -120.546437,
+  south: 50.607833,
+  east: -120.025817,
+  north: 50.873614
+};
+
+function usage() {
+  return [
+    "Kamloops terrain coverage audit",
+    "",
+    "Usage:",
+    "  npm run terrain:kamloops-audit -- [--grid 5] [--edge-meters 3000] [--output .artifacts/kamloops-terrain-coverage-audit/latest.private.json]",
+    "",
+    "The output path is private/operator-local by default because it contains exact sample coordinates."
+  ].join("\n");
+}
+
+function valueAfter(args, index, flag) {
+  const value = args[index + 1];
+  if (!value || value.startsWith("--")) throw new Error(`${flag} requires a value.`);
+  return value;
+}
+
+function parseNumber(value, flag) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) throw new Error(`${flag} must be a finite number.`);
+  return parsed;
+}
+
+function parseArgs(args) {
+  const options = {
+    grid: 5,
+    edgeMeters: 3000,
+    output: ".artifacts/kamloops-terrain-coverage-audit/latest.private.json"
+  };
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--help" || arg === "-h") {
+      console.log(usage());
+      process.exit(0);
+    }
+    if (arg === "--grid") {
+      options.grid = Math.max(
+        1,
+        Math.min(16, Math.floor(parseNumber(valueAfter(args, index, arg), arg)))
+      );
+      index += 1;
+      continue;
+    }
+    if (arg === "--edge-meters") {
+      options.edgeMeters = Math.max(
+        512,
+        Math.min(10000, parseNumber(valueAfter(args, index, arg), arg))
+      );
+      index += 1;
+      continue;
+    }
+    if (arg === "--output") {
+      options.output = valueAfter(args, index, arg);
+      index += 1;
+      continue;
+    }
+    throw new Error(`Unknown argument: ${arg}`);
+  }
+
+  return options;
+}
+
+function offsetCoordinate({ latitude, longitude, eastMeters, northMeters }) {
+  const metersPerDegreeLat = 111_320;
+  const metersPerDegreeLng = Math.max(
+    12_000,
+    metersPerDegreeLat * Math.cos((latitude * Math.PI) / 180)
+  );
+  return {
+    latitude: latitude + northMeters / metersPerDegreeLat,
+    longitude: longitude + eastMeters / metersPerDegreeLng
+  };
+}
+
+function boundsFromCentroid({ latitude, longitude, edgeMeters }) {
+  const half = edgeMeters / 2;
+  const southWest = offsetCoordinate({
+    latitude,
+    longitude,
+    eastMeters: -half,
+    northMeters: -half
+  });
+  const northEast = offsetCoordinate({
+    latitude,
+    longitude,
+    eastMeters: half,
+    northMeters: half
+  });
+  return {
+    west: southWest.longitude,
+    south: southWest.latitude,
+    east: northEast.longitude,
+    north: northEast.latitude
+  };
+}
+
+function bboxContains(container, target) {
+  return (
+    target.west >= container.west &&
+    target.east <= container.east &&
+    target.south >= container.south &&
+    target.north <= container.north
+  );
+}
+
+function formatCoordinate(value) {
+  return Number(value.toFixed(6)).toString();
+}
+
+function queryUrl(bbox) {
+  const url = new URL(`${DEM_GRID_LAYER_URL}/query`);
+  url.searchParams.set("f", "json");
+  url.searchParams.set("where", "1=1");
+  url.searchParams.set(
+    "geometry",
+    [bbox.west, bbox.south, bbox.east, bbox.north].map(formatCoordinate).join(",")
+  );
+  url.searchParams.set("geometryType", "esriGeometryEnvelope");
+  url.searchParams.set("inSR", "4326");
+  url.searchParams.set("spatialRel", "esriSpatialRelIntersects");
+  url.searchParams.set("outFields", "OBJECTID,CELLNAME,PHOTOGRIDLIMITS");
+  url.searchParams.set("returnGeometry", "false");
+  return url.toString();
+}
+
+function safeCellName(value) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toUpperCase();
+  return /^[A-Z0-9_-]+$/.test(normalized) ? normalized : null;
+}
+
+function demZipUrl(cellName) {
+  return `${DEM_DOWNLOAD_BASE_URL}/DEM_CGVD2013_${cellName}.zip`;
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 20_000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function parseCells(payload) {
+  if (!payload || typeof payload !== "object" || !Array.isArray(payload.features)) return [];
+  const cells = [];
+  for (const feature of payload.features) {
+    const attributes =
+      feature &&
+      typeof feature === "object" &&
+      feature.attributes &&
+      typeof feature.attributes === "object"
+        ? feature.attributes
+        : null;
+    if (!attributes) continue;
+    const cellName = safeCellName(attributes.CELLNAME);
+    if (!cellName) continue;
+    cells.push({
+      objectId: typeof attributes.OBJECTID === "number" ? attributes.OBJECTID : null,
+      cellName,
+      photoGridLimits:
+        typeof attributes.PHOTOGRIDLIMITS === "string" ? attributes.PHOTOGRIDLIMITS : null,
+      demZipUrl: demZipUrl(cellName)
+    });
+  }
+  return cells.sort((left, right) => left.cellName.localeCompare(right.cellName));
+}
+
+async function verifyDemZip(cell) {
+  if (cell.photoGridLimits?.trim().toUpperCase() !== "YES") {
+    return { reachable: false, status: null, contentLengthBytes: null, skipped: true };
+  }
+  const attempts = [
+    { method: "HEAD", headers: { Accept: "application/zip,*/*" } },
+    { method: "HEAD", headers: { Accept: "application/zip,*/*" } },
+    { method: "GET", headers: { Accept: "application/zip,*/*", Range: "bytes=0-0" } }
+  ];
+  let lastStatus = null;
+  for (const attempt of attempts) {
+    try {
+      const response = await fetchWithTimeout(cell.demZipUrl, attempt, 20_000);
+      lastStatus = response.status;
+      const contentLength = Number(response.headers.get("content-length") ?? "");
+      const contentRange = response.headers.get("content-range") ?? "";
+      const rangeSize = /\/(\d+)$/i.exec(contentRange)?.[1];
+      if (response.body) await response.body.cancel().catch(() => undefined);
+      if (response.ok || response.status === 206) {
+        return {
+          reachable: true,
+          status: response.status,
+          contentLengthBytes:
+            Number.isFinite(contentLength) && contentLength > 0
+              ? contentLength
+              : rangeSize
+                ? Number(rangeSize)
+                : null,
+          skipped: false
+        };
+      }
+    } catch {
+      lastStatus = null;
+    }
+  }
+  return { reachable: false, status: lastStatus, contentLengthBytes: null, skipped: false };
+}
+
+function sampleCenters({ grid, edgeMeters }) {
+  const half = edgeMeters / 2;
+  const southWest = offsetCoordinate({
+    latitude: ELEVATION_VECTOR_EXTENT_WGS84.south,
+    longitude: ELEVATION_VECTOR_EXTENT_WGS84.west,
+    eastMeters: half,
+    northMeters: half
+  });
+  const northEast = offsetCoordinate({
+    latitude: ELEVATION_VECTOR_EXTENT_WGS84.north,
+    longitude: ELEVATION_VECTOR_EXTENT_WGS84.east,
+    eastMeters: -half,
+    northMeters: -half
+  });
+
+  const samples = [];
+  for (let y = 0; y < grid; y += 1) {
+    for (let x = 0; x < grid; x += 1) {
+      const longitude =
+        grid === 1
+          ? (southWest.longitude + northEast.longitude) / 2
+          : southWest.longitude + ((northEast.longitude - southWest.longitude) * x) / (grid - 1);
+      const latitude =
+        grid === 1
+          ? (southWest.latitude + northEast.latitude) / 2
+          : southWest.latitude + ((northEast.latitude - southWest.latitude) * y) / (grid - 1);
+      samples.push({
+        id: `grid-${String(y + 1).padStart(2, "0")}-${String(x + 1).padStart(2, "0")}`,
+        latitude,
+        longitude
+      });
+    }
+  }
+  return samples;
+}
+
+async function classifySample(sample, edgeMeters) {
+  const bbox = boundsFromCentroid({
+    latitude: sample.latitude,
+    longitude: sample.longitude,
+    edgeMeters
+  });
+  let response;
+  try {
+    response = await fetchWithTimeout(queryUrl(bbox), { headers: { Accept: "application/json" } });
+  } catch (error) {
+    return {
+      ...sample,
+      bbox,
+      status: "lookup-failed",
+      goldenQualityTerrainCandidate: false,
+      rasterBacked: false,
+      derivedElevationBacked: bboxContains(ELEVATION_VECTOR_EXTENT_WGS84, bbox),
+      cells: [],
+      blockers: [
+        error instanceof Error
+          ? `DEM Grid query failed: ${error.message}.`
+          : "DEM Grid query failed."
+      ]
+    };
+  }
+  if (!response.ok) {
+    return {
+      ...sample,
+      bbox,
+      status: "lookup-failed",
+      goldenQualityTerrainCandidate: false,
+      rasterBacked: false,
+      derivedElevationBacked: false,
+      cells: [],
+      blockers: [`DEM Grid query failed with HTTP ${response.status}.`]
+    };
+  }
+
+  const cells = parseCells(await response.json());
+  const verifiedCells = [];
+  for (const cell of cells) {
+    verifiedCells.push({
+      ...cell,
+      demZipAvailability: await verifyDemZip(cell)
+    });
+  }
+
+  const missingCells = verifiedCells.filter((cell) => !cell.demZipAvailability.reachable);
+  const rasterBacked = verifiedCells.length > 0 && missingCells.length === 0;
+  const derivedElevationBacked = bboxContains(ELEVATION_VECTOR_EXTENT_WGS84, bbox);
+  return {
+    ...sample,
+    bbox,
+    status: rasterBacked
+      ? "golden-candidate"
+      : derivedElevationBacked
+        ? "derived-elevation"
+        : "blocked",
+    goldenQualityTerrainCandidate: rasterBacked,
+    rasterBacked,
+    derivedElevationBacked,
+    cells: verifiedCells,
+    blockers: rasterBacked
+      ? []
+      : [
+          missingCells.length > 0
+            ? `Missing or non-downloadable DEM ZIP cells: ${missingCells.map((cell) => cell.cellName).join(", ")}.`
+            : "No DEM Grid cells intersected this exact 3 km frame.",
+          derivedElevationBacked
+            ? "Official DEMPoint/DEMBreakline and contour-derived fallback can produce a labelled slice, but not the golden raster bar."
+            : "The exact 3 km frame falls outside the municipal derived-elevation fallback extent."
+        ]
+  };
+}
+
+function publicSummary(report) {
+  return {
+    schemaVersion: report.schemaVersion,
+    generatedAt: report.generatedAt,
+    edgeMeters: report.edgeMeters,
+    grid: report.grid,
+    sampleCount: report.samples.length,
+    counts: report.counts,
+    privacy: {
+      exactCoordinatesOmittedFromConsoleSummary: true,
+      privateReportPathContainsExactSampleCoordinates: true
+    }
+  };
+}
+
+async function main() {
+  const options = parseArgs(process.argv.slice(2));
+  const samples = [];
+  for (const sample of sampleCenters(options)) {
+    samples.push(await classifySample(sample, options.edgeMeters));
+  }
+  const counts = {
+    goldenCandidate: samples.filter((sample) => sample.goldenQualityTerrainCandidate).length,
+    derivedElevation: samples.filter((sample) => sample.status === "derived-elevation").length,
+    blocked: samples.filter(
+      (sample) => sample.status === "blocked" || sample.status === "lookup-failed"
+    ).length
+  };
+  const report = {
+    schemaVersion: "vmesh-kamloops-terrain-coverage-audit-v1",
+    generatedAt: new Date().toISOString(),
+    source: {
+      demGridLayer: DEM_GRID_LAYER_URL,
+      demDownloadBaseUrl: DEM_DOWNLOAD_BASE_URL
+    },
+    edgeMeters: options.edgeMeters,
+    grid: options.grid,
+    counts,
+    samples
+  };
+
+  await mkdir(path.dirname(options.output), { recursive: true });
+  await writeFile(options.output, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+  console.log(JSON.stringify({ ...publicSummary(report), output: options.output }, null, 2));
+}
+
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
+});

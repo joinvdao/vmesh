@@ -93,9 +93,13 @@ describe("Kamloops terrain preflight route", () => {
     ]);
     expect(payload.cells.nonDownloadable).toEqual([]);
     expect(payload.goldenQualityBlockers).toEqual([]);
-    expect(requests).toHaveLength(1);
+    expect(requests).toHaveLength(3);
     expect(requests[0]).toContain("FeatureDataset/GIS_Administrative_1/MapServer/6/query");
     expect(requests[0]).toContain("geometryType=esriGeometryEnvelope");
+    expect(requests.slice(1)).toEqual([
+      "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip",
+      "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156C.zip"
+    ]);
   });
 
   it("selects the contour-derived municipal rail when the exact slice intersects non-downloadable DEM cells", async () => {
@@ -139,13 +143,17 @@ describe("Kamloops terrain preflight route", () => {
     expect(payload.suggestedSourceBackedFrame).toBeNull();
   });
 
-  it("does not suggest a nearby shifted frame when the exact contour-derived rail can service the slice", async () => {
-    let requestCount = 0;
-    vi.stubGlobal("fetch", async () => {
-      requestCount += 1;
+  it("suggests a nearby golden-quality frame when the exact slice is derived-only", async () => {
+    let gridQueryCount = 0;
+    vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
+      const requestUrl = String(url);
+      if (requestUrl.includes("/opendata/DEM/2024_CGVD2013/")) {
+        return new Response(null, { status: 200 });
+      }
+      gridQueryCount += 1;
       return new Response(
         JSON.stringify(
-          requestCount === 1 ? partialCoverageDemGridResponse : fullCoverageDemGridResponse
+          gridQueryCount === 1 ? partialCoverageDemGridResponse : fullCoverageDemGridResponse
         ),
         {
           status: 200,
@@ -170,9 +178,23 @@ describe("Kamloops terrain preflight route", () => {
       derivedElevationBacked: true,
       goldenQualityTerrainCandidate: false,
       inputRefKinds: ["zip-archive", "arcgis-feature-query"],
-      suggestedSourceBackedFrame: null
+      suggestedGoldenQualityFrame: {
+        status: "available",
+        centerDisclosure: "relative-offset-only",
+        rasterBacked: true,
+        rasterZipVerified: true,
+        goldenQualityTerrainCandidate: true,
+        downloadableCellCount: 2,
+        nonDownloadableCellCount: 0
+      },
+      suggestedSourceBackedFrame: {
+        status: "available",
+        rasterBacked: true,
+        rasterZipVerified: true,
+        goldenQualityTerrainCandidate: true
+      }
     });
-    expect(requestCount).toBe(1);
+    expect(gridQueryCount).toBe(2);
     expect(serialized).not.toContain("50.68");
     expect(serialized).not.toContain("-120.23");
   });

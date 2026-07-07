@@ -77,6 +77,9 @@ export interface TerrainSourceAdapterOptions {
   kamloopsLocalLidarGeoTiffUrlTemplate?: string;
   kamloopsMunicipalDemGridResponse?: unknown;
   kamloopsMunicipalDemGridBaseUrl?: string;
+  kamloopsMunicipalDemZipAvailability?: Record<string, KamloopsMunicipalDemZipAvailability>;
+  verifyKamloopsMunicipalDemZipUrls?: boolean;
+  kamloopsMunicipalDemProbeTimeoutMs?: number;
   bcLidarGeoTiffUrl?: string;
   bcLidarGeoTiffUrlTemplate?: string;
   bcLidarFeatureServerResponse?: unknown;
@@ -527,6 +530,12 @@ interface KamloopsMunicipalDemGridSelection {
   lidarZipUrl: string;
 }
 
+interface KamloopsMunicipalDemZipAvailability {
+  reachable: boolean;
+  status: number | null;
+  contentLengthBytes: number | null;
+}
+
 export type KamloopsMunicipalDemCoverageStatus =
   | "source-backed"
   | "partial"
@@ -541,6 +550,9 @@ export interface KamloopsMunicipalDemCoverageCell {
   objectId: number | null;
   photoGridLimits: string | null;
   downloadable: boolean;
+  rasterZipStatus: "verified" | "missing" | "unchecked";
+  demZipHttpStatus: number | null;
+  demZipContentLengthBytes: number | null;
 }
 
 export interface KamloopsMunicipalDemCoveragePreflight {
@@ -548,6 +560,7 @@ export interface KamloopsMunicipalDemCoveragePreflight {
   status: KamloopsMunicipalDemCoverageStatus;
   sourceBacked: boolean;
   rasterBacked: boolean;
+  rasterZipVerified: boolean;
   derivedElevationBacked: boolean;
   contourDerived: boolean;
   pointBreakDerived: boolean;
@@ -647,22 +660,116 @@ function selectKamloopsMunicipalDemGridTiles(value: unknown): KamloopsMunicipalD
   return candidates.sort((left, right) => left.cellName.localeCompare(right.cellName));
 }
 
+function kamloopsMunicipalDemZipAvailabilityForTile(
+  tile: KamloopsMunicipalDemGridSelection,
+  availability: Record<string, KamloopsMunicipalDemZipAvailability> | undefined
+): KamloopsMunicipalDemZipAvailability | undefined {
+  return availability?.[tile.cellName] ?? availability?.[tile.demZipUrl];
+}
+
 function isDownloadableKamloopsMunicipalDemGridTile(
-  tile: KamloopsMunicipalDemGridSelection
+  tile: KamloopsMunicipalDemGridSelection,
+  availability?: Record<string, KamloopsMunicipalDemZipAvailability>
 ): boolean {
+  const verified = kamloopsMunicipalDemZipAvailabilityForTile(tile, availability);
+  if (verified) return verified.reachable;
   return tile.photoGridLimits?.trim().toUpperCase() === "YES";
 }
 
 function publicKamloopsMunicipalDemCoverageCell(
-  tile: KamloopsMunicipalDemGridSelection
+  tile: KamloopsMunicipalDemGridSelection,
+  availability?: Record<string, KamloopsMunicipalDemZipAvailability>
 ): KamloopsMunicipalDemCoverageCell {
+  const verified = kamloopsMunicipalDemZipAvailabilityForTile(tile, availability);
   return {
     sourceId: tile.sourceId,
     cellName: tile.cellName,
     objectId: tile.objectId,
     photoGridLimits: tile.photoGridLimits,
-    downloadable: isDownloadableKamloopsMunicipalDemGridTile(tile)
+    downloadable: isDownloadableKamloopsMunicipalDemGridTile(tile, availability),
+    rasterZipStatus: verified ? (verified.reachable ? "verified" : "missing") : "unchecked",
+    demZipHttpStatus: verified?.status ?? null,
+    demZipContentLengthBytes: verified?.contentLengthBytes ?? null
   };
+}
+
+async function fetchWithTimeout(
+  fetchImpl: typeof fetch,
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetchImpl(input, {
+      ...init,
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function verifyKamloopsMunicipalDemZipAvailability({
+  tiles,
+  fetchImpl,
+  timeoutMs
+}: {
+  tiles: KamloopsMunicipalDemGridSelection[];
+  fetchImpl: typeof fetch;
+  timeoutMs: number;
+}): Promise<Record<string, KamloopsMunicipalDemZipAvailability>> {
+  async function probeUrl(url: string): Promise<KamloopsMunicipalDemZipAvailability> {
+    const attempts: RequestInit[] = [
+      { method: "HEAD", headers: { Accept: "application/zip,*/*" } },
+      { method: "HEAD", headers: { Accept: "application/zip,*/*" } },
+      { method: "GET", headers: { Accept: "application/zip,*/*", Range: "bytes=0-0" } }
+    ];
+
+    let lastStatus: number | null = null;
+    for (const attempt of attempts) {
+      try {
+        const response = await fetchWithTimeout(fetchImpl, url, attempt, timeoutMs);
+        lastStatus = response.status;
+        const contentLength = Number(response.headers.get("content-length") ?? "");
+        const contentRange = response.headers.get("content-range") ?? "";
+        const rangeSize = /\/(\d+)$/i.exec(contentRange)?.[1];
+        if (response.body) await response.body.cancel().catch(() => undefined);
+        if (response.ok || response.status === 206) {
+          return {
+            reachable: true,
+            status: response.status,
+            contentLengthBytes:
+              Number.isFinite(contentLength) && contentLength > 0
+                ? contentLength
+                : rangeSize
+                  ? Number(rangeSize)
+                  : null
+          };
+        }
+      } catch {
+        lastStatus = null;
+      }
+    }
+
+    return {
+      reachable: false,
+      status: lastStatus,
+      contentLengthBytes: null
+    };
+  }
+
+  const downloadableCatalogTiles = tiles.filter(
+    (tile) => tile.photoGridLimits?.trim().toUpperCase() === "YES"
+  );
+  const entries = await Promise.all(
+    downloadableCatalogTiles.map(async (tile) => {
+      return [tile.cellName, await probeUrl(tile.demZipUrl)] as const;
+    })
+  );
+
+  return Object.fromEntries(entries);
 }
 
 function kamloopsMunicipalDemPreflightInput(
@@ -707,13 +814,14 @@ export function createKamloopsMunicipalDemCoveragePreflight(
   statusOverride?: KamloopsMunicipalDemCoverageStatus
 ): KamloopsMunicipalDemCoveragePreflight {
   const preflightInput = kamloopsMunicipalDemPreflightInput(input);
+  const zipAvailability = options.kamloopsMunicipalDemZipAvailability;
   const tiles = selectKamloopsMunicipalDemGridTiles(demGridResponse);
   const downloadable = tiles
-    .filter(isDownloadableKamloopsMunicipalDemGridTile)
-    .map(publicKamloopsMunicipalDemCoverageCell);
+    .filter((tile) => isDownloadableKamloopsMunicipalDemGridTile(tile, zipAvailability))
+    .map((tile) => publicKamloopsMunicipalDemCoverageCell(tile, zipAvailability));
   const nonDownloadable = tiles
-    .filter((tile) => !isDownloadableKamloopsMunicipalDemGridTile(tile))
-    .map(publicKamloopsMunicipalDemCoverageCell);
+    .filter((tile) => !isDownloadableKamloopsMunicipalDemGridTile(tile, zipAvailability))
+    .map((tile) => publicKamloopsMunicipalDemCoverageCell(tile, zipAvailability));
   const plan = createTerrainSourceAdapterPlan(preflightInput, {
     ...options,
     kamloopsMunicipalDemGridResponse: demGridResponse
@@ -743,10 +851,15 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     (inputRef) => inputRef.url === KAMLOOPS_MUNICIPAL_CONTOUR_1M_LAYER_URL
   );
   const rasterBacked = usesDemZipRail || usesDirectRasterRail;
+  const rasterZipVerified =
+    rasterBacked &&
+    downloadable.length > 0 &&
+    downloadable.every((cell) => cell.rasterZipStatus === "verified");
   const derivedElevationBacked = usesPointBreakDerivedRail || usesContourDerivedRail;
   const goldenQualityTerrainCandidate =
     status === "source-backed" &&
     rasterBacked &&
+    rasterZipVerified &&
     !derivedElevationBacked &&
     nonDownloadable.length === 0;
   const goldenQualityBlockers = [
@@ -755,6 +868,9 @@ export function createKamloopsMunicipalDemCoveragePreflight(
       : null,
     !rasterBacked
       ? "No materializable municipal raster DEM/DTM ref was selected for this exact 3 km slice."
+      : null,
+    rasterBacked && !rasterZipVerified
+      ? "Selected municipal raster DEM refs were not all verified reachable by public URL probe."
       : null,
     usesPointBreakDerivedRail
       ? "Selected terrain includes DEMPoint/DEMBreakline-derived elevation evidence, not a 1m raster DEM ZIP."
@@ -772,6 +888,7 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     status,
     sourceBacked: status === "source-backed",
     rasterBacked,
+    rasterZipVerified,
     derivedElevationBacked,
     contourDerived: usesContourDerivedRail,
     pointBreakDerived: usesPointBreakDerivedRail,
@@ -827,14 +944,17 @@ export async function createLiveKamloopsMunicipalDemCoveragePreflight(
   }
 
   const fetchImpl = options.fetchImpl ?? fetch;
+  const kamloopsProbeTimeoutMs = options.kamloopsMunicipalDemProbeTimeoutMs ?? 15_000;
 
   try {
-    const response = await fetchImpl(
+    const response = await fetchWithTimeout(
+      fetchImpl,
       createKamloopsMunicipalDemGridQueryUrl({
         bbox: initialPlan.bbox,
         baseUrl: options.kamloopsMunicipalDemGridBaseUrl ?? KAMLOOPS_MUNICIPAL_DEM_GRID_LAYER_URL
       }),
-      { headers: { Accept: "application/json" } }
+      { headers: { Accept: "application/json" } },
+      kamloopsProbeTimeoutMs
     );
 
     if (!response.ok) {
@@ -852,11 +972,21 @@ export async function createLiveKamloopsMunicipalDemCoveragePreflight(
       };
     }
 
-    return createKamloopsMunicipalDemCoveragePreflight(
-      preflightInput,
-      (await response.json()) as unknown,
-      options
-    );
+    const demGridResponse = (await response.json()) as unknown;
+    const tiles = selectKamloopsMunicipalDemGridTiles(demGridResponse);
+    const zipAvailability =
+      options.verifyKamloopsMunicipalDemZipUrls === false
+        ? options.kamloopsMunicipalDemZipAvailability
+        : await verifyKamloopsMunicipalDemZipAvailability({
+            tiles,
+            fetchImpl,
+            timeoutMs: kamloopsProbeTimeoutMs
+          });
+
+    return createKamloopsMunicipalDemCoveragePreflight(preflightInput, demGridResponse, {
+      ...options,
+      kamloopsMunicipalDemZipAvailability: zipAvailability
+    });
   } catch (error) {
     return {
       ...createKamloopsMunicipalDemCoveragePreflight(
@@ -1325,11 +1455,18 @@ function createKamloopsLocalLidarSourcePlan(
   const intersectingDemGridTiles = context.options.kamloopsMunicipalDemGridResponse
     ? selectKamloopsMunicipalDemGridTiles(context.options.kamloopsMunicipalDemGridResponse)
     : [];
-  const selectedDemGridTiles = intersectingDemGridTiles.filter(
-    isDownloadableKamloopsMunicipalDemGridTile
+  const selectedDemGridTiles = intersectingDemGridTiles.filter((tile) =>
+    isDownloadableKamloopsMunicipalDemGridTile(
+      tile,
+      context.options.kamloopsMunicipalDemZipAvailability
+    )
   );
   const nonDownloadableDemGridTiles = intersectingDemGridTiles.filter(
-    (tile) => !isDownloadableKamloopsMunicipalDemGridTile(tile)
+    (tile) =>
+      !isDownloadableKamloopsMunicipalDemGridTile(
+        tile,
+        context.options.kamloopsMunicipalDemZipAvailability
+      )
   );
   const elevationVectorCoversAoi = bboxContainsBbox({
     container: KAMLOOPS_MUNICIPAL_ELEVATION_VECTOR_EXTENT_WGS84,
@@ -1689,6 +1826,7 @@ export async function createLiveTerrainSourceAdapterPlan(
   }
 
   const fetchImpl = options.fetchImpl ?? fetch;
+  const kamloopsProbeTimeoutMs = options.kamloopsMunicipalDemProbeTimeoutMs ?? 15_000;
   const role = terrainPreviewRoleForToolProfile(initialPlan.toolProfile);
   const coordinate = {
     latitude: (initialPlan.bbox.south + initialPlan.bbox.north) / 2,
@@ -1697,14 +1835,16 @@ export async function createLiveTerrainSourceAdapterPlan(
 
   try {
     if (initialPlan.toolProfile.toolId === "kamloops-local-lidar") {
-      const response = await fetchImpl(
+      const response = await fetchWithTimeout(
+        fetchImpl,
         createKamloopsMunicipalDemGridQueryUrl({
           bbox: initialPlan.bbox,
           baseUrl: options.kamloopsMunicipalDemGridBaseUrl ?? KAMLOOPS_MUNICIPAL_DEM_GRID_LAYER_URL
         }),
         {
           headers: { Accept: "application/json" }
-        }
+        },
+        kamloopsProbeTimeoutMs
       );
 
       if (!response.ok) {
@@ -1718,9 +1858,19 @@ export async function createLiveTerrainSourceAdapterPlan(
       }
 
       const demGridResponse = (await response.json()) as unknown;
+      const tiles = selectKamloopsMunicipalDemGridTiles(demGridResponse);
+      const zipAvailability =
+        options.verifyKamloopsMunicipalDemZipUrls === false
+          ? options.kamloopsMunicipalDemZipAvailability
+          : await verifyKamloopsMunicipalDemZipAvailability({
+              tiles,
+              fetchImpl,
+              timeoutMs: kamloopsProbeTimeoutMs
+            });
       return createTerrainSourceAdapterPlan(input, {
         ...options,
-        kamloopsMunicipalDemGridResponse: demGridResponse
+        kamloopsMunicipalDemGridResponse: demGridResponse,
+        kamloopsMunicipalDemZipAvailability: zipAvailability
       });
     }
 

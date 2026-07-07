@@ -11,6 +11,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const SUGGESTION_PROBE_TIMEOUT_MS = 3_000;
+
 function jsonResponse(body: unknown, status = 200) {
   return NextResponse.json(body, {
     status,
@@ -106,7 +108,7 @@ function searchOffsets(stepMeters: number, maxMeters: number) {
   );
 }
 
-async function sourceBackedSuggestion({
+async function goldenQualitySuggestion({
   latitude,
   longitude,
   edgeMeters,
@@ -153,9 +155,12 @@ async function sourceBackedSuggestion({
           offline: true
         }
       },
-      { env: process.env }
+      {
+        env: process.env,
+        kamloopsMunicipalDemProbeTimeoutMs: SUGGESTION_PROBE_TIMEOUT_MS
+      }
     );
-    if (!preflight.sourceBacked) continue;
+    if (!preflight.goldenQualityTerrainCandidate) continue;
 
     candidates.push({
       status: "available",
@@ -168,10 +173,13 @@ async function sourceBackedSuggestion({
       edgeMeters,
       gridSize,
       selectedSourceIds: preflight.selectedSourceIds,
+      rasterBacked: preflight.rasterBacked,
+      rasterZipVerified: preflight.rasterZipVerified,
+      goldenQualityTerrainCandidate: preflight.goldenQualityTerrainCandidate,
       downloadableCellCount: preflight.cells.downloadable.length,
       nonDownloadableCellCount: preflight.cells.nonDownloadable.length,
       warnings: [
-        "Suggested frame is source-backed for terrain but shifts the 3 km slice center; keep the user parcel boundary as an overlay."
+        "Suggested frame is a verified municipal raster-backed golden terrain candidate but shifts the 3 km slice center; keep the user parcel boundary as an overlay."
       ]
     });
     if (candidates.length >= limit) break;
@@ -184,7 +192,7 @@ async function sourceBackedSuggestion({
       candidates,
       warnings: [
         ...candidates[0].warnings,
-        "Candidate frames prove public municipal source refs only; Abundance must still materialize and QA the DEM mosaic before runtime terrain readiness."
+        "Candidate frames prove public municipal raster refs only; Abundance must still materialize and QA the DEM mosaic before runtime terrain readiness."
       ]
     };
   }
@@ -197,7 +205,7 @@ async function sourceBackedSuggestion({
     candidateCount: 0,
     candidates: [],
     warnings: [
-      "No source-backed 3 km municipal DEM frame was found within the configured relative-offset search radius."
+      "No verified municipal raster-backed golden terrain candidate frame was found within the configured relative-offset search radius."
     ]
   };
 }
@@ -239,6 +247,27 @@ export async function GET(req: NextRequest) {
     { env: process.env }
   );
 
+  const shouldSuggest =
+    parseBoolean(req.nextUrl.searchParams.get("suggestion")) &&
+    !preflight.goldenQualityTerrainCandidate;
+  const suggestedGoldenQualityFrame = shouldSuggest
+    ? await goldenQualitySuggestion({
+        latitude,
+        longitude,
+        edgeMeters,
+        gridSize,
+        consumerAppId,
+        label,
+        stepMeters:
+          boundedNumber(req.nextUrl.searchParams.get("suggestionStepMeters"), 100, 1000) ?? 250,
+        maxMeters:
+          boundedNumber(req.nextUrl.searchParams.get("suggestionMaxMeters"), 250, 5000) ?? 2500,
+        limit:
+          Math.floor(boundedNumber(req.nextUrl.searchParams.get("suggestionLimit"), 1, 16) ?? 6) ||
+          1
+      })
+    : null;
+
   return jsonResponse({
     ...preflight,
     request: {
@@ -252,24 +281,7 @@ export async function GET(req: NextRequest) {
       gridSize,
       parcelBoundaryRole: "overlay-only"
     },
-    suggestedSourceBackedFrame:
-      parseBoolean(req.nextUrl.searchParams.get("suggestion")) && !preflight.sourceBacked
-        ? await sourceBackedSuggestion({
-            latitude,
-            longitude,
-            edgeMeters,
-            gridSize,
-            consumerAppId,
-            label,
-            stepMeters:
-              boundedNumber(req.nextUrl.searchParams.get("suggestionStepMeters"), 100, 1000) ?? 250,
-            maxMeters:
-              boundedNumber(req.nextUrl.searchParams.get("suggestionMaxMeters"), 250, 5000) ?? 2500,
-            limit:
-              Math.floor(
-                boundedNumber(req.nextUrl.searchParams.get("suggestionLimit"), 1, 16) ?? 6
-              ) || 1
-          })
-        : null
+    suggestedGoldenQualityFrame,
+    suggestedSourceBackedFrame: suggestedGoldenQualityFrame
   });
 }
