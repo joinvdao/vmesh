@@ -801,6 +801,8 @@ export interface KamloopsMunicipalDemCoveragePreflight {
   missingRasterCellsRawLidarVerified: boolean;
   rawLidarDtmMaterializerReady: false;
   derivedElevationBacked: boolean;
+  derivedElevationSupport: "not-required" | "supported" | "unsupported" | "unknown";
+  contourSupportFeatureCount: number | null;
   contourDerived: boolean;
   pointBreakDerived: boolean;
   goldenQualityTerrainCandidate: boolean;
@@ -1206,6 +1208,7 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     nonDownloadable.length > 0 &&
     nonDownloadable.every((cell) => cell.rawLidarZipStatus === "verified");
   const derivedElevationBacked = usesPointBreakDerivedRail || usesContourDerivedRail;
+  const derivedElevationSupport = derivedElevationBacked ? "unknown" : "not-required";
   const goldenQualityTerrainCandidate =
     status === "source-backed" &&
     rasterBacked &&
@@ -1248,6 +1251,8 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     missingRasterCellsRawLidarVerified,
     rawLidarDtmMaterializerReady: false,
     derivedElevationBacked,
+    derivedElevationSupport,
+    contourSupportFeatureCount: null,
     contourDerived: usesContourDerivedRail,
     pointBreakDerived: usesPointBreakDerivedRail,
     goldenQualityTerrainCandidate,
@@ -1285,6 +1290,50 @@ export function createKamloopsMunicipalDemCoveragePreflight(
             "Do not claim golden-quality terrain for this exact centered 3 km slice.",
             "Offer fallback visual terrain, pick another center, or add another official DTM source for the missing cells."
           ]
+  };
+}
+
+function withLiveDerivedElevationSupport(
+  preflight: KamloopsMunicipalDemCoveragePreflight,
+  contourSupport:
+    | { status: "supported"; count: number }
+    | { status: "unsupported"; count: number }
+    | { status: "unknown"; reason: string }
+): KamloopsMunicipalDemCoveragePreflight {
+  if (!preflight.derivedElevationBacked || preflight.rasterBacked) return preflight;
+
+  if (contourSupport.status === "supported") {
+    return {
+      ...preflight,
+      derivedElevationSupport: "supported",
+      contourSupportFeatureCount: contourSupport.count,
+      warnings: [
+        ...preflight.warnings,
+        `City of Kamloops contour support probe found ${contourSupport.count} contour feature(s) for this exact 3 km AOI.`
+      ]
+    };
+  }
+
+  const reason =
+    contourSupport.status === "unsupported"
+      ? "City of Kamloops municipal derived-elevation rail is not source-backed for this exact 3 km AOI because the official 1m contour support probe returned zero features."
+      : contourSupport.reason;
+
+  return {
+    ...preflight,
+    status: contourSupport.status === "unknown" ? "lookup-failed" : "blocked",
+    sourceBacked: false,
+    selectedSourceIds: [],
+    derivedElevationSupport: contourSupport.status === "unknown" ? "unknown" : "unsupported",
+    contourSupportFeatureCount:
+      contourSupport.status === "unsupported" ? contourSupport.count : null,
+    blockedReasons: [...preflight.blockedReasons, reason],
+    goldenQualityBlockers: [...preflight.goldenQualityBlockers, reason],
+    warnings: [...preflight.warnings, reason],
+    nextActions: [
+      "Do not claim source-backed or golden-quality terrain for this exact centered 3 km slice.",
+      "Offer fallback visual terrain, pick another center, or add another official DTM source for the missing cells."
+    ]
   };
 }
 
@@ -1374,11 +1423,26 @@ export async function createLiveKamloopsMunicipalDemCoveragePreflight(
             }
           : options.kamloopsMunicipalLidarZipAvailability;
 
-    return createKamloopsMunicipalDemCoveragePreflight(preflightInput, demGridResponse, {
+    const preflight = createKamloopsMunicipalDemCoveragePreflight(preflightInput, demGridResponse, {
       ...options,
       kamloopsMunicipalDemZipAvailability: zipAvailability,
       kamloopsMunicipalLidarZipAvailability: lidarZipAvailability
     });
+
+    if (
+      options.verifyKamloopsMunicipalContourSupport !== false &&
+      preflight.derivedElevationBacked &&
+      !preflight.rasterBacked
+    ) {
+      const contourSupport = await verifyKamloopsMunicipalContourSupport({
+        bbox: initialPlan.bbox,
+        fetchImpl,
+        timeoutMs: kamloopsProbeTimeoutMs
+      });
+      return withLiveDerivedElevationSupport(preflight, contourSupport);
+    }
+
+    return preflight;
   } catch (error) {
     return {
       ...createKamloopsMunicipalDemCoveragePreflight(

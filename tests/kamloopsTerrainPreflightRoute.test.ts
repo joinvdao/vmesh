@@ -115,6 +115,12 @@ describe("Kamloops terrain preflight route", () => {
           status: requestUrl.includes("5156D.zip") ? 200 : 404
         });
       }
+      if (requestUrl.includes("/CityWorks/UtilityBaseMap/MapServer/4/query")) {
+        return new Response(JSON.stringify({ count: 42 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
       return new Response(JSON.stringify(partialCoverageDemGridResponse), {
         status: 200,
         headers: { "Content-Type": "application/json" }
@@ -138,6 +144,8 @@ describe("Kamloops terrain preflight route", () => {
       missingRasterCellsRawLidarVerified: true,
       rawLidarDtmMaterializerReady: false,
       derivedElevationBacked: true,
+      derivedElevationSupport: "supported",
+      contourSupportFeatureCount: 42,
       contourDerived: true,
       pointBreakDerived: true,
       goldenQualityTerrainCandidate: false,
@@ -164,6 +172,49 @@ describe("Kamloops terrain preflight route", () => {
     expect(payload.suggestedSourceBackedFrame).toBeNull();
   });
 
+  it("blocks derived municipal preflight when the exact slice has no contour support", async () => {
+    vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
+      const requestUrl = String(url);
+      if (requestUrl.includes("/opendata/DEM/2024_CGVD2013/")) {
+        return new Response(null, { status: 404 });
+      }
+      if (requestUrl.includes("/opendata/Lidar/2024/")) {
+        return new Response(null, { status: 404 });
+      }
+      if (requestUrl.includes("/CityWorks/UtilityBaseMap/MapServer/4/query")) {
+        return new Response(JSON.stringify({ count: 0 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      return new Response(JSON.stringify(partialCoverageDemGridResponse), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    });
+
+    const response = await GET(
+      new NextRequest(
+        "http://localhost/api/geospatial-package/kamloops-terrain-preflight?lat=50.68&lng=-120.23"
+      )
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      status: "blocked",
+      sourceBacked: false,
+      rasterBacked: false,
+      derivedElevationBacked: true,
+      derivedElevationSupport: "unsupported",
+      contourSupportFeatureCount: 0,
+      selectedSourceIds: [],
+      goldenQualityTerrainCandidate: false
+    });
+    expect(payload.blockedReasons.join(" ")).toContain("zero features");
+    expect(payload.nextActions.join(" ")).toContain("fallback visual terrain");
+  });
+
   it("suggests a nearby golden-quality frame when the exact slice is derived-only", async () => {
     let gridQueryCount = 0;
     vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
@@ -175,6 +226,12 @@ describe("Kamloops terrain preflight route", () => {
       }
       if (requestUrl.includes("/opendata/Lidar/2024/")) {
         return new Response(null, { status: 404 });
+      }
+      if (requestUrl.includes("/CityWorks/UtilityBaseMap/MapServer/4/query")) {
+        return new Response(JSON.stringify({ count: 42 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
       }
       gridQueryCount += 1;
       return new Response(
