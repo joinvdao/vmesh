@@ -34,6 +34,7 @@ import {
 
 export type TerrainSourceAdapterKind =
   | "arcgis-image-export"
+  | "arcgis-feature-query"
   | "direct-geotiff"
   | "s3-cog"
   | "stac-cog"
@@ -152,9 +153,11 @@ const KAMLOOPS_MUNICIPAL_2024_LIDAR_DOWNLOAD_BASE_URL =
   "https://maps.kamloops.ca/opendata/Lidar/2024";
 const KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL =
   "https://maps.kamloops.ca/OpenData/zipfiles/DEMPointBreakSHP.zip";
+const KAMLOOPS_MUNICIPAL_CONTOUR_1M_LAYER_URL =
+  "https://maps.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4";
 const KAMLOOPS_MUNICIPAL_2024_LIDAR_APP_URL =
   "https://kamloops.maps.arcgis.com/apps/webappviewer/index.html?id=6fea67a054a94b45ad2998c0a03d88e7";
-const KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_EXTENT_WGS84 = {
+const KAMLOOPS_MUNICIPAL_ELEVATION_VECTOR_EXTENT_WGS84 = {
   west: -120.546437,
   south: 50.607833,
   east: -120.025817,
@@ -715,6 +718,8 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     nonDownloadable,
     statusOverride
   });
+  const inputRefKinds = Array.from(new Set(plan.inputRefs.map((inputRef) => inputRef.kind)));
+  const usesContourDerivedRail = inputRefKinds.includes("arcgis-feature-query");
 
   return {
     schemaVersion: "vmesh-kamloops-municipal-dem-coverage-preflight-v1",
@@ -726,7 +731,7 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     selectedSourceIds:
       status === "source-backed" && plan.selectedSource?.id ? [plan.selectedSource.id] : [],
     inputRefCount: plan.inputRefs.length,
-    inputRefKinds: Array.from(new Set(plan.inputRefs.map((inputRef) => inputRef.kind))),
+    inputRefKinds,
     cells: {
       total: tiles.length,
       downloadable,
@@ -736,10 +741,16 @@ export function createKamloopsMunicipalDemCoveragePreflight(
     warnings: plan.warnings,
     nextActions:
       status === "source-backed"
-        ? [
-            "Call the Abundance site-runtime-pack route in sourcePackMode=required for this coordinate.",
-            "The worker must still fetch/window each DEM ZIP and prove full non-no-data coverage before claiming runtime terrain readiness."
-          ]
+        ? usesContourDerivedRail
+          ? [
+              "Call the Abundance site-runtime-pack route in sourcePackMode=required for this coordinate.",
+              "The worker must query ELEVATION-coded municipal contour polylines, interpolate the runtime grid, and preserve contour-derived warnings before claiming runtime terrain readiness.",
+              "Do not label this path as a 1m LiDAR raster DEM ZIP; it is official municipal contour-derived terrain."
+            ]
+          : [
+              "Call the Abundance site-runtime-pack route in sourcePackMode=required for this coordinate.",
+              "The worker must still fetch/window each DEM ZIP and prove full non-no-data coverage before claiming runtime terrain readiness."
+            ]
         : [
             "Do not claim golden-quality terrain for this exact centered 3 km slice.",
             "Offer fallback visual terrain, pick another center, or add another official DTM source for the missing cells."
@@ -1268,8 +1279,8 @@ function createKamloopsLocalLidarSourcePlan(
   const nonDownloadableDemGridTiles = intersectingDemGridTiles.filter(
     (tile) => !isDownloadableKamloopsMunicipalDemGridTile(tile)
   );
-  const pointBreakCoversAoi = bboxContainsBbox({
-    container: KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_EXTENT_WGS84,
+  const elevationVectorCoversAoi = bboxContainsBbox({
+    container: KAMLOOPS_MUNICIPAL_ELEVATION_VECTOR_EXTENT_WGS84,
     target: context.bbox
   });
   const demGridInputRefs = selectedDemGridTiles.map((selectedDemGridTile) =>
@@ -1290,8 +1301,37 @@ function createKamloopsLocalLidarSourcePlan(
       ]
     })
   );
+  const contourInputRef = buildInputRef({
+    context,
+    kind: "arcgis-feature-query",
+    url: KAMLOOPS_MUNICIPAL_CONTOUR_1M_LAYER_URL,
+    format: "json",
+    role: "terrain-source",
+    notes: [
+      "Official City of Kamloops CityWorks UtilityBaseMap Contour 1m Minors feature layer for the requested 3 km frame.",
+      "Use this only when public DEM raster ZIP cells are absent or incomplete.",
+      "A downstream worker must query ELEVATION-coded polylines, derive a contour-interpolated runtime grid, preserve EPSG:3157/CGVD2013 metadata, and report nearest-contour support distances.",
+      "This is a deterministic public ArcGIS FeatureServer source ref, not retained payload data and not a 1m raster DEM ZIP."
+    ]
+  });
 
   if (nonDownloadableDemGridTiles.length > 0) {
+    if (elevationVectorCoversAoi) {
+      return readyPlan({
+        context,
+        inputRefs: [contourInputRef],
+        warnings: [
+          `City of Kamloops public DEM Grid intersects ${nonDownloadableDemGridTiles.length} non-downloadable raster cell(s), so VMesh selected the official CityWorks 1m contour layer as the municipal contour-derived DTM rail for this AOI.`,
+          `Non-downloadable DEM grid cells were retained as evidence: ${nonDownloadableDemGridTiles
+            .map((tile) => `${tile.cellName} PHOTOGRIDLIMITS ${tile.photoGridLimits ?? "unknown"}`)
+            .join(", ")}.`,
+          `The public DEMPoint/DEMBreakline archive also exists at ${KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL}, but contour features are the primary fallback because they carry explicit ELEVATION-coded 1m isolines.`,
+          "Run class is dry-run: vmesh resolved public source refs only; Abundance must materialize and QA the contour-derived heightfield before runtime terrain readiness.",
+          "Do not label the contour-derived output as a 1m LiDAR raster; it is official municipal elevation-derived terrain."
+        ]
+      });
+    }
+
     return blockedPlan({
       context,
       reasons: [
@@ -1301,9 +1341,7 @@ function createKamloopsLocalLidarSourcePlan(
         `Non-downloadable DEM grid cells were omitted: ${nonDownloadableDemGridTiles
           .map((tile) => `${tile.cellName} PHOTOGRIDLIMITS ${tile.photoGridLimits ?? "unknown"}`)
           .join(", ")}.`,
-        pointBreakCoversAoi
-          ? `The public DEMPoint/DEMBreakline archive exists at ${KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL}, but it is a point/breakline-derived candidate that must pass support-radius QA before any source-backed DTM claim.`
-          : "The public DEMPoint/DEMBreakline source extent does not fully contain this 3 km AOI.",
+        "The public municipal elevation-vector source extent does not fully contain this 3 km AOI.",
         "Fall through to LidarBC/Canada HRDEM or label the AOI as outside full municipal public LiDAR/DEM coverage."
       ]
     });
@@ -1321,15 +1359,27 @@ function createKamloopsLocalLidarSourcePlan(
   }
 
   if (context.options.kamloopsMunicipalDemGridResponse) {
+    if (elevationVectorCoversAoi) {
+      return readyPlan({
+        context,
+        inputRefs: [contourInputRef],
+        warnings: [
+          "City of Kamloops public DEM Grid returned no DEM raster cells, but the official CityWorks 1m contour layer extent fully contains this 3 km AOI.",
+          "Run class is dry-run: vmesh resolved the public contour FeatureServer source ref only; Abundance must derive/interpolate and QA the runtime DTM grid before claiming source-backed terrain.",
+          "Do not label the contour-derived output as a 1m LiDAR raster; it is official municipal elevation-derived terrain."
+        ]
+      });
+    }
+
     return blockedPlan({
       context,
       reasons: [
         "City of Kamloops public DEM Grid did not return a tile for the selected AOI centroid."
       ],
       warnings: [
-        pointBreakCoversAoi
-          ? `The public DEMPoint/DEMBreakline archive exists at ${KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL}, but it is a point/breakline-derived candidate that must pass support-radius QA before any source-backed DTM claim.`
-          : "The public DEMPoint/DEMBreakline source extent does not fully contain this 3 km AOI.",
+        elevationVectorCoversAoi
+          ? `The official CityWorks 1m contour layer exists at ${KAMLOOPS_MUNICIPAL_CONTOUR_1M_LAYER_URL}, but the DEM Grid did not return a raster tile for this AOI; downstream workers must prove contour support before terrain readiness.`
+          : "The public municipal elevation-vector source extent does not fully contain this 3 km AOI.",
         "Fall through to LidarBC/Canada HRDEM or label the AOI as outside municipal public LiDAR/DEM coverage."
       ]
     });

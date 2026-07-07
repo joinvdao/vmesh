@@ -96,8 +96,8 @@ describe("Kamloops terrain coverage route", () => {
         callerOwnedSampleIdsOnly: true
       },
       summary: {
-        sourceBackedCount: 1,
-        partialCount: 1,
+        sourceBackedCount: 2,
+        partialCount: 0,
         blockedCount: 0
       }
     });
@@ -112,11 +112,12 @@ describe("Kamloops terrain coverage route", () => {
       }),
       expect.objectContaining({
         id: "partial-cell",
-        status: "partial",
-        sourceBacked: false,
+        status: "source-backed",
+        sourceBacked: true,
         downloadableCellCount: 1,
         nonDownloadableCellCount: 1,
-        selectedSourceIds: []
+        selectedSourceIds: ["kamloops-local-lidar-dtm-1m"],
+        warnings: expect.arrayContaining([expect.stringContaining("contour")])
       })
     ]);
     expect(serialized).not.toContain("50.64");

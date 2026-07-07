@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  abundanceSourceSliceBoundsFromCentroid,
   createLiveNorthAmericaDsmSourceAdapterPlan,
   createLiveNorthAmericaDtmSourceAdapterPlan,
   createLiveTerrainSourceAdapterPlan,
@@ -10,9 +11,19 @@ import {
 } from "@/lib/geospatialPackage";
 
 const sampleAoi = {
+  centroid: { latitude: 38.7223, longitude: -9.1393 },
   bounds: [-120.55, 50.66, -120.54, 50.67] as [number, number, number, number],
   label: "Golden eval AOI"
 };
+function kamloopsThreeKmAoi(latitude: number, longitude: number, label: string) {
+  return {
+    bounds: abundanceSourceSliceBoundsFromCentroid({
+      centroid: { latitude, longitude },
+      edgeMeters: 3000
+    }),
+    label
+  };
+}
 const canadaHrdemOneMeterStac = {
   features: [
     {
@@ -1012,7 +1023,7 @@ describe("terrain source adapters", () => {
     expect(requests[0]).toMatch(/geometry=-120\.[0-9]+%2C50\.[0-9]+%2C-120\.[0-9]+%2C50\.[0-9]+/);
   });
 
-  it("falls through from uncovered Kamloops municipal grid to public BC LidarBC", async () => {
+  it("uses official Kamloops contour refs when the municipal DEM grid has no raster cells", async () => {
     const requests: string[] = [];
     const fetchImpl: typeof fetch = async (url) => {
       const requestUrl = String(url);
@@ -1024,19 +1035,13 @@ describe("terrain source adapters", () => {
         });
       }
 
-      return new Response(JSON.stringify(lidarBcOneMeterDemResponse), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
+      throw new Error("municipal contour fallback should avoid provincial fallback fetches");
     };
 
     const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
       {
         request: {
-          aoi: {
-            centroid: { latitude: 50.64, longitude: -120.26 },
-            label: "Kamloops public-safe fallback AOI"
-          },
+          aoi: kamloopsThreeKmAoi(50.64, -120.26, "Kamloops public-safe fallback AOI"),
           layers: ["terrain"]
         }
       },
@@ -1044,13 +1049,23 @@ describe("terrain source adapters", () => {
     );
 
     expect(plan.status).toBe("ready");
-    expect(plan.selectedSource?.id).toBe("bc-lidarbc");
-    expect(requests).toHaveLength(2);
+    expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
+    expect(plan.toolProfile?.toolId).toBe("kamloops-local-lidar");
+    expect(plan.inputRefs).toHaveLength(1);
+    expect(plan.inputRefs[0]).toMatchObject({
+      kind: "arcgis-feature-query",
+      format: "json",
+      role: "terrain-source",
+      url: "https://maps.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4"
+    });
+    expect(plan.warnings.join(" ")).toContain("contour");
+    expect(plan.warnings.join(" ")).toContain("Do not label");
+    expect(plan.warnings.join(" ")).toContain("1m LiDAR raster");
+    expect(requests).toHaveLength(1);
     expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
-    expect(requests[1]).toContain("/FeatureServer/5/query");
   });
 
-  it("falls through from partial Kamloops municipal DEM-grid coverage instead of overclaiming a 3 km DTM", async () => {
+  it("uses official Kamloops contour refs when partial DEM-grid cells are not downloadable", async () => {
     const requests: string[] = [];
     const fetchImpl: typeof fetch = async (url) => {
       const requestUrl = String(url);
@@ -1062,19 +1077,13 @@ describe("terrain source adapters", () => {
         });
       }
 
-      return new Response(JSON.stringify(lidarBcOneMeterDemResponse), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
+      throw new Error("municipal contour fallback should avoid provincial fallback fetches");
     };
 
     const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
       {
         request: {
-          aoi: {
-            centroid: { latitude: 50.68, longitude: -120.23 },
-            label: "Kamloops partial public-safe AOI"
-          },
+          aoi: kamloopsThreeKmAoi(50.68, -120.23, "Kamloops partial public-safe AOI"),
           layers: ["terrain"]
         }
       },
@@ -1082,10 +1091,20 @@ describe("terrain source adapters", () => {
     );
 
     expect(plan.status).toBe("ready");
-    expect(plan.selectedSource?.id).toBe("bc-lidarbc");
-    expect(requests).toHaveLength(2);
+    expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
+    expect(plan.toolProfile?.toolId).toBe("kamloops-local-lidar");
+    expect(plan.inputRefs).toHaveLength(1);
+    expect(plan.inputRefs[0]).toMatchObject({
+      kind: "arcgis-feature-query",
+      format: "json",
+      role: "terrain-source",
+      url: "https://maps.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4"
+    });
+    expect(plan.warnings.join(" ")).toContain("non-downloadable raster cell");
+    expect(plan.warnings.join(" ")).toContain("Do not label");
+    expect(plan.warnings.join(" ")).toContain("1m LiDAR raster");
+    expect(requests).toHaveLength(1);
     expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
-    expect(requests[1]).toContain("/FeatureServer/5/query");
   });
 
   it("resolves an ambiguous border-box Canada DTM chain by blocking USGS then selecting HRDEM", async () => {

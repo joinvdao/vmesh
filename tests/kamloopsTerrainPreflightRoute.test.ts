@@ -94,7 +94,7 @@ describe("Kamloops terrain preflight route", () => {
     expect(requests[0]).toContain("geometryType=esriGeometryEnvelope");
   });
 
-  it("fails the source-backed claim quickly when the exact slice intersects non-downloadable cells", async () => {
+  it("selects the contour-derived municipal rail when the exact slice intersects non-downloadable DEM cells", async () => {
     vi.stubGlobal("fetch", async () => {
       return new Response(JSON.stringify(partialCoverageDemGridResponse), {
         status: 200,
@@ -111,9 +111,10 @@ describe("Kamloops terrain preflight route", () => {
 
     expect(response.status).toBe(200);
     expect(payload).toMatchObject({
-      status: "partial",
-      sourceBacked: false,
-      selectedSourceIds: []
+      status: "source-backed",
+      sourceBacked: true,
+      selectedSourceIds: ["kamloops-local-lidar-dtm-1m"],
+      inputRefKinds: ["arcgis-feature-query"]
     });
     expect(payload.cells.downloadable.map((cell: { cellName: string }) => cell.cellName)).toEqual([
       "5156B"
@@ -121,12 +122,13 @@ describe("Kamloops terrain preflight route", () => {
     expect(
       payload.cells.nonDownloadable.map((cell: { cellName: string }) => cell.cellName)
     ).toEqual(["5156D"]);
-    expect(payload.blockedReasons.join(" ")).toContain("non-downloadable");
-    expect(payload.nextActions.join(" ")).toContain("Do not claim golden-quality terrain");
+    expect(payload.warnings.join(" ")).toContain("non-downloadable raster cell");
+    expect(payload.nextActions.join(" ")).toContain("contour-derived terrain");
+    expect(payload.nextActions.join(" ")).toContain("not label this path as a 1m LiDAR raster");
     expect(payload.suggestedSourceBackedFrame).toBeNull();
   });
 
-  it("can suggest a nearby source-backed frame using a relative offset only", async () => {
+  it("does not suggest a nearby shifted frame when the exact contour-derived rail can service the slice", async () => {
     let requestCount = 0;
     vi.stubGlobal("fetch", async () => {
       requestCount += 1;
@@ -151,26 +153,12 @@ describe("Kamloops terrain preflight route", () => {
 
     expect(response.status).toBe(200);
     expect(payload).toMatchObject({
-      status: "partial",
-      sourceBacked: false,
-      suggestedSourceBackedFrame: {
-        status: "available",
-        centerDisclosure: "relative-offset-only",
-        distanceMeters: 250,
-        edgeMeters: 3000,
-        gridSize: 257,
-        candidateCount: 1,
-        selectedSourceIds: ["kamloops-local-lidar-dtm-1m"],
-        downloadableCellCount: 2,
-        nonDownloadableCellCount: 0
-      }
+      status: "source-backed",
+      sourceBacked: true,
+      inputRefKinds: ["arcgis-feature-query"],
+      suggestedSourceBackedFrame: null
     });
-    expect(payload.suggestedSourceBackedFrame.candidates).toHaveLength(1);
-    expect(payload.suggestedSourceBackedFrame.offsetMeters).toMatchObject({
-      north: expect.any(Number),
-      east: expect.any(Number)
-    });
-    expect(requestCount).toBe(2);
+    expect(requestCount).toBe(1);
     expect(serialized).not.toContain("50.68");
     expect(serialized).not.toContain("-120.23");
   });

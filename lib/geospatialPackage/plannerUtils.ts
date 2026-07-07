@@ -46,13 +46,24 @@ function centroidFromH3(h3Id: string) {
   }
 }
 
+function centroidFromBounds(bounds: PackageAoiInput["bounds"]) {
+  if (!bounds) return null;
+  const [west, south, east, north] = bounds;
+  if (![west, south, east, north].every(Number.isFinite)) return null;
+  return {
+    latitude: Number(((south + north) * 0.5).toFixed(7)),
+    longitude: Number(((west + east) * 0.5).toFixed(7))
+  };
+}
+
 export function normalizePackageAoi(
   input: PackageAoiInput,
   resolution = DEFAULT_RESOLUTION
 ): NormalizedPackageAoi {
   const requestedResolution = clampResolution(resolution);
   const centroid = input.centroid ??
-    (input.h3Id ? centroidFromH3(input.h3Id) : null) ?? {
+    (input.h3Id ? centroidFromH3(input.h3Id) : null) ??
+    centroidFromBounds(input.bounds) ?? {
       latitude: 38.7223,
       longitude: -9.1393
     };
