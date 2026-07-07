@@ -47,6 +47,7 @@
     "terrain:coverage-matrix": "node scripts/terrain-source-coverage-matrix.mjs",
     "terrain:kamloops-audit": "node scripts/kamloops-terrain-coverage-audit.mjs",
     "terrain:kamloops-discovery": "node scripts/kamloops-terrain-source-discovery.mjs",
+    "terrain:kamloops-manifest-audit": "node scripts/kamloops-operator-terrain-manifest-audit.mjs",
     "terrain:country-sample-live-proof": "node scripts/terrain-source-country-sample-live-proof.mjs",
     "terrain:route-live-proof": "node scripts/terrain-source-route-live-proof.mjs",
     "terrain:viewer-live-proof": "node scripts/terrain-source-viewer-live-proof.mjs",
