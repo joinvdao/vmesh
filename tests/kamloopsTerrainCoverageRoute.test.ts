@@ -152,6 +152,12 @@ describe("Kamloops terrain coverage route", () => {
           status: requestUrl.includes("DEM_CGVD2013_5357D.zip") ? 404 : 200
         });
       }
+      if (requestUrl.includes("/CityWorks/UtilityBaseMap/MapServer/4/query")) {
+        return new Response(JSON.stringify({ count: 12 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
       gridQueryCount += 1;
       return new Response(
         JSON.stringify(

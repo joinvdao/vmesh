@@ -203,6 +203,18 @@ const KAMLOOPS_MUNICIPAL_ELEVATION_VECTOR_EXTENT_WGS84 = {
   east: -120.025817,
   north: 50.873614
 };
+const KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_COLUMN = 53;
+const KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_ROW = 50;
+const KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_EASTING = 682_585.92;
+const KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_NORTHING = 5_610_360.01;
+const KAMLOOPS_MUNICIPAL_DEM_GRID_FULL_WIDTH_METERS = 3_000;
+const KAMLOOPS_MUNICIPAL_DEM_GRID_FULL_HEIGHT_METERS = 2_400;
+const KAMLOOPS_MUNICIPAL_DEM_GRID_TILE_WIDTH_METERS = 1_500;
+const KAMLOOPS_MUNICIPAL_DEM_GRID_TILE_HEIGHT_METERS = 1_200;
+const KAMLOOPS_MUNICIPAL_DEM_GRID_MIN_ROW = 48;
+const KAMLOOPS_MUNICIPAL_DEM_GRID_MAX_ROW = 64;
+const KAMLOOPS_MUNICIPAL_DEM_GRID_MIN_COLUMN = 48;
+const KAMLOOPS_MUNICIPAL_DEM_GRID_MAX_COLUMN = 64;
 
 const SOURCE_NATIVE_TOOL_IDS = new Set([
   "usgs-3dep",
@@ -721,6 +733,181 @@ function createKamloopsMunicipalDemGridQueryUrl({
   url.searchParams.set("returnGeometry", "false");
 
   return url.toString();
+}
+
+function utm10Nad83FromWgs84({ latitude, longitude }: { latitude: number; longitude: number }): {
+  easting: number;
+  northing: number;
+} {
+  const semiMajorAxis = 6_378_137;
+  const inverseFlattening = 298.257_222_101;
+  const flattening = 1 / inverseFlattening;
+  const eccentricitySquared = flattening * (2 - flattening);
+  const secondEccentricitySquared = eccentricitySquared / (1 - eccentricitySquared);
+  const scaleFactor = 0.9996;
+  const centralMeridian = (-123 * Math.PI) / 180;
+  const latitudeRadians = (latitude * Math.PI) / 180;
+  const longitudeRadians = (longitude * Math.PI) / 180;
+  const sinLatitude = Math.sin(latitudeRadians);
+  const cosLatitude = Math.cos(latitudeRadians);
+  const tanLatitude = Math.tan(latitudeRadians);
+  const n = semiMajorAxis / Math.sqrt(1 - eccentricitySquared * sinLatitude * sinLatitude);
+  const t = tanLatitude * tanLatitude;
+  const c = secondEccentricitySquared * cosLatitude * cosLatitude;
+  const a = cosLatitude * (longitudeRadians - centralMeridian);
+  const meridionalArc =
+    semiMajorAxis *
+    ((1 -
+      eccentricitySquared / 4 -
+      (3 * eccentricitySquared * eccentricitySquared) / 64 -
+      (5 * eccentricitySquared * eccentricitySquared * eccentricitySquared) / 256) *
+      latitudeRadians -
+      ((3 * eccentricitySquared) / 8 +
+        (3 * eccentricitySquared * eccentricitySquared) / 32 +
+        (45 * eccentricitySquared * eccentricitySquared * eccentricitySquared) / 1024) *
+        Math.sin(2 * latitudeRadians) +
+      ((15 * eccentricitySquared * eccentricitySquared) / 256 +
+        (45 * eccentricitySquared * eccentricitySquared * eccentricitySquared) / 1024) *
+        Math.sin(4 * latitudeRadians) -
+      ((35 * eccentricitySquared * eccentricitySquared * eccentricitySquared) / 3072) *
+        Math.sin(6 * latitudeRadians));
+
+  const easting =
+    scaleFactor *
+      n *
+      (a +
+        ((1 - t + c) * a ** 3) / 6 +
+        ((5 - 18 * t + t * t + 72 * c - 58 * secondEccentricitySquared) * a ** 5) / 120) +
+    500_000;
+  const northing =
+    scaleFactor *
+    (meridionalArc +
+      n *
+        tanLatitude *
+        ((a * a) / 2 +
+          ((5 - t + 9 * c + 4 * c * c) * a ** 4) / 24 +
+          ((61 - 58 * t + t * t + 600 * c - 330 * secondEccentricitySquared) * a ** 6) / 720));
+
+  return { easting, northing };
+}
+
+function utmBoundsFromWgs84Bbox(bbox: NonNullable<TerrainSourceAdapterPlan["bbox"]>) {
+  const midLatitude = (bbox.south + bbox.north) / 2;
+  const midLongitude = (bbox.west + bbox.east) / 2;
+  const points = [
+    { latitude: bbox.south, longitude: bbox.west },
+    { latitude: bbox.south, longitude: bbox.east },
+    { latitude: bbox.north, longitude: bbox.west },
+    { latitude: bbox.north, longitude: bbox.east },
+    { latitude: midLatitude, longitude: bbox.west },
+    { latitude: midLatitude, longitude: bbox.east },
+    { latitude: bbox.south, longitude: midLongitude },
+    { latitude: bbox.north, longitude: midLongitude }
+  ].map(utm10Nad83FromWgs84);
+
+  return {
+    west: Math.min(...points.map((point) => point.easting)),
+    south: Math.min(...points.map((point) => point.northing)),
+    east: Math.max(...points.map((point) => point.easting)),
+    north: Math.max(...points.map((point) => point.northing))
+  };
+}
+
+function demGridTileUtmBounds(row: number, column: number, quadrant: "A" | "B" | "C" | "D") {
+  const columnBase =
+    KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_EASTING +
+    (column - KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_COLUMN) *
+      KAMLOOPS_MUNICIPAL_DEM_GRID_FULL_WIDTH_METERS;
+  const rowBase =
+    KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_NORTHING +
+    (row - KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_ROW) * KAMLOOPS_MUNICIPAL_DEM_GRID_FULL_HEIGHT_METERS;
+  const west =
+    columnBase +
+    (quadrant === "B" || quadrant === "D" ? KAMLOOPS_MUNICIPAL_DEM_GRID_TILE_WIDTH_METERS : 0);
+  const south =
+    rowBase +
+    (quadrant === "C" || quadrant === "D" ? KAMLOOPS_MUNICIPAL_DEM_GRID_TILE_HEIGHT_METERS : 0);
+
+  return {
+    west,
+    south,
+    east: west + KAMLOOPS_MUNICIPAL_DEM_GRID_TILE_WIDTH_METERS,
+    north: south + KAMLOOPS_MUNICIPAL_DEM_GRID_TILE_HEIGHT_METERS
+  };
+}
+
+function utmBboxesIntersect(
+  left: ReturnType<typeof utmBoundsFromWgs84Bbox>,
+  right: ReturnType<typeof utmBoundsFromWgs84Bbox>
+) {
+  return (
+    left.west < right.east &&
+    left.east > right.west &&
+    left.south < right.north &&
+    left.north > right.south
+  );
+}
+
+function createIndexedKamloopsMunicipalDemGridResponse(
+  bbox: NonNullable<TerrainSourceAdapterPlan["bbox"]>
+) {
+  const target = utmBoundsFromWgs84Bbox(bbox);
+  const minColumn = Math.max(
+    KAMLOOPS_MUNICIPAL_DEM_GRID_MIN_COLUMN,
+    Math.floor(
+      (target.west - KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_EASTING) /
+        KAMLOOPS_MUNICIPAL_DEM_GRID_FULL_WIDTH_METERS +
+        KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_COLUMN
+    ) - 1
+  );
+  const maxColumn = Math.min(
+    KAMLOOPS_MUNICIPAL_DEM_GRID_MAX_COLUMN,
+    Math.ceil(
+      (target.east - KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_EASTING) /
+        KAMLOOPS_MUNICIPAL_DEM_GRID_FULL_WIDTH_METERS +
+        KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_COLUMN
+    ) + 1
+  );
+  const minRow = Math.max(
+    KAMLOOPS_MUNICIPAL_DEM_GRID_MIN_ROW,
+    Math.floor(
+      (target.south - KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_NORTHING) /
+        KAMLOOPS_MUNICIPAL_DEM_GRID_FULL_HEIGHT_METERS +
+        KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_ROW
+    ) - 1
+  );
+  const maxRow = Math.min(
+    KAMLOOPS_MUNICIPAL_DEM_GRID_MAX_ROW,
+    Math.ceil(
+      (target.north - KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_NORTHING) /
+        KAMLOOPS_MUNICIPAL_DEM_GRID_FULL_HEIGHT_METERS +
+        KAMLOOPS_MUNICIPAL_DEM_GRID_ORIGIN_ROW
+    ) + 1
+  );
+  const features: Array<{ attributes: Record<string, unknown> }> = [];
+
+  for (let row = minRow; row <= maxRow; row += 1) {
+    for (let column = minColumn; column <= maxColumn; column += 1) {
+      for (const quadrant of ["A", "B", "C", "D"] as const) {
+        if (!utmBboxesIntersect(target, demGridTileUtmBounds(row, column, quadrant))) continue;
+        features.push({
+          attributes: {
+            OBJECTID: null,
+            CELLNAME: `${row.toString().padStart(2, "0")}${column
+              .toString()
+              .padStart(2, "0")}${quadrant}`,
+            PHOTOGRIDLIMITS: "YES"
+          }
+        });
+      }
+    }
+  }
+
+  return {
+    features: features.sort((left, right) =>
+      String(left.attributes.CELLNAME).localeCompare(String(right.attributes.CELLNAME))
+    )
+  };
 }
 
 interface BcLidarAssetSelection {
@@ -1356,6 +1543,65 @@ export async function createLiveKamloopsMunicipalDemCoveragePreflight(
   const fetchImpl = options.fetchImpl ?? fetch;
   const kamloopsProbeTimeoutMs = options.kamloopsMunicipalDemProbeTimeoutMs ?? 15_000;
 
+  async function createIndexedPreflight(
+    reason: string
+  ): Promise<KamloopsMunicipalDemCoveragePreflight> {
+    const demGridResponse = createIndexedKamloopsMunicipalDemGridResponse(initialPlan.bbox!);
+    const tiles = selectKamloopsMunicipalDemGridTiles(demGridResponse);
+    const zipAvailability =
+      options.verifyKamloopsMunicipalDemZipUrls === false
+        ? options.kamloopsMunicipalDemZipAvailability
+        : await verifyKamloopsMunicipalDemZipAvailability({
+            tiles,
+            fetchImpl,
+            timeoutMs: kamloopsProbeTimeoutMs
+          });
+    const tilesMissingDemRaster = tiles.filter(
+      (tile) => !isDownloadableKamloopsMunicipalDemGridTile(tile, zipAvailability)
+    );
+    const lidarZipAvailability =
+      options.verifyKamloopsMunicipalLidarZipUrls === false
+        ? options.kamloopsMunicipalLidarZipAvailability
+        : tilesMissingDemRaster.length > 0
+          ? {
+              ...(options.kamloopsMunicipalLidarZipAvailability ?? {}),
+              ...(await verifyKamloopsMunicipalDemZipAvailability({
+                tiles: tilesMissingDemRaster,
+                fetchImpl,
+                timeoutMs: kamloopsProbeTimeoutMs,
+                urlForTile: (tile) => tile.lidarZipUrl
+              }))
+            }
+          : options.kamloopsMunicipalLidarZipAvailability;
+    const preflight = createKamloopsMunicipalDemCoveragePreflight(preflightInput, demGridResponse, {
+      ...options,
+      kamloopsMunicipalDemZipAvailability: zipAvailability,
+      kamloopsMunicipalLidarZipAvailability: lidarZipAvailability
+    });
+    const withIndexedWarning = {
+      ...preflight,
+      warnings: [
+        ...preflight.warnings,
+        `${reason}; VMesh used its deterministic public DEM ZIP grid index and still verified candidate ZIP URLs before source selection.`
+      ]
+    };
+
+    if (
+      options.verifyKamloopsMunicipalContourSupport !== false &&
+      withIndexedWarning.derivedElevationBacked &&
+      !withIndexedWarning.rasterBacked
+    ) {
+      const contourSupport = await verifyKamloopsMunicipalContourSupport({
+        bbox: initialPlan.bbox!,
+        fetchImpl,
+        timeoutMs: kamloopsProbeTimeoutMs
+      });
+      return withLiveDerivedElevationSupport(withIndexedWarning, contourSupport);
+    }
+
+    return withIndexedWarning;
+  }
+
   if (
     initialPlan.status === "ready" &&
     initialPlan.toolProfile?.toolId === "kamloops-local-lidar" &&
@@ -1381,18 +1627,9 @@ export async function createLiveKamloopsMunicipalDemCoveragePreflight(
     );
 
     if (!response.ok) {
-      return {
-        ...createKamloopsMunicipalDemCoveragePreflight(
-          preflightInput,
-          { features: [] },
-          options,
-          "lookup-failed"
-        ),
-        blockedReasons: [
-          ...initialPlan.blockedReasons,
-          `City of Kamloops public DEM Grid resolver failed with HTTP ${response.status}.`
-        ]
-      };
+      return createIndexedPreflight(
+        `City of Kamloops public DEM Grid resolver failed with HTTP ${response.status}`
+      );
     }
 
     const demGridResponse = (await response.json()) as unknown;
@@ -1444,20 +1681,11 @@ export async function createLiveKamloopsMunicipalDemCoveragePreflight(
 
     return preflight;
   } catch (error) {
-    return {
-      ...createKamloopsMunicipalDemCoveragePreflight(
-        preflightInput,
-        { features: [] },
-        options,
-        "lookup-failed"
-      ),
-      blockedReasons: [
-        ...initialPlan.blockedReasons,
-        error instanceof Error
-          ? `City of Kamloops public DEM Grid resolver failed: ${error.message}`
-          : "City of Kamloops public DEM Grid resolver failed."
-      ]
-    };
+    return createIndexedPreflight(
+      error instanceof Error
+        ? `City of Kamloops public DEM Grid resolver failed: ${error.message}`
+        : "City of Kamloops public DEM Grid resolver failed"
+    );
   }
 }
 
@@ -2304,6 +2532,97 @@ export async function createLiveTerrainSourceAdapterPlan(
     longitude: (initialPlan.bbox.west + initialPlan.bbox.east) / 2
   };
 
+  async function createLiveKamloopsPlanFromGridResponse({
+    demGridResponse,
+    fallbackWarning
+  }: {
+    demGridResponse: unknown;
+    fallbackWarning?: string;
+  }): Promise<TerrainSourceAdapterPlan> {
+    const tiles = selectKamloopsMunicipalDemGridTiles(demGridResponse);
+    const zipAvailability =
+      options.verifyKamloopsMunicipalDemZipUrls === false
+        ? options.kamloopsMunicipalDemZipAvailability
+        : await verifyKamloopsMunicipalDemZipAvailability({
+            tiles,
+            fetchImpl,
+            timeoutMs: kamloopsProbeTimeoutMs
+          });
+    const tilesMissingDemRaster = tiles.filter(
+      (tile) => !isDownloadableKamloopsMunicipalDemGridTile(tile, zipAvailability)
+    );
+    const lidarZipAvailability =
+      options.verifyKamloopsMunicipalLidarZipUrls === false
+        ? options.kamloopsMunicipalLidarZipAvailability
+        : tilesMissingDemRaster.length > 0
+          ? {
+              ...(options.kamloopsMunicipalLidarZipAvailability ?? {}),
+              ...(await verifyKamloopsMunicipalDemZipAvailability({
+                tiles: tilesMissingDemRaster,
+                fetchImpl,
+                timeoutMs: kamloopsProbeTimeoutMs,
+                urlForTile: (tile) => tile.lidarZipUrl
+              }))
+            }
+          : options.kamloopsMunicipalLidarZipAvailability;
+    const municipalPlan = createTerrainSourceAdapterPlan(input, {
+      ...options,
+      kamloopsMunicipalDemGridResponse: demGridResponse,
+      kamloopsMunicipalDemZipAvailability: zipAvailability,
+      kamloopsMunicipalLidarZipAvailability: lidarZipAvailability
+    });
+    const planWithFallbackWarning = fallbackWarning
+      ? {
+          ...municipalPlan,
+          warnings: [...municipalPlan.warnings, fallbackWarning]
+        }
+      : municipalPlan;
+
+    if (
+      options.verifyKamloopsMunicipalContourSupport !== false &&
+      isDeferrableKamloopsDerivedElevationPlan(planWithFallbackWarning)
+    ) {
+      const contourSupport = await verifyKamloopsMunicipalContourSupport({
+        bbox: initialPlan.bbox!,
+        fetchImpl,
+        timeoutMs: kamloopsProbeTimeoutMs
+      });
+
+      if (contourSupport.status === "unsupported") {
+        return {
+          ...planWithFallbackWarning,
+          status: "blocked",
+          inputRefs: [],
+          blockedReasons: [
+            ...planWithFallbackWarning.blockedReasons,
+            "City of Kamloops municipal derived-elevation rail was blocked because the official 1m contour support probe returned zero features for this exact 3 km AOI."
+          ],
+          warnings: [
+            ...planWithFallbackWarning.warnings,
+            "Do not mark DEMPoint/contour-derived municipal terrain ready until an exact-AOI support probe finds source elevation samples."
+          ]
+        };
+      }
+
+      if (contourSupport.status === "supported") {
+        return {
+          ...planWithFallbackWarning,
+          warnings: [
+            ...planWithFallbackWarning.warnings,
+            `City of Kamloops contour support probe found ${contourSupport.count} contour feature(s) for this exact 3 km AOI; Abundance must still materialize and QA the derived DTM before runtime readiness.`
+          ]
+        };
+      }
+
+      return {
+        ...planWithFallbackWarning,
+        warnings: [...planWithFallbackWarning.warnings, contourSupport.reason]
+      };
+    }
+
+    return planWithFallbackWarning;
+  }
+
   try {
     if (initialPlan.toolProfile.toolId === "kamloops-local-lidar") {
       const response = await fetchWithTimeout(
@@ -2319,92 +2638,14 @@ export async function createLiveTerrainSourceAdapterPlan(
       );
 
       if (!response.ok) {
-        return {
-          ...initialPlan,
-          blockedReasons: [
-            ...initialPlan.blockedReasons,
-            `City of Kamloops public DEM Grid resolver failed with HTTP ${response.status}.`
-          ]
-        };
+        return createLiveKamloopsPlanFromGridResponse({
+          demGridResponse: createIndexedKamloopsMunicipalDemGridResponse(initialPlan.bbox),
+          fallbackWarning: `City of Kamloops public DEM Grid resolver failed with HTTP ${response.status}; VMesh used its deterministic public DEM ZIP grid index and still verified candidate ZIP URLs before source selection.`
+        });
       }
 
       const demGridResponse = (await response.json()) as unknown;
-      const tiles = selectKamloopsMunicipalDemGridTiles(demGridResponse);
-      const zipAvailability =
-        options.verifyKamloopsMunicipalDemZipUrls === false
-          ? options.kamloopsMunicipalDemZipAvailability
-          : await verifyKamloopsMunicipalDemZipAvailability({
-              tiles,
-              fetchImpl,
-              timeoutMs: kamloopsProbeTimeoutMs
-            });
-      const tilesMissingDemRaster = tiles.filter(
-        (tile) => !isDownloadableKamloopsMunicipalDemGridTile(tile, zipAvailability)
-      );
-      const lidarZipAvailability =
-        options.verifyKamloopsMunicipalLidarZipUrls === false
-          ? options.kamloopsMunicipalLidarZipAvailability
-          : tilesMissingDemRaster.length > 0
-            ? {
-                ...(options.kamloopsMunicipalLidarZipAvailability ?? {}),
-                ...(await verifyKamloopsMunicipalDemZipAvailability({
-                  tiles: tilesMissingDemRaster,
-                  fetchImpl,
-                  timeoutMs: kamloopsProbeTimeoutMs,
-                  urlForTile: (tile) => tile.lidarZipUrl
-                }))
-              }
-            : options.kamloopsMunicipalLidarZipAvailability;
-      const municipalPlan = createTerrainSourceAdapterPlan(input, {
-        ...options,
-        kamloopsMunicipalDemGridResponse: demGridResponse,
-        kamloopsMunicipalDemZipAvailability: zipAvailability,
-        kamloopsMunicipalLidarZipAvailability: lidarZipAvailability
-      });
-
-      if (
-        options.verifyKamloopsMunicipalContourSupport !== false &&
-        isDeferrableKamloopsDerivedElevationPlan(municipalPlan)
-      ) {
-        const contourSupport = await verifyKamloopsMunicipalContourSupport({
-          bbox: initialPlan.bbox,
-          fetchImpl,
-          timeoutMs: kamloopsProbeTimeoutMs
-        });
-
-        if (contourSupport.status === "unsupported") {
-          return {
-            ...municipalPlan,
-            status: "blocked",
-            inputRefs: [],
-            blockedReasons: [
-              ...municipalPlan.blockedReasons,
-              "City of Kamloops municipal derived-elevation rail was blocked because the official 1m contour support probe returned zero features for this exact 3 km AOI."
-            ],
-            warnings: [
-              ...municipalPlan.warnings,
-              "Do not mark DEMPoint/contour-derived municipal terrain ready until an exact-AOI support probe finds source elevation samples."
-            ]
-          };
-        }
-
-        if (contourSupport.status === "supported") {
-          return {
-            ...municipalPlan,
-            warnings: [
-              ...municipalPlan.warnings,
-              `City of Kamloops contour support probe found ${contourSupport.count} contour feature(s) for this exact 3 km AOI; Abundance must still materialize and QA the derived DTM before runtime readiness.`
-            ]
-          };
-        }
-
-        return {
-          ...municipalPlan,
-          warnings: [...municipalPlan.warnings, contourSupport.reason]
-        };
-      }
-
-      return municipalPlan;
+      return createLiveKamloopsPlanFromGridResponse({ demGridResponse });
     }
 
     if (initialPlan.toolProfile.toolId === "usgs-3dep") {
@@ -2516,6 +2757,16 @@ export async function createLiveTerrainSourceAdapterPlan(
       canadaHrdemStacSearchResponse: stacSearchResponse
     });
   } catch (error) {
+    if (initialPlan.toolProfile.toolId === "kamloops-local-lidar" && initialPlan.bbox) {
+      return createLiveKamloopsPlanFromGridResponse({
+        demGridResponse: createIndexedKamloopsMunicipalDemGridResponse(initialPlan.bbox),
+        fallbackWarning:
+          error instanceof Error
+            ? `City of Kamloops public DEM Grid resolver failed: ${error.message}; VMesh used its deterministic public DEM ZIP grid index and still verified candidate ZIP URLs before source selection.`
+            : "City of Kamloops public DEM Grid resolver failed; VMesh used its deterministic public DEM ZIP grid index and still verified candidate ZIP URLs before source selection."
+      });
+    }
+
     return {
       ...initialPlan,
       blockedReasons: [

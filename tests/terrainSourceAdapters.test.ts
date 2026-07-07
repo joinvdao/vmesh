@@ -1161,6 +1161,90 @@ describe("terrain source adapters", () => {
     expect(preflight.goldenQualityBlockers).toEqual([]);
   });
 
+  it("uses the deterministic Kamloops DEM ZIP grid index when the public ArcGIS grid lookup fails", async () => {
+    const requests: string[] = [];
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      requests.push(url);
+      if (url.includes("/FeatureDataset/GIS_Administrative_1/MapServer/6/query")) {
+        return new Response(JSON.stringify({ error: "service down" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      if (url.includes("/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_")) {
+        return new Response(null, {
+          status: 200,
+          headers: { "content-length": "6719570" }
+        });
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    };
+
+    const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
+      {
+        request: {
+          aoi: kamloopsThreeKmAoi(50.64, -120.26, "Indexed Kamloops AOI"),
+          layers: ["terrain"]
+        }
+      },
+      {
+        env: {},
+        fetchImpl,
+        verifyKamloopsMunicipalLidarZipUrls: false
+      }
+    );
+
+    expect(plan.status).toBe("ready");
+    expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
+    expect(plan.inputRefs.length).toBeGreaterThan(0);
+    expect(plan.inputRefs.every((ref) => ref.url.includes("DEM_CGVD2013_"))).toBe(true);
+    expect(plan.warnings.join(" ")).toContain("deterministic public DEM ZIP grid index");
+    expect(requests.some((url) => url.includes("/MapServer/6/query"))).toBe(true);
+  });
+
+  it("marks indexed Kamloops DEM ZIP preflight as source-backed when ArcGIS lookup fails but ZIP refs verify", async () => {
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes("/FeatureDataset/GIS_Administrative_1/MapServer/6/query")) {
+        return new Response(JSON.stringify({ error: "service down" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      if (url.includes("/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_")) {
+        return new Response(null, {
+          status: 200,
+          headers: { "content-length": "6719570" }
+        });
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    };
+
+    const preflight = await createLiveKamloopsMunicipalDemCoveragePreflight(
+      {
+        request: {
+          aoi: kamloopsThreeKmAoi(50.64, -120.26, "Indexed Kamloops preflight AOI"),
+          layers: ["terrain"],
+          preferredSourceIds: ["kamloops-local-lidar-dtm-1m"],
+          offline: true
+        }
+      },
+      {
+        env: {},
+        fetchImpl,
+        verifyKamloopsMunicipalLidarZipUrls: false
+      }
+    );
+
+    expect(preflight.status).toBe("source-backed");
+    expect(preflight.rasterBacked).toBe(true);
+    expect(preflight.rasterZipVerified).toBe(true);
+    expect(preflight.goldenQualityTerrainCandidate).toBe(true);
+    expect(preflight.selectedSourceIds).toEqual(["kamloops-local-lidar-dtm-1m"]);
+    expect(preflight.warnings.join(" ")).toContain("deterministic public DEM ZIP grid index");
+  });
+
   it("fails a Kamloops operator terrain manifest closed when the source is not a 1m DTM", async () => {
     const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
       {
