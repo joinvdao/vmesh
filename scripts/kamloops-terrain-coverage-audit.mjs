@@ -186,9 +186,6 @@ function parseCells(payload) {
 }
 
 async function verifyDemZip(cell) {
-  if (cell.photoGridLimits?.trim().toUpperCase() !== "YES") {
-    return { reachable: false, status: null, contentLengthBytes: null, skipped: true };
-  }
   const attempts = [
     { method: "HEAD", headers: { Accept: "application/zip,*/*" } },
     { method: "HEAD", headers: { Accept: "application/zip,*/*" } },
@@ -213,14 +210,19 @@ async function verifyDemZip(cell) {
               : rangeSize
                 ? Number(rangeSize)
                 : null,
-          skipped: false
+          catalogPhotoGridLimits: cell.photoGridLimits ?? null
         };
       }
     } catch {
       lastStatus = null;
     }
   }
-  return { reachable: false, status: lastStatus, contentLengthBytes: null, skipped: false };
+  return {
+    reachable: false,
+    status: lastStatus,
+    contentLengthBytes: null,
+    catalogPhotoGridLimits: cell.photoGridLimits ?? null
+  };
 }
 
 function sampleCenters({ grid, edgeMeters }) {

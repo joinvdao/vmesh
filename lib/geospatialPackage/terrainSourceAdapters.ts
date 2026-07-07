@@ -989,11 +989,8 @@ async function verifyKamloopsMunicipalDemZipAvailability({
     };
   }
 
-  const downloadableCatalogTiles = tiles.filter(
-    (tile) => tile.photoGridLimits?.trim().toUpperCase() === "YES"
-  );
   const entries = await Promise.all(
-    downloadableCatalogTiles.map(async (tile) => {
+    tiles.map(async (tile) => {
       return [tile.cellName, await probeUrl(tile.demZipUrl)] as const;
     })
   );

@@ -103,7 +103,13 @@ describe("Kamloops terrain preflight route", () => {
   });
 
   it("selects the contour-derived municipal rail when the exact slice intersects non-downloadable DEM cells", async () => {
-    vi.stubGlobal("fetch", async () => {
+    vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
+      const requestUrl = String(url);
+      if (requestUrl.includes("/opendata/DEM/2024_CGVD2013/")) {
+        return new Response(null, {
+          status: requestUrl.includes("DEM_CGVD2013_5156D.zip") ? 404 : 200
+        });
+      }
       return new Response(JSON.stringify(partialCoverageDemGridResponse), {
         status: 200,
         headers: { "Content-Type": "application/json" }
@@ -148,7 +154,9 @@ describe("Kamloops terrain preflight route", () => {
     vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
       const requestUrl = String(url);
       if (requestUrl.includes("/opendata/DEM/2024_CGVD2013/")) {
-        return new Response(null, { status: 200 });
+        return new Response(null, {
+          status: requestUrl.includes("DEM_CGVD2013_5156D.zip") ? 404 : 200
+        });
       }
       gridQueryCount += 1;
       return new Response(

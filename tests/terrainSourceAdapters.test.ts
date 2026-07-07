@@ -190,6 +190,17 @@ const kamloopsPartialDemGridResponse = {
     }
   ]
 };
+const kamloopsStaleNoDemGridResponse = {
+  features: [
+    {
+      attributes: {
+        OBJECTID: 43,
+        CELLNAME: "5156D",
+        PHOTOGRIDLIMITS: "NO"
+      }
+    }
+  ]
+};
 
 afterEach(() => {
   delete process.env.VMESH_KAMLOOPS_LOCAL_LIDAR_MODE;
@@ -1261,7 +1272,9 @@ describe("terrain source adapters", () => {
       }
 
       if (requestUrl.includes("/opendata/DEM/2024_CGVD2013/")) {
-        return new Response(null, { status: 200 });
+        return new Response(null, {
+          status: requestUrl.includes("DEM_CGVD2013_5156D.zip") ? 404 : 200
+        });
       }
 
       throw new Error(
@@ -1298,11 +1311,59 @@ describe("terrain source adapters", () => {
     expect(plan.warnings.join(" ")).toContain("non-downloadable raster cell");
     expect(plan.warnings.join(" ")).toContain("Do not label");
     expect(plan.warnings.join(" ")).toContain("1m LiDAR raster");
-    expect(requests).toHaveLength(2);
+    expect(requests).toHaveLength(5);
     expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
     expect(requests[1]).toBe(
       "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
     );
+    expect(requests.slice(2)).toEqual(
+      Array(3).fill("https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156D.zip")
+    );
+  });
+
+  it("trusts verified Kamloops DEM ZIP reachability over stale PhotoGrid limits", async () => {
+    const requests: string[] = [];
+    const fetchImpl: typeof fetch = async (url) => {
+      const requestUrl = String(url);
+      requests.push(requestUrl);
+      if (requestUrl.includes("/FeatureDataset/GIS_Administrative_1/MapServer/6/query")) {
+        return new Response(JSON.stringify(kamloopsStaleNoDemGridResponse), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      if (requestUrl.includes("/opendata/DEM/2024_CGVD2013/")) {
+        return new Response(null, { status: 200 });
+      }
+
+      throw new Error("unexpected Kamloops stale-flag test request");
+    };
+
+    const plan = await createLiveNorthAmericaDtmSourceAdapterPlan(
+      {
+        request: {
+          aoi: kamloopsThreeKmAoi(50.64, -120.26, "Kamloops stale flag AOI"),
+          layers: ["terrain"]
+        }
+      },
+      { env: {}, fetchImpl }
+    );
+
+    expect(plan.status).toBe("ready");
+    expect(plan.inputRefs).toHaveLength(1);
+    expect(plan.inputRefs[0]).toMatchObject({
+      kind: "zip-archive",
+      format: "zip",
+      role: "terrain-source",
+      url: "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156D.zip"
+    });
+    expect(plan.inputRefs[0].notes.join(" ")).toContain("PHOTOGRIDLIMITS NO");
+    expect(plan.warnings.join(" ")).toContain("DEM ZIP ref");
+    expect(requests).toEqual([
+      expect.stringContaining("/FeatureDataset/GIS_Administrative_1/MapServer/6/query"),
+      "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156D.zip"
+    ]);
   });
 
   it("resolves an ambiguous border-box Canada DTM chain by blocking USGS then selecting HRDEM", async () => {

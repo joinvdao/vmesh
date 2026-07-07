@@ -57,12 +57,18 @@ afterEach(() => {
 
 describe("Kamloops terrain coverage route", () => {
   it("classifies a batch of candidate centers without echoing coordinates", async () => {
-    let requestCount = 0;
-    vi.stubGlobal("fetch", async () => {
-      requestCount += 1;
+    let gridQueryCount = 0;
+    vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
+      const requestUrl = String(url);
+      if (requestUrl.includes("/opendata/DEM/2024_CGVD2013/")) {
+        return new Response(null, {
+          status: requestUrl.includes("DEM_CGVD2013_5357D.zip") ? 404 : 200
+        });
+      }
+      gridQueryCount += 1;
       return new Response(
         JSON.stringify(
-          requestCount === 1 ? fullCoverageDemGridResponse : partialCoverageDemGridResponse
+          gridQueryCount === 1 ? fullCoverageDemGridResponse : partialCoverageDemGridResponse
         ),
         {
           status: 200,
