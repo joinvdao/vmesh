@@ -82,6 +82,7 @@ export interface TerrainSourceAdapterOptions {
   kamloopsMunicipalLidarZipAvailability?: Record<string, KamloopsMunicipalDemZipAvailability>;
   verifyKamloopsMunicipalDemZipUrls?: boolean;
   verifyKamloopsMunicipalLidarZipUrls?: boolean;
+  verifyKamloopsMunicipalContourSupport?: boolean;
   kamloopsMunicipalDemProbeTimeoutMs?: number;
   bcLidarGeoTiffUrl?: string;
   bcLidarGeoTiffUrlTemplate?: string;
@@ -1023,6 +1024,89 @@ async function verifyKamloopsMunicipalDemZipAvailability({
   );
 
   return Object.fromEntries(entries);
+}
+
+function createKamloopsMunicipalContourSupportCountQueryUrl({
+  bbox,
+  baseUrl = KAMLOOPS_MUNICIPAL_CONTOUR_1M_LAYER_URL
+}: {
+  bbox: NonNullable<TerrainSourceAdapterPlan["bbox"]>;
+  baseUrl?: string;
+}): string {
+  const url = new URL(`${baseUrl}/query`);
+  url.searchParams.set("f", "json");
+  url.searchParams.set("where", "1=1");
+  url.searchParams.set("geometry", bboxString(bbox));
+  url.searchParams.set("geometryType", "esriGeometryEnvelope");
+  url.searchParams.set("inSR", "4326");
+  url.searchParams.set("spatialRel", "esriSpatialRelIntersects");
+  url.searchParams.set("returnCountOnly", "true");
+  url.searchParams.set("returnGeometry", "false");
+  return url.toString();
+}
+
+async function verifyKamloopsMunicipalContourSupport({
+  bbox,
+  fetchImpl,
+  timeoutMs
+}: {
+  bbox: NonNullable<TerrainSourceAdapterPlan["bbox"]>;
+  fetchImpl: typeof fetch;
+  timeoutMs: number;
+}): Promise<
+  | { status: "supported"; count: number }
+  | { status: "unsupported"; count: number }
+  | { status: "unknown"; reason: string }
+> {
+  try {
+    const response = await fetchWithTimeout(
+      fetchImpl,
+      createKamloopsMunicipalContourSupportCountQueryUrl({ bbox }),
+      { headers: { Accept: "application/json" } },
+      timeoutMs
+    );
+    if (!response.ok) {
+      return {
+        status: "unknown",
+        reason: `City of Kamloops contour support probe failed with HTTP ${response.status}.`
+      };
+    }
+
+    const payload = (await response.json()) as unknown;
+    if (!isRecord(payload)) {
+      return {
+        status: "unknown",
+        reason: "City of Kamloops contour support probe returned a non-object payload."
+      };
+    }
+    if (isRecord(payload.error)) {
+      const message =
+        typeof payload.error.message === "string" ? payload.error.message : "ArcGIS query error";
+      return {
+        status: "unknown",
+        reason: `City of Kamloops contour support probe failed: ${message}.`
+      };
+    }
+
+    const count =
+      typeof payload.count === "number" && Number.isFinite(payload.count) ? payload.count : null;
+    if (count === null) {
+      return {
+        status: "unknown",
+        reason: "City of Kamloops contour support probe did not return a count."
+      };
+    }
+
+    return count > 0 ? { status: "supported", count } : { status: "unsupported", count };
+  } catch (error) {
+    return {
+      status: "unknown",
+      reason:
+        error instanceof Error
+          ? `City of Kamloops contour support probe failed: ${error.message}.`
+          : "City of Kamloops contour support probe failed."
+    };
+  }
 }
 
 function kamloopsMunicipalDemPreflightInput(
@@ -2207,12 +2291,56 @@ export async function createLiveTerrainSourceAdapterPlan(
                 }))
               }
             : options.kamloopsMunicipalLidarZipAvailability;
-      return createTerrainSourceAdapterPlan(input, {
+      const municipalPlan = createTerrainSourceAdapterPlan(input, {
         ...options,
         kamloopsMunicipalDemGridResponse: demGridResponse,
         kamloopsMunicipalDemZipAvailability: zipAvailability,
         kamloopsMunicipalLidarZipAvailability: lidarZipAvailability
       });
+
+      if (
+        options.verifyKamloopsMunicipalContourSupport !== false &&
+        isDeferrableKamloopsDerivedElevationPlan(municipalPlan)
+      ) {
+        const contourSupport = await verifyKamloopsMunicipalContourSupport({
+          bbox: initialPlan.bbox,
+          fetchImpl,
+          timeoutMs: kamloopsProbeTimeoutMs
+        });
+
+        if (contourSupport.status === "unsupported") {
+          return {
+            ...municipalPlan,
+            status: "blocked",
+            inputRefs: [],
+            blockedReasons: [
+              ...municipalPlan.blockedReasons,
+              "City of Kamloops municipal derived-elevation rail was blocked because the official 1m contour support probe returned zero features for this exact 3 km AOI."
+            ],
+            warnings: [
+              ...municipalPlan.warnings,
+              "Do not mark DEMPoint/contour-derived municipal terrain ready until an exact-AOI support probe finds source elevation samples."
+            ]
+          };
+        }
+
+        if (contourSupport.status === "supported") {
+          return {
+            ...municipalPlan,
+            warnings: [
+              ...municipalPlan.warnings,
+              `City of Kamloops contour support probe found ${contourSupport.count} contour feature(s) for this exact 3 km AOI; Abundance must still materialize and QA the derived DTM before runtime readiness.`
+            ]
+          };
+        }
+
+        return {
+          ...municipalPlan,
+          warnings: [...municipalPlan.warnings, contourSupport.reason]
+        };
+      }
+
+      return municipalPlan;
     }
 
     if (initialPlan.toolProfile.toolId === "usgs-3dep") {
