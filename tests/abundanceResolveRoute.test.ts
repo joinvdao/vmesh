@@ -148,7 +148,8 @@ describe("Abundance resolver route", () => {
     expect(payload.terrainAdapterPlans[0].warnings.join(" ")).toContain(
       "Source pixel coverage probe proved"
     );
-    expect(requests).toHaveLength(1);
+    expect(requests[0]).toContain("LiDAR_BC_S3_Public");
+    expect(requests.length).toBeGreaterThanOrEqual(1);
     expect(vi.mocked(probeTerrainCogCoordinate)).toHaveBeenCalledWith(
       expect.objectContaining({
         providerId: "bc-lidarbc",

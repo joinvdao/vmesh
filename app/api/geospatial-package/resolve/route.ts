@@ -163,6 +163,7 @@ async function buildHandoff(input: AbundanceSourceHandoffRequest, liveTerrain = 
   if (liveTerrain) {
     const operatorTerrainManifest = await loadKamloopsOperatorTerrainManifest();
     const handoff = await createLiveAbundanceSourceHandoff(input, {
+      includeFallbackTerrainPlans: true,
       terrainSourceAdapterOptions: {
         kamloopsOperatorTerrainManifest: operatorTerrainManifest.manifest,
         requireSourcePixelCoverage: true

@@ -11,6 +11,7 @@ import {
   type BuildingPackageWorkerHandoff
 } from "@/lib/geospatialPackage/buildingPackageWorker";
 import {
+  createLiveNorthAmericaDtmSourceAdapterPlans,
   createLiveNorthAmericaDtmSourceAdapterPlan,
   createTerrainSourceAdapterPlan,
   isSourceNativeTerrainAdapterSupported,
@@ -51,6 +52,7 @@ interface AbundanceSourceHandoffOptions {
 
 interface LiveAbundanceSourceHandoffOptions extends AbundanceSourceHandoffOptions {
   terrainSourceAdapterOptions?: TerrainSourceAdapterOptions;
+  includeFallbackTerrainPlans?: boolean;
 }
 
 function finitePositive(value: number | undefined, fallback: number) {
@@ -488,8 +490,8 @@ export async function createLiveAbundanceSourceHandoff(
   const sourceSliceAoi = sourceSliceAoiForRequest(input);
   const terrainRequested = input.segments.includes("terrain_elevation");
   const terrainAdapterPlans = terrainRequested
-    ? [
-        await createLiveNorthAmericaDtmSourceAdapterPlan(
+    ? options.includeFallbackTerrainPlans
+      ? await createLiveNorthAmericaDtmSourceAdapterPlans(
           {
             request: {
               aoi: sourceSliceAoi,
@@ -499,7 +501,18 @@ export async function createLiveAbundanceSourceHandoff(
           },
           options.terrainSourceAdapterOptions
         )
-      ]
+      : [
+          await createLiveNorthAmericaDtmSourceAdapterPlan(
+            {
+              request: {
+                aoi: sourceSliceAoi,
+                layers: ["terrain"],
+                consumerAppId
+              }
+            },
+            options.terrainSourceAdapterOptions
+          )
+        ]
     : undefined;
 
   return createAbundanceSourceHandoff(

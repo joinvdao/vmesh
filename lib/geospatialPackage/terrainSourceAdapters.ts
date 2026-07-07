@@ -2549,12 +2549,98 @@ async function createLiveNorthAmericaSourceAdapterPlan({
   };
 }
 
+async function createLiveNorthAmericaSourceAdapterPlans({
+  input,
+  options,
+  candidateSourceIds,
+  unresolvedWarning
+}: {
+  input: TerrainPackageWorkerInput;
+  options: TerrainSourceAdapterOptions;
+  candidateSourceIds: string[];
+  unresolvedWarning: string;
+}): Promise<TerrainSourceAdapterPlan[]> {
+  const basePlan = createTerrainWorkerPlan(input, options);
+
+  if (candidateSourceIds.length === 0) {
+    return [createTerrainSourceAdapterPlan(input, options)];
+  }
+
+  const baseRequest = input.request ?? {
+    aoi: basePlan.aoi,
+    layers: basePlan.requestedLayers,
+    consumerAppId: basePlan.manifest.consumerAppId
+  };
+  const plans: TerrainSourceAdapterPlan[] = [];
+  const deferredReadyPlans: TerrainSourceAdapterPlan[] = [];
+
+  for (const sourceId of candidateSourceIds) {
+    const plan = await createLiveTerrainSourceAdapterPlan(
+      {
+        request: {
+          ...baseRequest,
+          preferredSourceIds: [sourceId]
+        }
+      },
+      options
+    );
+    const verifiedPlan = await requireSourcePixelCoverageForPlan(plan, options);
+
+    if (
+      isDeferrableKamloopsDerivedElevationPlan(verifiedPlan) &&
+      candidateSourceIds.some((candidateSourceId) => candidateSourceId !== sourceId)
+    ) {
+      deferredReadyPlans.push(verifiedPlan);
+      continue;
+    }
+
+    plans.push(verifiedPlan);
+  }
+
+  if (deferredReadyPlans.length > 0) {
+    plans.push(
+      ...deferredReadyPlans.map((plan) => ({
+        ...plan,
+        warnings: [
+          ...plan.warnings,
+          "VMesh kept the Kamloops municipal DEMPoint/contour-derived rail behind source-native regional raster candidates for this AOI."
+        ]
+      }))
+    );
+  }
+
+  if (plans.some((plan) => plan.status === "ready")) return plans;
+
+  const fallback = plans[plans.length - 1] ?? createTerrainSourceAdapterPlan(input, options);
+  return [
+    {
+      ...fallback,
+      blockedReasons: plans.flatMap((plan) => plan.blockedReasons),
+      warnings: [...fallback.warnings, unresolvedWarning]
+    }
+  ];
+}
+
 export async function createLiveNorthAmericaDtmSourceAdapterPlan(
   input: TerrainPackageWorkerInput,
   options: TerrainSourceAdapterOptions = {}
 ): Promise<TerrainSourceAdapterPlan> {
   const basePlan = createTerrainWorkerPlan(input, options);
   return createLiveNorthAmericaSourceAdapterPlan({
+    input,
+    options,
+    candidateSourceIds: northAmericaDtmCandidateSourceIds(basePlan.aoi.centroid),
+    unresolvedWarning:
+      "No official USA/Canada DTM source adapter resolved ready for this AOI after trying the regional candidate chain."
+  });
+}
+
+export async function createLiveNorthAmericaDtmSourceAdapterPlans(
+  input: TerrainPackageWorkerInput,
+  options: TerrainSourceAdapterOptions = {}
+): Promise<TerrainSourceAdapterPlan[]> {
+  const basePlan = createTerrainWorkerPlan(input, options);
+  return createLiveNorthAmericaSourceAdapterPlans({
     input,
     options,
     candidateSourceIds: northAmericaDtmCandidateSourceIds(basePlan.aoi.centroid),
