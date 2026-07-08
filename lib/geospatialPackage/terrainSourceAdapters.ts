@@ -2650,18 +2650,6 @@ export async function createLiveTerrainSourceAdapterPlan(
       );
 
       if (contourSupport.status === "unsupported") {
-        if (hasDemPointBreakRef) {
-          return {
-            ...planWithFallbackWarning,
-            warnings: [
-              ...planWithFallbackWarning.warnings,
-              ...(contourSupport.warnings ?? []),
-              "City of Kamloops contour support probe returned zero features for this exact 3 km AOI; VMesh is still handing off the public DEMPoint/DEMBreakline source so the Abundance GIS worker can prove or reject point/breakline support during materialization.",
-              "Do not mark this path as 1m raster LiDAR golden terrain unless the worker materializes a valid DTM from source samples and reports the lower derived-elevation confidence tier."
-            ]
-          };
-        }
-
         return {
           ...planWithFallbackWarning,
           status: "blocked",
@@ -2669,9 +2657,7 @@ export async function createLiveTerrainSourceAdapterPlan(
           blockedReasons: [
             ...planWithFallbackWarning.blockedReasons,
             "City of Kamloops municipal derived-elevation rail was blocked because the official 1m contour support probe returned zero features for this exact 3 km AOI.",
-            planWithFallbackWarning.inputRefs.some(
-              (inputRef) => inputRef.url === KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL
-            )
+            hasDemPointBreakRef
               ? "DEMPoint/DEMBreakline archive extent alone is not exact-AOI source support; Abundance must not claim source-backed terrain until the worker finds usable point, breakline, contour, raster, or raw LiDAR samples."
               : null
           ].filter((reason): reason is string => Boolean(reason)),
