@@ -1329,6 +1329,8 @@ describe("terrain source adapters", () => {
       "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
     );
     expect(plan.inputRefs[0].notes.join(" ")).toContain("DEM grid CELLNAME 5156B");
+    expect(plan.inputRefs[0].notes.join(" ")).toContain("5dff6fe1f28a4f278ce652a236085dde");
+    expect(plan.inputRefs[0].notes.join(" ")).toContain("PHOTOGRIDLIMITS = 'YES'");
     expect(plan.inputRefs[0].notes.join(" ")).toContain(
       "https://maps.kamloops.ca/opendata/Lidar/2024/5156B.zip"
     );
@@ -1515,6 +1517,9 @@ describe("terrain source adapters", () => {
       url: "https://maps.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4"
     });
     expect(plan.warnings.join(" ")).toContain("non-downloadable raster cell");
+    expect(plan.warnings.join(" ")).toContain(
+      "not advertised by the official download WebMap layer"
+    );
     expect(plan.warnings.join(" ")).toContain(
       "mixed municipal DEM ZIP plus derived-elevation repair"
     );

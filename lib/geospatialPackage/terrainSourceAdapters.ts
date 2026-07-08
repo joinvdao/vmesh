@@ -202,6 +202,9 @@ const KAMLOOPS_MUNICIPAL_CONTOUR_1M_LAYER_FALLBACK_URLS = [
 ] as const;
 const KAMLOOPS_MUNICIPAL_2024_LIDAR_APP_URL =
   "https://kamloops.maps.arcgis.com/apps/webappviewer/index.html?id=6fea67a054a94b45ad2998c0a03d88e7";
+const KAMLOOPS_MUNICIPAL_2024_DOWNLOAD_WEBMAP_URL =
+  "https://kamloops.maps.arcgis.com/sharing/rest/content/items/5dff6fe1f28a4f278ce652a236085dde/data";
+const KAMLOOPS_MUNICIPAL_DOWNLOAD_LAYER_DEFINITION = "PHOTOGRIDLIMITS = 'YES'";
 const KAMLOOPS_MUNICIPAL_ELEVATION_VECTOR_EXTENT_WGS84 = {
   west: -120.546437,
   south: 50.607833,
@@ -1113,6 +1116,12 @@ function isDownloadableKamloopsMunicipalDemGridTile(
 ): boolean {
   const verified = kamloopsMunicipalDemZipAvailabilityForTile(tile, availability);
   if (verified) return verified.reachable;
+  return tile.photoGridLimits?.trim().toUpperCase() === "YES";
+}
+
+function isAdvertisedKamloopsMunicipalDownloadTile(
+  tile: KamloopsMunicipalDemGridSelection
+): boolean {
   return tile.photoGridLimits?.trim().toUpperCase() === "YES";
 }
 
@@ -2228,9 +2237,10 @@ function createKamloopsLocalLidarSourcePlan(
       notes: [
         `Resolved from the public City of Kamloops DEM Grid as ${selectedDemGridTile.sourceId}.`,
         `DEM grid CELLNAME ${selectedDemGridTile.cellName}; OBJECTID ${selectedDemGridTile.objectId ?? "unknown"}; PHOTOGRIDLIMITS ${selectedDemGridTile.photoGridLimits ?? "unknown"}.`,
+        `The official City of Kamloops download WebMap is ${KAMLOOPS_MUNICIPAL_2024_DOWNLOAD_WEBMAP_URL}; its popup expressions define the 2024 LAS and DEM ZIP URL formulas and its operational layer definition is ${KAMLOOPS_MUNICIPAL_DOWNLOAD_LAYER_DEFINITION}.`,
         `The public LiDAR download app is ${KAMLOOPS_MUNICIPAL_2024_LIDAR_APP_URL}.`,
         `The matching public LiDAR archive is ${selectedDemGridTile.lidarZipUrl}.`,
-        "This is a deterministic public DEM ZIP source ref, not stored payload data.",
+        "This is a deterministic official public DEM ZIP source ref, not stored payload data; VMesh verifies archive reachability before selecting it.",
         "A downstream worker must fetch/window the ESRI Grid DEM, QA no-data and vertical metadata, then emit a runtime terrain raster/heightfield before claiming golden-quality terrain.",
         "The exact AOI query geometry is intentionally not emitted in this public-safe source-index ref."
       ]
@@ -2276,7 +2286,14 @@ function createKamloopsLocalLidarSourcePlan(
             ? `City of Kamloops public DEM Grid intersects ${selectedDemGridTiles.length} downloadable and ${nonDownloadableDemGridTiles.length} non-downloadable raster cell(s), so VMesh selected a mixed municipal DEM ZIP plus derived-elevation repair rail for this AOI.`
             : `City of Kamloops public DEM Grid intersects ${nonDownloadableDemGridTiles.length} non-downloadable raster cell(s), so VMesh selected the official CityWorks 1m contour layer as the municipal contour-derived DTM rail for this AOI.`,
           `Non-downloadable DEM grid cells were retained as evidence: ${nonDownloadableDemGridTiles
-            .map((tile) => `${tile.cellName} PHOTOGRIDLIMITS ${tile.photoGridLimits ?? "unknown"}`)
+            .map(
+              (tile) =>
+                `${tile.cellName} PHOTOGRIDLIMITS ${tile.photoGridLimits ?? "unknown"}${
+                  isAdvertisedKamloopsMunicipalDownloadTile(tile)
+                    ? ""
+                    : " (not advertised by the official download WebMap layer)"
+                }`
+            )
             .join(", ")}.`,
           rawLidarVerifiedForMissingDemTiles
             ? "Every non-downloadable DEM raster cell has a verified public raw LiDAR archive; a point-cloud-to-DTM worker could promote this AOI above the contour-derived rail after materialization and QA."
@@ -2298,7 +2315,14 @@ function createKamloopsLocalLidarSourcePlan(
       ],
       warnings: [
         `Non-downloadable DEM grid cells were omitted: ${nonDownloadableDemGridTiles
-          .map((tile) => `${tile.cellName} PHOTOGRIDLIMITS ${tile.photoGridLimits ?? "unknown"}`)
+          .map(
+            (tile) =>
+              `${tile.cellName} PHOTOGRIDLIMITS ${tile.photoGridLimits ?? "unknown"}${
+                isAdvertisedKamloopsMunicipalDownloadTile(tile)
+                  ? ""
+                  : " (not advertised by the official download WebMap layer)"
+              }`
+          )
           .join(", ")}.`,
         "The public municipal elevation-vector source extent does not fully contain this 3 km AOI.",
         "Fall through to LidarBC/Canada HRDEM or label the AOI as outside full municipal public LiDAR/DEM coverage."
