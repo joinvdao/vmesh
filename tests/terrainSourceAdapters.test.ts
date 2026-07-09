@@ -1325,21 +1325,24 @@ describe("terrain source adapters", () => {
       groundModelRole: "bare-earth-dtm",
       targetResolutionMeters: 1
     });
-    expect(plan.inputRefs[0].url).toBe(
+    const urls = plan.inputRefs.map((inputRef) => inputRef.url);
+    expect(urls).toContain(
       "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
     );
-    expect(plan.inputRefs[0].notes.join(" ")).toContain("DEM grid CELLNAME 5156B");
-    expect(plan.inputRefs[0].notes.join(" ")).toContain("5dff6fe1f28a4f278ce652a236085dde");
-    expect(plan.inputRefs[0].notes.join(" ")).toContain("PHOTOGRIDLIMITS = 'YES'");
-    expect(plan.inputRefs[0].notes.join(" ")).toContain(
+    const primaryRef = plan.inputRefs.find((inputRef) => inputRef.url.includes("5156B.zip"));
+    expect(primaryRef?.notes.join(" ")).toContain("DEM grid CELLNAME 5156B");
+    expect(primaryRef?.notes.join(" ")).toContain("5dff6fe1f28a4f278ce652a236085dde");
+    expect(primaryRef?.notes.join(" ")).toContain("PHOTOGRIDLIMITS = 'YES'");
+    expect(primaryRef?.notes.join(" ")).toContain(
       "https://maps.kamloops.ca/opendata/Lidar/2024/5156B.zip"
     );
-    expect(plan.inputRefs[0].notes.join(" ")).toContain("not emitted");
-    expect(requests).toHaveLength(2);
+    expect(primaryRef?.notes.join(" ")).toContain("not emitted");
+    expect(plan.warnings.join(" ")).toContain("deterministic public DEM ZIP grid candidate");
+    expect(requests.length).toBeGreaterThan(2);
     expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
     expect(requests[0]).toContain("geometryType=esriGeometryEnvelope");
     expect(requests[0]).toMatch(/geometry=-120\.[0-9]+%2C50\.[0-9]+%2C-120\.[0-9]+%2C50\.[0-9]+/);
-    expect(requests[1]).toBe(
+    expect(requests).toContain(
       "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
     );
   });
@@ -1510,32 +1513,50 @@ describe("terrain source adapters", () => {
     expect(plan.status).toBe("ready");
     expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
     expect(plan.toolProfile?.toolId).toBe("kamloops-local-lidar");
-    expect(plan.inputRefs).toHaveLength(4);
-    expect(plan.inputRefs[0]).toMatchObject({
+    expect(plan.inputRefs.length).toBeGreaterThan(4);
+    expect(plan.inputRefs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "zip-archive",
+          format: "zip",
+          role: "terrain-source",
+          url: "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
+        }),
+        expect.objectContaining({
+          kind: "zip-archive",
+          format: "zip",
+          role: "terrain-source",
+          url: "https://maps.kamloops.ca/opendata/Lidar/2024/5156D.zip"
+        }),
+        expect.objectContaining({
+          kind: "zip-archive",
+          format: "zip",
+          role: "terrain-source",
+          url: "https://maps.kamloops.ca/OpenData/zipfiles/DEMPointBreakSHP.zip"
+        }),
+        expect.objectContaining({
+          kind: "arcgis-feature-query",
+          format: "json",
+          role: "terrain-source",
+          url: "https://maps.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4"
+        })
+      ])
+    );
+    const dem5156BRef = plan.inputRefs.find((inputRef) => inputRef.url.includes("5156B.zip"));
+    const lidar5156DRef = plan.inputRefs.find((inputRef) => inputRef.url.includes("5156D.zip"));
+    expect(dem5156BRef).toMatchObject({
       kind: "zip-archive",
       format: "zip",
       role: "terrain-source",
       url: "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
     });
-    expect(plan.inputRefs[1]).toMatchObject({
+    expect(lidar5156DRef).toMatchObject({
       kind: "zip-archive",
       format: "zip",
       role: "terrain-source",
       url: "https://maps.kamloops.ca/opendata/Lidar/2024/5156D.zip"
     });
-    expect(plan.inputRefs[1].notes.join(" ")).toContain("raw-LiDAR ZIP source ref");
-    expect(plan.inputRefs[2]).toMatchObject({
-      kind: "zip-archive",
-      format: "zip",
-      role: "terrain-source",
-      url: "https://maps.kamloops.ca/OpenData/zipfiles/DEMPointBreakSHP.zip"
-    });
-    expect(plan.inputRefs[3]).toMatchObject({
-      kind: "arcgis-feature-query",
-      format: "json",
-      role: "terrain-source",
-      url: "https://maps.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4"
-    });
+    expect(lidar5156DRef?.notes.join(" ")).toContain("raw-LiDAR ZIP source ref");
     expect(plan.warnings.join(" ")).toContain("non-downloadable raster cell");
     expect(plan.warnings.join(" ")).toContain(
       "not advertised by the official download WebMap layer"
@@ -1543,6 +1564,7 @@ describe("terrain source adapters", () => {
     expect(plan.warnings.join(" ")).toContain(
       "mixed municipal DEM ZIP plus derived-elevation repair"
     );
+    expect(plan.warnings.join(" ")).toContain("deterministic public DEM ZIP grid candidate");
     expect(plan.warnings.join(" ")).toContain(
       "materialize the verified municipal DEM ZIP cells first"
     );
@@ -1551,18 +1573,12 @@ describe("terrain source adapters", () => {
     expect(plan.warnings.join(" ")).toContain("Do not label");
     expect(plan.warnings.join(" ")).toContain("1m LiDAR raster");
     expect(plan.warnings.join(" ")).toContain("contour support probe found 99");
-    expect(requests).toHaveLength(7);
     expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
-    expect(requests[1]).toBe(
+    expect(requests).toContain(
       "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
     );
-    expect(requests.slice(2, 6)).toEqual([
-      ...Array(3).fill(
-        "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156D.zip"
-      ),
-      "https://maps.kamloops.ca/opendata/Lidar/2024/5156D.zip"
-    ]);
-    expect(requests[6]).toContain("/CityWorks/UtilityBaseMap/MapServer/4/query");
+    expect(requests).toContain("https://maps.kamloops.ca/opendata/Lidar/2024/5156D.zip");
+    expect(requests[requests.length - 1]).toContain("/CityWorks/UtilityBaseMap/MapServer/4/query");
   });
 
   it("falls back to the public alternate Kamloops contour host when the canonical host fails", async () => {
@@ -1669,19 +1685,23 @@ describe("terrain source adapters", () => {
     );
 
     expect(plan.status).toBe("ready");
-    expect(plan.inputRefs).toHaveLength(1);
-    expect(plan.inputRefs[0]).toMatchObject({
+    expect(plan.inputRefs.length).toBeGreaterThanOrEqual(1);
+    const staleRef = plan.inputRefs.find((inputRef) => inputRef.url.includes("5156D.zip"));
+    expect(staleRef).toMatchObject({
       kind: "zip-archive",
       format: "zip",
       role: "terrain-source",
       url: "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156D.zip"
     });
-    expect(plan.inputRefs[0].notes.join(" ")).toContain("PHOTOGRIDLIMITS NO");
+    expect(staleRef?.notes.join(" ")).toContain("PHOTOGRIDLIMITS NO");
     expect(plan.warnings.join(" ")).toContain("DEM ZIP ref");
-    expect(requests).toEqual([
-      expect.stringContaining("/FeatureDataset/GIS_Administrative_1/MapServer/6/query"),
-      "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156D.zip"
-    ]);
+    expect(plan.warnings.join(" ")).toContain("deterministic public DEM ZIP grid candidate");
+    expect(requests).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("/FeatureDataset/GIS_Administrative_1/MapServer/6/query"),
+        "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156D.zip"
+      ])
+    );
   });
 
   it("resolves an ambiguous border-box Canada DTM chain by blocking USGS then selecting HRDEM", async () => {

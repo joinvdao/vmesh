@@ -288,15 +288,15 @@ describe("Abundance source handoff", () => {
       selectedSource: { id: "kamloops-local-lidar-dtm-1m" },
       toolProfile: { toolId: "kamloops-local-lidar" }
     });
-    expect(handoff.terrainAdapterPlans[0].inputRefs[0]).toMatchObject({
+    const kamloopsRefs = handoff.terrainAdapterPlans[0].inputRefs;
+    const dem5156BRef = kamloopsRefs.find((inputRef) => inputRef.url.includes("5156B.zip"));
+    expect(dem5156BRef).toMatchObject({
       kind: "zip-archive",
       role: "terrain-source",
       format: "zip",
       url: "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
     });
-    expect(handoff.terrainAdapterPlans[0].inputRefs[0].notes.join(" ")).toContain(
-      "DEM grid CELLNAME 5156B"
-    );
+    expect(dem5156BRef?.notes.join(" ")).toContain("DEM grid CELLNAME 5156B");
     expect(
       handoff.sourceRanking.layerDecisions
         .find((decision) => decision.layerId === "terrain")
@@ -307,10 +307,10 @@ describe("Abundance source handoff", () => {
       accessMode: "official-download-archive",
       processingCost: "medium"
     });
-    expect(requests).toHaveLength(2);
+    expect(requests.length).toBeGreaterThan(2);
     expect(requests[0]).toContain("FeatureDataset/GIS_Administrative_1/MapServer/6/query");
     expect(requests[0]).toContain("geometryType=esriGeometryEnvelope");
-    expect(requests[1]).toBe(
+    expect(requests).toContain(
       "https://maps.kamloops.ca/opendata/DEM/2024_CGVD2013/DEM_CGVD2013_5156B.zip"
     );
     const geometry = new URL(requests[0]).searchParams.get("geometry")?.split(",").map(Number);

@@ -919,6 +919,30 @@ function createIndexedKamloopsMunicipalDemGridResponse(
   };
 }
 
+function mergeKamloopsMunicipalDemGridResponses(
+  primaryResponse: unknown,
+  indexedResponse: unknown
+) {
+  const featuresByCellName = new Map<string, { attributes: Record<string, unknown> }>();
+
+  for (const response of [indexedResponse, primaryResponse]) {
+    if (!isRecord(response) || !Array.isArray(response.features)) continue;
+    for (const feature of response.features) {
+      if (!isRecord(feature)) continue;
+      const attributes = isRecord(feature.attributes) ? feature.attributes : null;
+      const cellName = attributes ? stringAttr(attributes.CELLNAME) : null;
+      if (!cellName) continue;
+      featuresByCellName.set(cellName, { attributes });
+    }
+  }
+
+  return {
+    features: Array.from(featuresByCellName.values()).sort((left, right) =>
+      String(left.attributes.CELLNAME).localeCompare(String(right.attributes.CELLNAME))
+    )
+  };
+}
+
 interface BcLidarAssetSelection {
   sourceId: string;
   href: string;
@@ -1723,7 +1747,13 @@ export async function createLiveKamloopsMunicipalDemCoveragePreflight(
     }
 
     const demGridResponse = (await response.json()) as unknown;
-    const tiles = selectKamloopsMunicipalDemGridTiles(demGridResponse);
+    const liveTiles = selectKamloopsMunicipalDemGridTiles(demGridResponse);
+    const indexedDemGridResponse = createIndexedKamloopsMunicipalDemGridResponse(initialPlan.bbox);
+    const effectiveDemGridResponse =
+      liveTiles.length > 0
+        ? mergeKamloopsMunicipalDemGridResponses(demGridResponse, indexedDemGridResponse)
+        : demGridResponse;
+    const tiles = selectKamloopsMunicipalDemGridTiles(effectiveDemGridResponse);
     if (tiles.length === 0) {
       return createIndexedPreflight(
         "City of Kamloops public DEM Grid resolver returned no raster cells for this exact 3 km AOI"
@@ -1756,25 +1786,40 @@ export async function createLiveKamloopsMunicipalDemCoveragePreflight(
             }
           : options.kamloopsMunicipalLidarZipAvailability;
 
-    const preflight = createKamloopsMunicipalDemCoveragePreflight(preflightInput, demGridResponse, {
-      ...options,
-      kamloopsMunicipalDemZipAvailability: zipAvailability,
-      kamloopsMunicipalLidarZipAvailability: lidarZipAvailability
-    });
+    const preflight = createKamloopsMunicipalDemCoveragePreflight(
+      preflightInput,
+      effectiveDemGridResponse,
+      {
+        ...options,
+        kamloopsMunicipalDemZipAvailability: zipAvailability,
+        kamloopsMunicipalLidarZipAvailability: lidarZipAvailability
+      }
+    );
+    const addedIndexedCellCount = tiles.length - liveTiles.length;
+    const preflightWithAugmentedIndexWarning =
+      addedIndexedCellCount > 0
+        ? {
+            ...preflight,
+            warnings: [
+              ...preflight.warnings,
+              `City of Kamloops public DEM Grid resolver returned ${liveTiles.length} raster cell(s) for this exact 3 km AOI; VMesh added ${addedIndexedCellCount} deterministic public DEM ZIP grid candidate cell(s) and verified candidate ZIP URLs before source selection.`
+            ]
+          }
+        : preflight;
 
     if (
       options.verifyKamloopsMunicipalContourSupport !== false &&
-      preflight.derivedElevationBacked
+      preflightWithAugmentedIndexWarning.derivedElevationBacked
     ) {
       const contourSupport = await verifyKamloopsMunicipalContourSupport({
         bbox: initialPlan.bbox,
         fetchImpl,
         timeoutMs: kamloopsProbeTimeoutMs
       });
-      return withLiveDerivedElevationSupport(preflight, contourSupport);
+      return withLiveDerivedElevationSupport(preflightWithAugmentedIndexWarning, contourSupport);
     }
 
-    return preflight;
+    return preflightWithAugmentedIndexWarning;
   } catch (error) {
     return createIndexedPreflight(
       error instanceof Error
@@ -2820,7 +2865,8 @@ export async function createLiveTerrainSourceAdapterPlan(
       }
 
       const demGridResponse = (await response.json()) as unknown;
-      if (selectKamloopsMunicipalDemGridTiles(demGridResponse).length === 0) {
+      const liveTiles = selectKamloopsMunicipalDemGridTiles(demGridResponse);
+      if (liveTiles.length === 0) {
         return createLiveKamloopsPlanFromGridResponse({
           demGridResponse: createIndexedKamloopsMunicipalDemGridResponse(initialPlan.bbox),
           fallbackWarning:
@@ -2828,7 +2874,23 @@ export async function createLiveTerrainSourceAdapterPlan(
         });
       }
 
-      return createLiveKamloopsPlanFromGridResponse({ demGridResponse });
+      const indexedDemGridResponse = createIndexedKamloopsMunicipalDemGridResponse(
+        initialPlan.bbox
+      );
+      const effectiveDemGridResponse = mergeKamloopsMunicipalDemGridResponses(
+        demGridResponse,
+        indexedDemGridResponse
+      );
+      const addedIndexedCellCount =
+        selectKamloopsMunicipalDemGridTiles(effectiveDemGridResponse).length - liveTiles.length;
+
+      return createLiveKamloopsPlanFromGridResponse({
+        demGridResponse: effectiveDemGridResponse,
+        fallbackWarning:
+          addedIndexedCellCount > 0
+            ? `City of Kamloops public DEM Grid resolver returned ${liveTiles.length} raster cell(s) for this exact 3 km AOI; VMesh added ${addedIndexedCellCount} deterministic public DEM ZIP grid candidate cell(s) and verified candidate ZIP URLs before source selection.`
+            : undefined
+      });
     }
 
     if (initialPlan.toolProfile.toolId === "usgs-3dep") {
