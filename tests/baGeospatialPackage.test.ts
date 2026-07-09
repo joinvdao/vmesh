@@ -102,5 +102,15 @@ describe("BA geospatial package", () => {
       "water",
       "hydrology"
     ]);
+    expect(getBaGeospatialLayersForSegments(["soils_landcover"])).toEqual([
+      "soil",
+      "landcover",
+      "vegetation"
+    ]);
+    expect(getBaGeospatialLayersForSegments(["ecology_biodiversity_carbon"])).toEqual([
+      "ecology",
+      "vegetation",
+      "landcover"
+    ]);
   });
 });

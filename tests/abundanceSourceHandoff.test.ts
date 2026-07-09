@@ -75,6 +75,7 @@ describe("Abundance source handoff", () => {
       "contours",
       "roads",
       "buildings",
+      "soil",
       "landcover",
       "vegetation"
     ]);
@@ -84,6 +85,7 @@ describe("Abundance source handoff", () => {
       "contours",
       "roads",
       "buildings",
+      "soil",
       "landcover",
       "vegetation"
     ]);
@@ -167,6 +169,80 @@ describe("Abundance source handoff", () => {
         (candidate) => candidate.sourceId === "overture-maps-geoparquet"
       )
     ).toMatchObject({ rank: 2, dataType: "roads" });
+  });
+
+  it("returns independent ranked source decisions for the full 057 land-intelligence spine", () => {
+    const handoff = createAbundanceSourceHandoff(
+      {
+        aoi: {
+          centroid: { latitude: 49.2827, longitude: -123.1207 },
+          label: "Vancouver public-safe full-spine sample"
+        },
+        segments: [
+          "terrain_elevation",
+          "access_infrastructure",
+          "water_hydrology",
+          "soils_landcover",
+          "ecology_biodiversity_carbon",
+          "land_property_planning"
+        ],
+        consumerAppId: "building-abundance"
+      },
+      { now: FIXED_NOW }
+    );
+    const decisions = new Map(
+      handoff.sourceRanking.layerDecisions.map((decision) => [decision.layerId, decision])
+    );
+
+    expect(Array.from(decisions.keys())).toEqual(
+      expect.arrayContaining([
+        "terrain",
+        "roads",
+        "buildings",
+        "water",
+        "soil",
+        "landcover",
+        "vegetation",
+        "ecology",
+        "parcels"
+      ])
+    );
+    expect(
+      decisions.get("terrain")?.candidates.find((candidate) => candidate.sourceId === "bc-lidarbc")
+    ).toMatchObject({
+      dataType: "terrain",
+      providerId: "bc-lidarbc",
+      materializerId: "terrain:bc-lidarbc",
+      retrievalMethod: "source-index",
+      license: expect.any(String),
+      coverageStatus: "regional-check-required"
+    });
+    expect(
+      decisions.get("soil")?.candidates.find((candidate) => candidate.sourceId === "soilgrids")
+    ).toMatchObject({
+      dataType: "soil",
+      sourceSubType: "soil",
+      materializerId: "environment:soil-context",
+      retrievalMethod: "bulk-open-data"
+    });
+    expect(
+      decisions
+        .get("ecology")
+        ?.candidates.find((candidate) => candidate.sourceId === "dynamic-world")
+    ).toMatchObject({
+      dataType: "ecology",
+      materializerId: "environment:ecology-context"
+    });
+    expect(
+      decisions
+        .get("buildings")
+        ?.candidates.find((candidate) => candidate.sourceId === "overture-maps-geoparquet")
+    ).toMatchObject({
+      dataType: "buildings",
+      materializerId: "vectors:building-footprints"
+    });
+    expect(decisions.get("parcels")?.bestAvailableSourceId).toBe("official-parcel-gis");
+    expect(decisions.get("soil")?.bestRank).not.toBe(decisions.get("terrain")?.bestRank);
   });
 
   it("keeps parcel/property layers blocked when no reviewed source refs exist", () => {

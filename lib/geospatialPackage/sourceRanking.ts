@@ -43,6 +43,7 @@ export interface SourceRankingCandidate {
   dataType: string;
   sourceId: string;
   label: string;
+  providerId: string;
   rank: SourceQualityRank;
   rankLabel: string;
   selected: boolean;
@@ -50,12 +51,23 @@ export interface SourceRankingCandidate {
   sourceRole: string;
   sourceSubType: string;
   provider: string;
+  attribution: string;
+  license: string;
   status: string;
   access: string;
   accessMode: SourceAccessMode;
+  retrievalMethod: SourceAccessMode;
+  materializerId: string;
   processingCost: SourceProcessingCost;
   confidenceTier: SourceRankingConfidenceTier;
   coverage: string;
+  coverageStatus:
+    | "selected-for-aoi"
+    | "covers-aoi"
+    | "probable"
+    | "regional-check-required"
+    | "unknown"
+    | "unavailable";
   resolution: string;
   evidence: SourceRankingEvidence[];
   workerAction: string;
@@ -114,7 +126,9 @@ const LAYER_DATA_TYPE: Record<PackageLayerId, string> = {
   buildings: "buildings",
   water: "water",
   hydrology: "hydrology",
-  vegetation: "vegetation-ecology",
+  vegetation: "vegetation",
+  ecology: "ecology",
+  soil: "soil",
   landcover: "landcover",
   parcels: "parcel-cadastre",
   "field-boundaries": "field-boundaries",
@@ -136,6 +150,7 @@ function confidenceTier(rank: SourceQualityRank): SourceRankingConfidenceTier {
 function dataSubType({ layerId, sourceRole }: { layerId: PackageLayerId; sourceRole: string }) {
   const normalized = sourceRole.toLowerCase();
   if (normalized.includes("soil")) return "soil";
+  if (normalized.includes("ecology") || normalized.includes("biodiversity")) return "ecology";
   if (normalized.includes("building")) return "building-footprint";
   if (layerId === "buildings") return "building-footprint";
   if (layerId === "roads") return "road-network";
@@ -313,19 +328,30 @@ function rankWaterOrHydrologySource(sourceId: string): SourceQualityRank {
   return 7;
 }
 
-function rankLandcoverVegetationSoilSource(
-  sourceId: string,
-  sourceRole: string
-): SourceQualityRank {
+function rankSoilSource(sourceId: string, sourceRole: string): SourceQualityRank {
   const role = sourceRole.toLowerCase();
   if (sourceId === "usda-ssurgo-gssurgo") return 2;
+  if (sourceId === "soilgrids") return 6;
+  if (role.includes("soil")) return 6;
+  return 7;
+}
+
+function rankEcologySource(sourceId: string, sourceRole: string): SourceQualityRank {
+  const role = sourceRole.toLowerCase();
+  if (sourceId === "landfire") return 3;
+  if (sourceId === "esa-worldcover" || sourceId === "dynamic-world") return 4;
+  if (sourceId === "hansen-global-forest-change" || sourceId === "nasa-gedi-canopy") return 6;
+  if (role.includes("ecology") || role.includes("biodiversity")) return 5;
+  return 7;
+}
+
+function rankLandcoverVegetationSource(sourceId: string, sourceRole: string): SourceQualityRank {
+  const role = sourceRole.toLowerCase();
   if (sourceId === "annual-nlcd" || sourceId === "landfire") return 3;
   if (sourceId === "esa-worldcover" || sourceId === "dynamic-world") return 4;
   if (sourceId === "sentinel-2-l2a-earth-search") return 5;
-  if (sourceId === "soilgrids") return 6;
   if (sourceId === "hansen-global-forest-change" || sourceId === "nasa-gedi-canopy") return 6;
   if (sourceId === "fields-of-the-world") return 5;
-  if (role.includes("soil")) return 6;
   if (role.includes("predicted")) return 6;
   return 7;
 }
@@ -383,7 +409,11 @@ function baseRankForLayer({
       return rankWaterOrHydrologySource(sourceId);
     case "vegetation":
     case "landcover":
-      return rankLandcoverVegetationSoilSource(sourceId, sourceRole);
+      return rankLandcoverVegetationSource(sourceId, sourceRole);
+    case "ecology":
+      return rankEcologySource(sourceId, sourceRole);
+    case "soil":
+      return rankSoilSource(sourceId, sourceRole);
     case "imagery":
       return rankImagerySource(sourceId, sourceRole);
     case "climate":
@@ -408,6 +438,61 @@ function planAccessMode(plan: TerrainSourceAdapterPlan | null) {
     plan.inputRefs.find((ref) => ref.kind === "zip-archive")?.kind ??
     plan.inputRefs[0]?.kind;
   return bestKind ? accessModeForTerrainKind(bestKind) : null;
+}
+
+function coverageStatusForCandidate({
+  source,
+  selected
+}: {
+  source: GeospatialSourceCandidate;
+  selected: boolean;
+}): SourceRankingCandidate["coverageStatus"] {
+  if (isUnavailable(source.status, source.access)) return "unavailable";
+  if (selected) return "selected-for-aoi";
+  const coverage = source.coverage.toLowerCase();
+  if (coverage.includes("global") || coverage.includes("package aoi")) return "covers-aoi";
+  if (
+    coverage.includes("jurisdiction") ||
+    coverage.includes("regional") ||
+    coverage.includes("united states") ||
+    coverage.includes("canada") ||
+    coverage.includes("british columbia") ||
+    coverage.includes("scotland") ||
+    coverage.includes("england")
+  ) {
+    return "regional-check-required";
+  }
+  if (coverage.length > 0) return "probable";
+  return "unknown";
+}
+
+function materializerIdForCandidate({
+  layerId,
+  sourceId,
+  plan,
+  accessMode
+}: {
+  layerId: PackageLayerId;
+  sourceId: string;
+  plan: TerrainSourceAdapterPlan | null;
+  accessMode: SourceAccessMode;
+}) {
+  if (layerId === "terrain" || layerId === "contours") {
+    if (plan?.toolProfile?.toolId) return `terrain:${plan.toolProfile.toolId}`;
+    if (accessMode === "generic-terrain-tiles") return "terrain:global-baseline-tile-decoder";
+    return "terrain:source-adapter";
+  }
+  if (layerId === "buildings") return "vectors:building-footprints";
+  if (layerId === "roads") return "vectors:road-network";
+  if (layerId === "water" || layerId === "hydrology") return "environment:water-hydrology";
+  if (layerId === "landcover") return "environment:landcover-raster";
+  if (layerId === "vegetation") return "environment:vegetation-mask";
+  if (layerId === "ecology") return "environment:ecology-context";
+  if (layerId === "soil") return "environment:soil-context";
+  if (layerId === "parcels" || layerId === "field-boundaries") return "planning:boundary-context";
+  if (layerId === "imagery") return "imagery:context";
+  if (layerId === "climate") return "climate:context";
+  return `${layerId}:${sourceId}`;
 }
 
 function workerActionForCandidate({
@@ -484,6 +569,7 @@ function candidateFromSource({
     dataType: LAYER_DATA_TYPE[layerId],
     sourceId: source.id,
     label: sourceRecord?.label ?? source.label,
+    providerId: source.id,
     rank,
     rankLabel: RANK_LABELS[rank],
     selected,
@@ -493,12 +579,17 @@ function candidateFromSource({
     sourceRole,
     sourceSubType: dataSubType({ layerId, sourceRole }),
     provider: sourceRecord?.providerRef ?? source.attribution,
+    attribution: source.attribution,
+    license: sourceRecord?.license ?? source.license,
     status: sourceRecord?.status ?? source.status,
     access: sourceRecord?.access ?? source.access,
     accessMode,
+    retrievalMethod: accessMode,
+    materializerId: materializerIdForCandidate({ layerId, sourceId: source.id, plan, accessMode }),
     processingCost: processingCostForAccessMode(accessMode),
     confidenceTier: confidenceTier(rank),
     coverage: sourceRecord?.coverage ?? source.coverage,
+    coverageStatus: coverageStatusForCandidate({ source, selected }),
     resolution: sourceRecord?.resolution ?? source.resolution,
     evidence,
     workerAction: workerActionForCandidate({ selected, rank, plan, sourceId: source.id }),

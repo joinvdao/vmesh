@@ -25,6 +25,7 @@ export type BaGeospatialSegmentId = Extract<
   | "access_infrastructure"
   | "land_property_planning"
   | "soils_landcover"
+  | "ecology_biodiversity_carbon"
   | "climate_weather"
 >;
 
@@ -149,6 +150,7 @@ export const BA_GEOSPATIAL_SEGMENTS: BaGeospatialSegmentId[] = [
   "access_infrastructure",
   "land_property_planning",
   "soils_landcover",
+  "ecology_biodiversity_carbon",
   "climate_weather"
 ];
 
@@ -158,7 +160,8 @@ const SEGMENT_LAYERS: Record<BaGeospatialSegmentId, PackageLayerId[]> = {
   water_hydrology: ["water", "hydrology"],
   access_infrastructure: ["roads", "buildings"],
   land_property_planning: ["parcels"],
-  soils_landcover: ["landcover", "vegetation"],
+  soils_landcover: ["soil", "landcover", "vegetation"],
+  ecology_biodiversity_carbon: ["ecology", "vegetation", "landcover"],
   climate_weather: ["climate"]
 };
 
@@ -183,6 +186,13 @@ const SEGMENT_SOURCE_IDS: Record<BaGeospatialSegmentId, string[]> = {
     "dynamic-world",
     "annual-nlcd",
     "landfire"
+  ],
+  ecology_biodiversity_carbon: [
+    "esa-worldcover",
+    "dynamic-world",
+    "hansen-global-forest-change",
+    "landfire",
+    "nasa-gedi-canopy"
   ],
   climate_weather: ["open-meteo-forecast", "nasa-power-solar-meteo", "landfire"]
 };

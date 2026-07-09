@@ -20,7 +20,7 @@ export const VMESH_GEOSPATIAL_PACKAGE_MCP_TOOLS: GeospatialMcpToolDescriptor[] =
         layerId: {
           type: "string",
           description:
-            "Optional layer filter such as terrain, imagery, roads, buildings, water, vegetation, parcels, climate, hydrology, contours, landcover, or field-boundaries."
+            "Optional layer filter such as terrain, imagery, roads, buildings, water, vegetation, ecology, soil, parcels, climate, hydrology, contours, landcover, or field-boundaries."
         }
       }
     }

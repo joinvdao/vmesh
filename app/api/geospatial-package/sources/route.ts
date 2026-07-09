@@ -17,6 +17,8 @@ function isPackageLayerId(value: string): value is PackageLayerId {
     "buildings",
     "water",
     "vegetation",
+    "ecology",
+    "soil",
     "parcels",
     "climate",
     "hydrology",

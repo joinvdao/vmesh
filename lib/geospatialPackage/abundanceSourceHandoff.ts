@@ -357,6 +357,16 @@ function createLayer({
         ...(layerId === "vegetation" || layerId === "landcover"
           ? ["Abundance must carry decoded semantic masks or vegetation occupancy cells."]
           : []),
+        ...(layerId === "soil"
+          ? [
+              "Soil context is ranked separately from terrain and must preserve model/survey confidence."
+            ]
+          : []),
+        ...(layerId === "ecology"
+          ? [
+              "Ecology context is ranked separately from terrain and must not imply species-level truth."
+            ]
+          : []),
         ...(layerId === "buildings"
           ? ["Do not synthesize building footprints when source extraction returns empty."]
           : [])

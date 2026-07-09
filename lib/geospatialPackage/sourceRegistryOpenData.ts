@@ -54,7 +54,7 @@ export function getOpenDataPackageSources(
     source({
       id: "esa-worldcover",
       label: "ESA WorldCover",
-      layerIds: ["landcover", "vegetation"],
+      layerIds: ["landcover", "vegetation", "ecology"],
       status: "preprocessing-required",
       artifactKinds: ["cog", "pmtiles", "h3-summary"],
       coverage: "Global",
@@ -93,7 +93,7 @@ export function getOpenDataPackageSources(
     source({
       id: "sentinel-2-l2a-earth-search",
       label: "Sentinel-2 L2A STAC / Earth Search",
-      layerIds: ["imagery", "vegetation", "water", "landcover"],
+      layerIds: ["imagery", "vegetation", "ecology", "water", "landcover"],
       status: "preprocessing-required",
       artifactKinds: ["cog", "pmtiles", "raster-tiles", "h3-summary", "manifest"],
       coverage: "Global Sentinel-2 land coverage",
@@ -113,7 +113,7 @@ export function getOpenDataPackageSources(
     source({
       id: "sentinel-2-sen2sr-pmtiles",
       label: "Sentinel-2 SEN2SR package output",
-      layerIds: ["imagery", "vegetation", "water", "landcover"],
+      layerIds: ["imagery", "vegetation", "ecology", "water", "landcover"],
       status: configuredOrFuture(options.sen2srPmtilesUrl),
       artifactKinds: ["pmtiles", "cog", "h3-summary", "manifest"],
       coverage: "Package AOI only",

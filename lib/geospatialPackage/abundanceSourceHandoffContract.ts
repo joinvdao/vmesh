@@ -34,6 +34,8 @@ export type AbundanceExpectedPayloadKind =
   | "environment-vector"
   | "landcover-raster"
   | "semantic-ground-vector"
+  | "soil-context"
+  | "ecology-context"
   | "climate-context"
   | "imagery-context"
   | "parcel-boundary"
@@ -145,6 +147,8 @@ export const ABUNDANCE_SEGMENTS_BY_LAYER: Record<PackageLayerId, BaGeospatialSeg
   buildings: ["access_infrastructure"],
   parcels: ["land_property_planning"],
   vegetation: ["soils_landcover"],
+  ecology: ["ecology_biodiversity_carbon"],
+  soil: ["soils_landcover"],
   landcover: ["soils_landcover"],
   climate: ["climate_weather"],
   "field-boundaries": ["land_property_planning"]
@@ -159,6 +163,8 @@ export const ABUNDANCE_PAYLOAD_KIND_BY_LAYER: Record<PackageLayerId, AbundanceEx
     buildings: "vector-buildings",
     water: "environment-vector",
     vegetation: "semantic-ground-vector",
+    ecology: "ecology-context",
+    soil: "soil-context",
     parcels: "parcel-boundary",
     climate: "climate-context",
     hydrology: "environment-vector",

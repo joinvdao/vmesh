@@ -169,6 +169,8 @@ const SOURCE_LAYER_SEGMENT_HINTS: Record<string, BaEcosystemSegmentId[]> = {
   hydrology: ["water_hydrology"],
   water: ["water_hydrology"],
   vegetation: ["ecology_biodiversity_carbon", "soils_landcover"],
+  ecology: ["ecology_biodiversity_carbon"],
+  soil: ["soils_landcover"],
   landcover: ["soils_landcover", "ecology_biodiversity_carbon"],
   climate: ["climate_weather"],
   "field-boundaries": ["agriculture_operations"],

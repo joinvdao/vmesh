@@ -21,6 +21,7 @@ const DEFAULT_SEGMENTS: BaGeospatialSegmentId[] = [
   "access_infrastructure",
   "water_hydrology",
   "soils_landcover",
+  "ecology_biodiversity_carbon",
   "climate_weather",
   "imagery_observation",
   "land_property_planning"

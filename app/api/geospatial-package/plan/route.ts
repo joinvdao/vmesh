@@ -26,6 +26,8 @@ const PACKAGE_LAYERS: PackageLayerId[] = [
   "buildings",
   "water",
   "vegetation",
+  "ecology",
+  "soil",
   "parcels",
   "climate",
   "hydrology",
@@ -44,7 +46,17 @@ function isPackageLayerId(value: unknown): value is PackageLayerId {
 
 function parseLayers(value: unknown): PackageLayerId[] {
   if (!Array.isArray(value)) {
-    return ["terrain", "imagery", "roads", "buildings", "water", "vegetation", "climate"];
+    return [
+      "terrain",
+      "imagery",
+      "roads",
+      "buildings",
+      "water",
+      "vegetation",
+      "ecology",
+      "soil",
+      "climate"
+    ];
   }
 
   const layers = value.filter(isPackageLayerId).slice(0, PACKAGE_LAYERS.length);
@@ -145,7 +157,17 @@ export async function GET() {
       centroid: { latitude: 38.7223, longitude: -9.1393 },
       label: "Lisbon sample AOI"
     },
-    layers: ["terrain", "imagery", "roads", "buildings", "water", "vegetation", "climate"],
+    layers: [
+      "terrain",
+      "imagery",
+      "roads",
+      "buildings",
+      "water",
+      "vegetation",
+      "ecology",
+      "soil",
+      "climate"
+    ],
     consumerAppId: "generic-downstream-app",
     offline: true
   };

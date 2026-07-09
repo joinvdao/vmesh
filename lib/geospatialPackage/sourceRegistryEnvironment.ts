@@ -104,7 +104,7 @@ const THEMATIC_SOURCES: ThematicSource[] = [
   {
     id: "soilgrids",
     label: "SoilGrids",
-    layerIds: ["vegetation", "landcover", "hydrology"],
+    layerIds: ["soil", "vegetation", "landcover", "hydrology"],
     coverage: "Global",
     resolution: "250m modeled soil properties",
     sourceUrl: "https://soilgrids.org/",
@@ -117,7 +117,7 @@ const THEMATIC_SOURCES: ThematicSource[] = [
   {
     id: "usda-ssurgo-gssurgo",
     label: "USDA SSURGO / gSSURGO",
-    layerIds: ["vegetation", "hydrology", "landcover"],
+    layerIds: ["soil", "vegetation", "hydrology", "landcover"],
     coverage: "United States",
     resolution: "Soil survey map units and attributes",
     sourceUrl:
@@ -132,7 +132,7 @@ const THEMATIC_SOURCES: ThematicSource[] = [
   {
     id: "dynamic-world",
     label: "Dynamic World",
-    layerIds: ["landcover", "vegetation", "water"],
+    layerIds: ["landcover", "vegetation", "ecology", "water"],
     coverage: "Global",
     resolution: "10m near-real-time land cover probabilities",
     sourceUrl: "https://dynamicworld.app/",
@@ -145,7 +145,7 @@ const THEMATIC_SOURCES: ThematicSource[] = [
   {
     id: "hansen-global-forest-change",
     label: "Hansen Global Forest Change",
-    layerIds: ["vegetation", "landcover", "climate"],
+    layerIds: ["vegetation", "ecology", "landcover", "climate"],
     coverage: "Global",
     resolution: "30m forest cover/loss/gain products",
     sourceUrl: "https://glad.earthengine.app/view/global-forest-change",
@@ -158,7 +158,7 @@ const THEMATIC_SOURCES: ThematicSource[] = [
   {
     id: "annual-nlcd",
     label: "Annual NLCD",
-    layerIds: ["landcover", "vegetation", "water"],
+    layerIds: ["landcover", "vegetation", "ecology", "water"],
     coverage: "United States",
     resolution: "30m annual land cover",
     sourceUrl: "https://www.mrlc.gov/",
@@ -171,7 +171,7 @@ const THEMATIC_SOURCES: ThematicSource[] = [
   {
     id: "landfire",
     label: "LANDFIRE",
-    layerIds: ["vegetation", "climate", "landcover"],
+    layerIds: ["vegetation", "ecology", "climate", "landcover"],
     coverage: "United States",
     resolution: "Vegetation/fuels products",
     sourceUrl: "https://landfire.gov/",
@@ -184,7 +184,7 @@ const THEMATIC_SOURCES: ThematicSource[] = [
   {
     id: "nasa-gedi-canopy",
     label: "NASA GEDI canopy metrics",
-    layerIds: ["vegetation", "landcover"],
+    layerIds: ["vegetation", "ecology", "landcover"],
     coverage: "Approximately 52S to 52N",
     resolution: "Canopy and ground metrics at coarse grids/footprints",
     sourceUrl: "https://gedi.umd.edu/",

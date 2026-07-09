@@ -43,6 +43,8 @@ export function getDefaultPackageLayers(): PackageLayerId[] {
     "buildings",
     "water",
     "vegetation",
+    "ecology",
+    "soil",
     "climate",
     "hydrology",
     "contours",

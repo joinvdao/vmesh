@@ -5,6 +5,8 @@ export type PackageLayerId =
   | "buildings"
   | "water"
   | "vegetation"
+  | "ecology"
+  | "soil"
   | "parcels"
   | "climate"
   | "hydrology"

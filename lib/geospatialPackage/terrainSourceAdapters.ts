@@ -931,7 +931,7 @@ function mergeKamloopsMunicipalDemGridResponses(
       if (!isRecord(feature)) continue;
       const attributes = isRecord(feature.attributes) ? feature.attributes : null;
       const cellName = attributes ? stringAttr(attributes.CELLNAME) : null;
-      if (!cellName) continue;
+      if (!attributes || !cellName) continue;
       featuresByCellName.set(cellName, { attributes });
     }
   }
