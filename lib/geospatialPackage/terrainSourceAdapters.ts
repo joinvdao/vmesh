@@ -904,7 +904,8 @@ function createIndexedKamloopsMunicipalDemGridResponse(
             CELLNAME: `${row.toString().padStart(2, "0")}${column
               .toString()
               .padStart(2, "0")}${quadrant}`,
-            PHOTOGRIDLIMITS: "YES"
+            PHOTOGRIDLIMITS: "YES",
+            VMESH_INDEX_SOURCE: "deterministic-grid-index"
           }
         });
       }
@@ -954,6 +955,7 @@ interface KamloopsMunicipalDemGridSelection {
   photoGridLimits: string | null;
   demZipUrl: string;
   lidarZipUrl: string;
+  resolutionSource: "arcgis-feature" | "deterministic-grid-index";
 }
 
 interface KamloopsMunicipalDemZipAvailability {
@@ -1089,7 +1091,11 @@ function selectKamloopsMunicipalDemGridTiles(value: unknown): KamloopsMunicipalD
       cellName,
       photoGridLimits: stringAttr(attributes.PHOTOGRIDLIMITS),
       demZipUrl: kamloopsMunicipalDemZipUrl(cellName),
-      lidarZipUrl: kamloopsMunicipalLidarZipUrl(cellName)
+      lidarZipUrl: kamloopsMunicipalLidarZipUrl(cellName),
+      resolutionSource:
+        stringAttr(attributes.VMESH_INDEX_SOURCE) === "deterministic-grid-index"
+          ? "deterministic-grid-index"
+          : "arcgis-feature"
     });
   }
 
@@ -1667,7 +1673,7 @@ export async function createLiveKamloopsMunicipalDemCoveragePreflight(
       ...preflight,
       warnings: [
         ...preflight.warnings,
-        `${reason}; VMesh used its deterministic public DEM ZIP grid index and still verified candidate ZIP URLs before source selection.`
+        `${reason}; VMesh consulted its deterministic public DEM ZIP grid index and still verified candidate ZIP URLs before source selection.`
       ]
     };
 
@@ -1718,6 +1724,12 @@ export async function createLiveKamloopsMunicipalDemCoveragePreflight(
 
     const demGridResponse = (await response.json()) as unknown;
     const tiles = selectKamloopsMunicipalDemGridTiles(demGridResponse);
+    if (tiles.length === 0) {
+      return createIndexedPreflight(
+        "City of Kamloops public DEM Grid resolver returned no raster cells for this exact 3 km AOI"
+      );
+    }
+
     const zipAvailability =
       options.verifyKamloopsMunicipalDemZipUrls === false
         ? options.kamloopsMunicipalDemZipAvailability
@@ -2259,7 +2271,9 @@ function createKamloopsLocalLidarSourcePlan(
       format: "zip",
       role: "terrain-source",
       notes: [
-        `Resolved from the public City of Kamloops DEM Grid as ${selectedDemGridTile.sourceId}.`,
+        selectedDemGridTile.resolutionSource === "deterministic-grid-index"
+          ? `Selected from VMesh's deterministic index of the official City of Kamloops DEM ZIP grid as ${selectedDemGridTile.sourceId}; the archive URL was reachability-verified before this source ref was emitted.`
+          : `Resolved from the public City of Kamloops DEM Grid as ${selectedDemGridTile.sourceId}.`,
         `DEM grid CELLNAME ${selectedDemGridTile.cellName}; OBJECTID ${selectedDemGridTile.objectId ?? "unknown"}; PHOTOGRIDLIMITS ${selectedDemGridTile.photoGridLimits ?? "unknown"}.`,
         `The official City of Kamloops download WebMap is ${KAMLOOPS_MUNICIPAL_2024_DOWNLOAD_WEBMAP_URL}; its popup expressions define the 2024 LAS and DEM ZIP URL formulas and its operational layer definition is ${KAMLOOPS_MUNICIPAL_DOWNLOAD_LAYER_DEFINITION}.`,
         `The public LiDAR download app is ${KAMLOOPS_MUNICIPAL_2024_LIDAR_APP_URL}.`,
@@ -2286,7 +2300,9 @@ function createKamloopsLocalLidarSourcePlan(
         format: "zip",
         role: "terrain-source",
         notes: [
-          `Resolved from the public City of Kamloops 2024 LiDAR archive as ${tile.sourceId}.`,
+          tile.resolutionSource === "deterministic-grid-index"
+            ? `Selected from VMesh's deterministic index of the official City of Kamloops 2024 LiDAR archive grid as ${tile.sourceId}; the archive URL was reachability-verified before this source ref was emitted.`
+            : `Resolved from the public City of Kamloops 2024 LiDAR archive as ${tile.sourceId}.`,
           `LiDAR archive CELLNAME ${tile.cellName}; OBJECTID ${tile.objectId ?? "unknown"}; DEM PHOTOGRIDLIMITS ${tile.photoGridLimits ?? "unknown"}.`,
           `The official City of Kamloops download WebMap is ${KAMLOOPS_MUNICIPAL_2024_DOWNLOAD_WEBMAP_URL}; its popup expressions define the 2024 LAS and DEM ZIP URL formulas and its operational layer definition is ${KAMLOOPS_MUNICIPAL_DOWNLOAD_LAYER_DEFINITION}.`,
           `The public LiDAR download app is ${KAMLOOPS_MUNICIPAL_2024_LIDAR_APP_URL}.`,
@@ -2804,6 +2820,14 @@ export async function createLiveTerrainSourceAdapterPlan(
       }
 
       const demGridResponse = (await response.json()) as unknown;
+      if (selectKamloopsMunicipalDemGridTiles(demGridResponse).length === 0) {
+        return createLiveKamloopsPlanFromGridResponse({
+          demGridResponse: createIndexedKamloopsMunicipalDemGridResponse(initialPlan.bbox),
+          fallbackWarning:
+            "City of Kamloops public DEM Grid resolver returned no raster cells for this exact 3 km AOI; VMesh consulted its deterministic public DEM ZIP grid index and still verified candidate ZIP URLs before source selection."
+        });
+      }
+
       return createLiveKamloopsPlanFromGridResponse({ demGridResponse });
     }
 
@@ -3046,15 +3070,6 @@ async function requireSourcePixelCoverageForPlan(
       "VMesh retained this source as index evidence only; Abundance must not claim heightfield-ready terrain from it for this AOI."
     ]
   };
-}
-
-function isKamloopsSourceNativeRasterRef(inputRef: TerrainSourceInputRef): boolean {
-  return (
-    inputRef.kind === "direct-geotiff" ||
-    inputRef.kind === "s3-cog" ||
-    inputRef.kind === "arcgis-image-export" ||
-    /\/opendata\/DEM\/[0-9]{4}_CGVD[0-9]+\/DEM_CGVD[0-9]+_[A-Z0-9_-]+\.zip$/i.test(inputRef.url)
-  );
 }
 
 function isKamloopsDerivedElevationRef(inputRef: TerrainSourceInputRef): boolean {

@@ -1398,9 +1398,9 @@ describe("terrain source adapters", () => {
     expect(plan.warnings.join(" ")).toContain("Do not label");
     expect(plan.warnings.join(" ")).toContain("1m LiDAR raster");
     expect(plan.warnings.join(" ")).toContain("contour support probe found 42");
-    expect(requests).toHaveLength(2);
     expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
-    expect(requests[1]).toContain("/CityWorks/UtilityBaseMap/MapServer/4/query");
+    expect(requests.some((requestUrl) => requestUrl.includes("DEM_CGVD2013_"))).toBe(true);
+    expect(requests[requests.length - 1]).toContain("/CityWorks/UtilityBaseMap/MapServer/4/query");
   });
 
   it("retains Kamloops DEMPoint/Breakline refs when the contour-count proxy has no support", async () => {
@@ -1456,9 +1456,9 @@ describe("terrain source adapters", () => {
     expect(plan.warnings.join(" ")).toContain(
       "Do not claim source-backed runtime terrain until Abundance materialization"
     );
-    expect(requests).toHaveLength(2);
     expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");
-    expect(requests[1]).toContain("/CityWorks/UtilityBaseMap/MapServer/4/query");
+    expect(requests.some((requestUrl) => requestUrl.includes("DEM_CGVD2013_"))).toBe(true);
+    expect(requests[requests.length - 1]).toContain("/CityWorks/UtilityBaseMap/MapServer/4/query");
   });
 
   it("uses official Kamloops DEM ZIP refs plus derived-elevation repair refs when partial DEM-grid cells are not downloadable", async () => {
