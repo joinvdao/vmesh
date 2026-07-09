@@ -223,10 +223,10 @@ describe("Kamloops terrain preflight route", () => {
     });
     expect(payload.goldenQualityBlockers.join(" ")).toContain("non-downloadable");
     expect(payload.warnings.join(" ")).toContain("contour support probe failed");
-    expect(payload.nextActions.join(" ")).toContain("auto mode must fall back");
+    expect(payload.nextActions.join(" ")).toContain("Auto mode may fall back");
   });
 
-  it("blocks derived municipal preflight when exact-AOI support is absent", async () => {
+  it("keeps derived municipal preflight partial when contour proxy support is absent", async () => {
     vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
       const requestUrl = String(url);
       if (requestUrl.includes("/opendata/DEM/2024_CGVD2013/")) {
@@ -256,7 +256,7 @@ describe("Kamloops terrain preflight route", () => {
 
     expect(response.status).toBe(200);
     expect(payload).toMatchObject({
-      status: "blocked",
+      status: "partial",
       sourceBacked: false,
       rasterBacked: false,
       derivedElevationBacked: true,
@@ -265,8 +265,10 @@ describe("Kamloops terrain preflight route", () => {
       selectedSourceIds: [],
       goldenQualityTerrainCandidate: false
     });
-    expect(payload.blockedReasons.join(" ")).toContain("zero features");
-    expect(payload.nextActions.join(" ")).toContain("Do not claim source-backed");
+    expect(payload.blockedReasons).toHaveLength(0);
+    expect(payload.warnings.join(" ")).toContain("zero features");
+    expect(payload.warnings.join(" ")).toContain("DEMPoint/DEMBreakline materializer candidate");
+    expect(payload.nextActions.join(" ")).toContain("Abundance must attempt DEMPoint/DEMBreakline");
   });
 
   it("suggests a nearby golden-quality frame when the exact slice is derived-only", async () => {
@@ -375,7 +377,7 @@ describe("Kamloops terrain preflight route", () => {
 
     expect(response.status).toBe(200);
     expect(payload).toMatchObject({
-      status: "blocked",
+      status: "partial",
       sourceBacked: false,
       goldenQualityTerrainCandidate: false,
       suggestedGoldenQualityFrame: {

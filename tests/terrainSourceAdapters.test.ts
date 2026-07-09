@@ -1403,7 +1403,7 @@ describe("terrain source adapters", () => {
     expect(requests[1]).toContain("/CityWorks/UtilityBaseMap/MapServer/4/query");
   });
 
-  it("blocks Kamloops DEMPoint/Breakline refs when the exact AOI has no contour support", async () => {
+  it("retains Kamloops DEMPoint/Breakline refs when the contour-count proxy has no support", async () => {
     const requests: string[] = [];
     const fetchImpl: typeof fetch = async (url) => {
       const requestUrl = String(url);
@@ -1435,13 +1435,26 @@ describe("terrain source adapters", () => {
       { env: {}, fetchImpl }
     );
 
-    expect(plan.status).toBe("blocked");
+    expect(plan.status).toBe("ready");
     expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
-    expect(plan.inputRefs).toHaveLength(0);
-    expect(plan.blockedReasons.join(" ")).toContain("zero features");
-    expect(plan.blockedReasons.join(" ")).toContain("DEMPoint/DEMBreakline archive extent");
+    expect(plan.inputRefs).toHaveLength(2);
+    expect(plan.inputRefs[0]).toMatchObject({
+      kind: "zip-archive",
+      format: "zip",
+      role: "terrain-source",
+      url: "https://maps.kamloops.ca/OpenData/zipfiles/DEMPointBreakSHP.zip"
+    });
+    expect(plan.inputRefs[1]).toMatchObject({
+      kind: "arcgis-feature-query",
+      format: "json",
+      role: "terrain-source",
+      url: "https://maps.kamloops.ca/arcgis/rest/services/CityWorks/UtilityBaseMap/MapServer/4"
+    });
+    expect(plan.blockedReasons).toHaveLength(0);
+    expect(plan.warnings.join(" ")).toContain("zero features");
+    expect(plan.warnings.join(" ")).toContain("DEMPoint/DEMBreakline materializer candidate");
     expect(plan.warnings.join(" ")).toContain(
-      "Do not mark DEMPoint/contour-derived municipal terrain ready"
+      "Do not claim source-backed runtime terrain until Abundance materialization"
     );
     expect(requests).toHaveLength(2);
     expect(requests[0]).toContain("/FeatureDataset/GIS_Administrative_1/MapServer/6/query");

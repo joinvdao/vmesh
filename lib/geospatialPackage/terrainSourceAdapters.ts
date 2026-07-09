@@ -1545,8 +1545,32 @@ function withLiveDerivedElevationSupport(
 
   const reason =
     contourSupport.status === "unsupported"
-      ? "City of Kamloops municipal derived-elevation rail is not source-backed for this exact 3 km AOI because the official 1m contour support probe returned zero features."
+      ? "City of Kamloops municipal contour support probe returned zero features for this exact 3 km AOI; DEMPoint/DEMBreakline support must be proven by the Abundance materializer before any source-backed terrain claim."
       : contourSupport.reason;
+
+  if (preflight.pointBreakDerived) {
+    return {
+      ...preflight,
+      status: "partial",
+      sourceBacked: false,
+      selectedSourceIds: [],
+      derivedElevationSupport: contourSupport.status === "unknown" ? "unknown" : "unsupported",
+      contourSupportFeatureCount:
+        contourSupport.status === "unsupported" ? contourSupport.count : null,
+      goldenQualityBlockers: [...preflight.goldenQualityBlockers, reason],
+      warnings: [
+        ...preflight.warnings,
+        reason,
+        "VMesh retained the public DEMPoint/DEMBreakline materializer candidate because exact point/breakline support is a worker QA decision, not a contour-count proxy."
+      ],
+      nextActions: [
+        "Call the Abundance site-runtime-pack route in sourcePackMode=required if source-backed terrain is required for this coordinate.",
+        "Abundance must attempt DEMPoint/DEMBreakline materialization, QA source-support distances, and fail closed if the exact AOI is too sparse.",
+        "Auto mode may fall back to labelled visual terrain if DEMPoint/Breakline materialization cannot prove runtime terrain readiness.",
+        "Do not claim this route as Kamloops-golden-quality terrain unless a raster DEM ZIP or raw-LiDAR DTM worker succeeds."
+      ]
+    };
+  }
 
   if (preflight.rasterBacked) {
     return {
@@ -2706,6 +2730,19 @@ export async function createLiveTerrainSourceAdapterPlan(
       );
 
       if (contourSupport.status === "unsupported") {
+        if (hasDemPointBreakRef) {
+          return {
+            ...planWithFallbackWarning,
+            warnings: [
+              ...planWithFallbackWarning.warnings,
+              ...(contourSupport.warnings ?? []),
+              "City of Kamloops contour support probe returned zero features for this exact 3 km AOI.",
+              "VMesh retained the public DEMPoint/DEMBreakline materializer candidate because exact point/breakline support is proven by the Abundance worker, not by the contour-count proxy.",
+              "Do not claim source-backed runtime terrain until Abundance materialization finds usable point, breakline, contour, raster, or raw LiDAR samples and passes QA."
+            ]
+          };
+        }
+
         return {
           ...planWithFallbackWarning,
           status: "blocked",
