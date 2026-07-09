@@ -2246,6 +2246,32 @@ function createKamloopsLocalLidarSourcePlan(
       ]
     })
   );
+  const rawLidarRepairInputRefs = nonDownloadableDemGridTiles
+    .filter(
+      (tile) =>
+        kamloopsMunicipalLidarZipAvailabilityForTile(
+          tile,
+          context.options.kamloopsMunicipalLidarZipAvailability
+        )?.reachable === true
+    )
+    .map((tile) =>
+      buildInputRef({
+        context,
+        kind: "zip-archive",
+        url: tile.lidarZipUrl,
+        format: "zip",
+        role: "terrain-source",
+        notes: [
+          `Resolved from the public City of Kamloops 2024 LiDAR archive as ${tile.sourceId}.`,
+          `LiDAR archive CELLNAME ${tile.cellName}; OBJECTID ${tile.objectId ?? "unknown"}; DEM PHOTOGRIDLIMITS ${tile.photoGridLimits ?? "unknown"}.`,
+          `The official City of Kamloops download WebMap is ${KAMLOOPS_MUNICIPAL_2024_DOWNLOAD_WEBMAP_URL}; its popup expressions define the 2024 LAS and DEM ZIP URL formulas and its operational layer definition is ${KAMLOOPS_MUNICIPAL_DOWNLOAD_LAYER_DEFINITION}.`,
+          `The public LiDAR download app is ${KAMLOOPS_MUNICIPAL_2024_LIDAR_APP_URL}.`,
+          "This is a deterministic official public raw-LiDAR ZIP source ref, not stored payload data; VMesh verifies archive reachability before selecting it.",
+          "A downstream worker must fetch the LAS/LAZ archive, require usable CRS metadata and ground-classified points, derive a DTM grid, QA source-support distances, and preserve warnings before claiming source-backed terrain.",
+          "Do not treat a raw LiDAR archive ref alone as a ready heightfield; the runtime pack is only terrain-ready after Abundance materialization succeeds."
+        ]
+      })
+    );
   const contourInputRef = buildInputRef({
     context,
     kind: "arcgis-feature-query",
@@ -2277,7 +2303,9 @@ function createKamloopsLocalLidarSourcePlan(
     if (elevationVectorCoversAoi) {
       const repairInputRefs = [demPointBreakInputRef, contourInputRef];
       const mixedRasterRepairInputRefs =
-        demGridInputRefs.length > 0 ? [...demGridInputRefs, ...repairInputRefs] : repairInputRefs;
+        demGridInputRefs.length > 0 || rawLidarRepairInputRefs.length > 0
+          ? [...demGridInputRefs, ...rawLidarRepairInputRefs, ...repairInputRefs]
+          : repairInputRefs;
       return readyPlan({
         context,
         inputRefs: mixedRasterRepairInputRefs,
@@ -2296,12 +2324,16 @@ function createKamloopsLocalLidarSourcePlan(
             )
             .join(", ")}.`,
           rawLidarVerifiedForMissingDemTiles
-            ? "Every non-downloadable DEM raster cell has a verified public raw LiDAR archive; a point-cloud-to-DTM worker could promote this AOI above the contour-derived rail after materialization and QA."
+            ? "Every non-downloadable DEM raster cell has a verified public raw LiDAR archive; VMesh emitted those archive refs so a point-cloud-to-DTM worker can promote this AOI above the contour-derived rail after materialization and QA."
             : "Raw LiDAR ZIP coverage is not verified for every non-downloadable DEM raster cell; keep this AOI on the derived-elevation rail unless another source-native raster is configured.",
           `The public DEMPoint/DEMBreakline archive at ${KAMLOOPS_MUNICIPAL_DEM_POINT_BREAK_SHP_URL} is included as a higher-support derived-elevation attempt before contour fallback.`,
           demGridInputRefs.length > 0
-            ? "Abundance should materialize the verified municipal DEM ZIP cells first, then use public DEMPoint/DEMBreakline or contour repair only for gaps."
-            : "Abundance should materialize the public DEMPoint/DEMBreakline rail first, then use contour repair if support is too sparse.",
+            ? rawLidarRepairInputRefs.length > 0
+              ? "Abundance should materialize the verified municipal DEM ZIP cells first, then attempt verified raw LiDAR archive DTM repair before public DEMPoint/DEMBreakline or contour repair."
+              : "Abundance should materialize the verified municipal DEM ZIP cells first, then use public DEMPoint/DEMBreakline or contour repair only for gaps."
+            : rawLidarRepairInputRefs.length > 0
+              ? "Abundance should materialize the verified public raw LiDAR archive rail first, then use public DEMPoint/DEMBreakline or contour repair if point-cloud DTM support is too sparse."
+              : "Abundance should materialize the public DEMPoint/DEMBreakline rail first, then use contour repair if support is too sparse.",
           "Run class is dry-run: vmesh resolved public source refs only; Abundance must materialize and QA the contour-derived heightfield before runtime terrain readiness.",
           "Do not label the contour-derived output as a 1m LiDAR raster; it is official municipal elevation-derived terrain."
         ]

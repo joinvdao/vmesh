@@ -1497,7 +1497,7 @@ describe("terrain source adapters", () => {
     expect(plan.status).toBe("ready");
     expect(plan.selectedSource?.id).toBe("kamloops-local-lidar-dtm-1m");
     expect(plan.toolProfile?.toolId).toBe("kamloops-local-lidar");
-    expect(plan.inputRefs).toHaveLength(3);
+    expect(plan.inputRefs).toHaveLength(4);
     expect(plan.inputRefs[0]).toMatchObject({
       kind: "zip-archive",
       format: "zip",
@@ -1508,9 +1508,16 @@ describe("terrain source adapters", () => {
       kind: "zip-archive",
       format: "zip",
       role: "terrain-source",
+      url: "https://maps.kamloops.ca/opendata/Lidar/2024/5156D.zip"
+    });
+    expect(plan.inputRefs[1].notes.join(" ")).toContain("raw-LiDAR ZIP source ref");
+    expect(plan.inputRefs[2]).toMatchObject({
+      kind: "zip-archive",
+      format: "zip",
+      role: "terrain-source",
       url: "https://maps.kamloops.ca/OpenData/zipfiles/DEMPointBreakSHP.zip"
     });
-    expect(plan.inputRefs[2]).toMatchObject({
+    expect(plan.inputRefs[3]).toMatchObject({
       kind: "arcgis-feature-query",
       format: "json",
       role: "terrain-source",
@@ -1527,6 +1534,7 @@ describe("terrain source adapters", () => {
       "materialize the verified municipal DEM ZIP cells first"
     );
     expect(plan.warnings.join(" ")).toContain("point-cloud-to-DTM worker");
+    expect(plan.warnings.join(" ")).toContain("verified raw LiDAR archive DTM repair");
     expect(plan.warnings.join(" ")).toContain("Do not label");
     expect(plan.warnings.join(" ")).toContain("1m LiDAR raster");
     expect(plan.warnings.join(" ")).toContain("contour support probe found 99");
