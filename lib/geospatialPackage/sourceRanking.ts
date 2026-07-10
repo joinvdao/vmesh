@@ -3,6 +3,7 @@ import type {
   TerrainSourceAdapterKind,
   TerrainSourceAdapterPlan
 } from "@/lib/geospatialPackage/terrainSourceAdapters";
+import { getTerrainToolProfileForSource } from "@/lib/geospatialPackage/terrainWorker";
 import type {
   GeospatialSourceCandidate,
   PackageLayerId,
@@ -62,6 +63,9 @@ export interface SourceRankingCandidate {
   confidenceTier: SourceRankingConfidenceTier;
   coverage: string;
   coverageStatus:
+    | "exact-frame-proven"
+    | "exact-frame-source-ref"
+    | "exact-frame-rejected"
     | "selected-for-aoi"
     | "covers-aoi"
     | "probable"
@@ -69,6 +73,8 @@ export interface SourceRankingCandidate {
     | "unknown"
     | "unavailable";
   resolution: string;
+  crs: string | null;
+  verticalDatum: string | null;
   evidence: SourceRankingEvidence[];
   workerAction: string;
   warnings: string[];
@@ -446,12 +452,24 @@ function planAccessMode(plan: TerrainSourceAdapterPlan | null) {
 
 function coverageStatusForCandidate({
   source,
-  selected
+  selected,
+  plan
 }: {
   source: GeospatialSourceCandidate;
   selected: boolean;
+  plan: TerrainSourceAdapterPlan | null;
 }): SourceRankingCandidate["coverageStatus"] {
   if (isUnavailable(source.status, source.access)) return "unavailable";
+  if (
+    plan?.status === "ready" &&
+    plan.warnings.some((warning) =>
+      /source pixel coverage probe proved|valid terrain pixels/i.test(warning)
+    )
+  ) {
+    return "exact-frame-proven";
+  }
+  if (plan?.status === "ready") return "exact-frame-source-ref";
+  if (plan?.status === "blocked") return "exact-frame-rejected";
   if (selected) return "selected-for-aoi";
   const coverage = source.coverage.toLowerCase();
   if (coverage.includes("global") || coverage.includes("package aoi")) return "covers-aoi";
@@ -483,6 +501,8 @@ function materializerIdForCandidate({
 }) {
   if (layerId === "terrain" || layerId === "contours") {
     if (plan?.toolProfile?.toolId) return `terrain:${plan.toolProfile.toolId}`;
+    const toolProfile = getTerrainToolProfileForSource(sourceId);
+    if (toolProfile) return `terrain:${toolProfile.toolId}`;
     if (accessMode === "generic-terrain-tiles") return "terrain:global-baseline-tile-decoder";
     return "terrain:source-adapter";
   }
@@ -577,9 +597,14 @@ function candidateFromSource({
     rank,
     rankLabel: RANK_LABELS[rank],
     selected,
-    selectedReason: selected
-      ? "selected for this AOI/layer by VMesh resolver"
-      : "rejected or retained as fallback/context candidate",
+    selectedReason:
+      plan?.status === "ready"
+        ? "selected after exact-frame resolution returned a materializable source request; payload pixels remain a downstream worker gate"
+        : plan?.status === "blocked"
+          ? "rejected after exact-frame source probe returned no executable terrain payload"
+          : selected
+            ? "selected for this AOI/layer by VMesh resolver"
+            : "rejected or retained as fallback/context candidate",
     sourceRole,
     sourceSubType: dataSubType({ layerId, sourceRole }),
     provider: sourceRecord?.providerRef ?? source.attribution,
@@ -593,8 +618,13 @@ function candidateFromSource({
     processingCost: processingCostForAccessMode(accessMode),
     confidenceTier: confidenceTier(rank),
     coverage: sourceRecord?.coverage ?? source.coverage,
-    coverageStatus: coverageStatusForCandidate({ source, selected }),
+    coverageStatus: coverageStatusForCandidate({ source, selected, plan }),
     resolution: sourceRecord?.resolution ?? source.resolution,
+    crs: plan?.inputRefs.find((ref) => ref.crs)?.crs ?? plan?.toolProfile?.crs ?? null,
+    verticalDatum:
+      plan?.inputRefs.find((ref) => ref.verticalDatum)?.verticalDatum ??
+      plan?.toolProfile?.verticalDatum ??
+      null,
     evidence,
     workerAction: workerActionForCandidate({ selected, rank, plan, sourceId: source.id }),
     warnings: Array.from(new Set([...(sourceRecord?.warnings ?? []), ...source.limitations])),

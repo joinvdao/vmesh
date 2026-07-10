@@ -66,7 +66,7 @@ function parseBounds(value: unknown): [number, number, number, number] | undefin
     east > 180 ||
     south < -90 ||
     north > 90 ||
-    west >= east ||
+    west === east ||
     south >= north
   ) {
     return undefined;

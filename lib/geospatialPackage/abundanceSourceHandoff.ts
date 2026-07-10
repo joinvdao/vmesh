@@ -11,8 +11,8 @@ import {
   type BuildingPackageWorkerHandoff
 } from "@/lib/geospatialPackage/buildingPackageWorker";
 import {
-  createLiveNorthAmericaDtmSourceAdapterPlans,
-  createLiveNorthAmericaDtmSourceAdapterPlan,
+  createLiveDtmSourceAdapterPlans,
+  createLiveDtmSourceAdapterPlan,
   createTerrainSourceAdapterPlan,
   isSourceNativeTerrainAdapterSupported,
   type TerrainSourceAdapterOptions,
@@ -65,6 +65,11 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+function wrapLongitude(longitude: number) {
+  const wrapped = ((((longitude + 180) % 360) + 360) % 360) - 180;
+  return wrapped === 180 ? -180 : wrapped;
+}
+
 export function abundanceSourceSliceBoundsFromCentroid({
   centroid,
   edgeMeters
@@ -82,9 +87,9 @@ export function abundanceSourceSliceBoundsFromCentroid({
   const halfLngDegrees = halfMeters / metersPerDegreeLng;
 
   return [
-    Number(clamp(centroid.longitude - halfLngDegrees, -180, 180).toFixed(7)),
+    Number(wrapLongitude(centroid.longitude - halfLngDegrees).toFixed(7)),
     Number(clamp(centroid.latitude - halfLatDegrees, -90, 90).toFixed(7)),
-    Number(clamp(centroid.longitude + halfLngDegrees, -180, 180).toFixed(7)),
+    Number(wrapLongitude(centroid.longitude + halfLngDegrees).toFixed(7)),
     Number(clamp(centroid.latitude + halfLatDegrees, -90, 90).toFixed(7))
   ];
 }
@@ -515,9 +520,16 @@ export async function createLiveAbundanceSourceHandoff(
   const consumerAppId = input.consumerAppId ?? "building-abundance";
   const sourceSliceAoi = sourceSliceAoiForRequest(input);
   const terrainRequested = input.segments.includes("terrain_elevation");
+  const terrainSourceAdapterOptions = {
+    ...options.terrainSourceAdapterOptions,
+    maxImageSide:
+      options.terrainSourceAdapterOptions?.maxImageSide ??
+      input.gridSize ??
+      ABUNDANCE_SOURCE_HANDOFF_DEFAULT_GRID_SIZE
+  };
   const terrainAdapterPlans = terrainRequested
     ? options.includeFallbackTerrainPlans
-      ? await createLiveNorthAmericaDtmSourceAdapterPlans(
+      ? await createLiveDtmSourceAdapterPlans(
           {
             request: {
               aoi: sourceSliceAoi,
@@ -525,10 +537,10 @@ export async function createLiveAbundanceSourceHandoff(
               consumerAppId
             }
           },
-          options.terrainSourceAdapterOptions
+          terrainSourceAdapterOptions
         )
       : [
-          await createLiveNorthAmericaDtmSourceAdapterPlan(
+          await createLiveDtmSourceAdapterPlan(
             {
               request: {
                 aoi: sourceSliceAoi,
@@ -536,7 +548,7 @@ export async function createLiveAbundanceSourceHandoff(
                 consumerAppId
               }
             },
-            options.terrainSourceAdapterOptions
+            terrainSourceAdapterOptions
           )
         ]
     : undefined;

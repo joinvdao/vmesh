@@ -233,7 +233,10 @@ const SOURCE_NATIVE_TOOL_IDS = new Set([
   "canada-hrdem-best-dtm",
   "canada-hrdem-dsm",
   "bc-lidarbc",
-  "bc-lidarbc-dsm"
+  "bc-lidarbc-dsm",
+  "environment-agency-lidar-dtm",
+  "scottish-remote-sensing-lidar",
+  "os-terrain-50"
 ]);
 
 function createdAt(options: TerrainSourceAdapterOptions): string {
@@ -1998,6 +2001,31 @@ function createUsgs3depSourcePlan(context: SourceAdapterContext): TerrainSourceA
   });
 }
 
+function createIndexedRegionalTerrainSourcePlan(
+  context: SourceAdapterContext
+): TerrainSourceAdapterPlan {
+  return readyPlan({
+    context,
+    inputRefs: [
+      buildInputRef({
+        context,
+        kind: "source-index-required",
+        url: context.source.sourceUrl,
+        format: "json",
+        role: "source-index",
+        notes: [
+          `Official ${context.toolProfile.provider} source index for the requested 3 km frame.`,
+          "VMesh indexes the source and worker contract only; Abundance must resolve exact tiles, fetch bounded raster windows, and run no-data QA.",
+          "A source-index handoff is not source-pixel proof and must fail through to the next ranked terrain rail when exact coverage is absent."
+        ]
+      })
+    ],
+    warnings: [
+      "Run class is dry-run: VMesh selected a regional source index, not a retained terrain payload."
+    ]
+  });
+}
+
 function createUsgsLpcDsmSourcePlan(context: SourceAdapterContext): TerrainSourceAdapterPlan {
   const selected = context.options.usgsLpcSourceIndexResponse
     ? selectUsgsLpcDsmSource(
@@ -2691,6 +2719,10 @@ export function createTerrainSourceAdapterPlan(
       return createCanadaHrdemSourcePlan(context);
     case "bc-lidarbc":
       return createBcLidarSourcePlan(context);
+    case "environment-agency-lidar-dtm":
+    case "scottish-remote-sensing-lidar":
+    case "os-terrain-50":
+      return createIndexedRegionalTerrainSourcePlan(context);
     case "mapterhorn-pmtiles":
     case "mapzen-joerd-terrarium":
       return createMapReadyFallbackBlock(context);
@@ -3044,6 +3076,23 @@ function northAmericaDtmCandidateSourceIds(coordinate: {
   return sourceIds;
 }
 
+function ukDtmCandidateSourceIds(coordinate: { latitude: number; longitude: number }): string[] {
+  const inGreatBritain =
+    coordinate.latitude >= 49.5 &&
+    coordinate.latitude <= 61.2 &&
+    coordinate.longitude >= -8.8 &&
+    coordinate.longitude <= 2.2;
+  if (!inGreatBritain) return [];
+
+  return coordinate.latitude >= 54.4
+    ? ["scottish-remote-sensing-lidar", "os-terrain-50"]
+    : ["environment-agency-lidar-dtm", "os-terrain-50"];
+}
+
+function liveDtmCandidateSourceIds(coordinate: { latitude: number; longitude: number }) {
+  return [...northAmericaDtmCandidateSourceIds(coordinate), ...ukDtmCandidateSourceIds(coordinate)];
+}
+
 function northAmericaDsmCandidateSourceIds(coordinate: {
   latitude: number;
   longitude: number;
@@ -3325,6 +3374,34 @@ export async function createLiveNorthAmericaDtmSourceAdapterPlans(
     candidateSourceIds: northAmericaDtmCandidateSourceIds(basePlan.aoi.centroid),
     unresolvedWarning:
       "No official USA/Canada DTM source adapter resolved ready for this AOI after trying the regional candidate chain."
+  });
+}
+
+export async function createLiveDtmSourceAdapterPlan(
+  input: TerrainPackageWorkerInput,
+  options: TerrainSourceAdapterOptions = {}
+): Promise<TerrainSourceAdapterPlan> {
+  const basePlan = createTerrainWorkerPlan(input, options);
+  return createLiveNorthAmericaSourceAdapterPlan({
+    input,
+    options,
+    candidateSourceIds: liveDtmCandidateSourceIds(basePlan.aoi.centroid),
+    unresolvedWarning:
+      "No indexed regional DTM source adapter resolved ready for this AOI; retain labelled global terrain fallback."
+  });
+}
+
+export async function createLiveDtmSourceAdapterPlans(
+  input: TerrainPackageWorkerInput,
+  options: TerrainSourceAdapterOptions = {}
+): Promise<TerrainSourceAdapterPlan[]> {
+  const basePlan = createTerrainWorkerPlan(input, options);
+  return createLiveNorthAmericaSourceAdapterPlans({
+    input,
+    options,
+    candidateSourceIds: liveDtmCandidateSourceIds(basePlan.aoi.centroid),
+    unresolvedWarning:
+      "No indexed regional DTM source adapter resolved ready for this AOI; retain labelled global terrain fallback."
   });
 }
 

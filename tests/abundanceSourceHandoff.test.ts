@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   ABUNDANCE_SOURCE_HANDOFF_SCHEMA_VERSION,
+  abundanceSourceSliceBoundsFromCentroid,
   createAbundanceSourceHandoff,
-  createLiveAbundanceSourceHandoff
+  createLiveAbundanceSourceHandoff,
+  isSourceNativeTerrainAdapterSupported
 } from "@/lib/geospatialPackage";
 
 const FIXED_NOW = () => new Date("2026-07-06T00:00:00.000Z");
@@ -41,6 +43,36 @@ afterEach(() => {
 });
 
 describe("Abundance source handoff", () => {
+  it("preserves the physical width of centroid frames across the antimeridian", async () => {
+    const bounds = abundanceSourceSliceBoundsFromCentroid({
+      centroid: { latitude: 10, longitude: 179.999 },
+      edgeMeters: 3_000
+    });
+
+    expect(bounds[0]).toBeGreaterThan(179);
+    expect(bounds[2]).toBeLessThan(-179);
+    expect(bounds[0]).toBeGreaterThan(bounds[2]);
+
+    const handoff = await createLiveAbundanceSourceHandoff(
+      {
+        aoi: { centroid: { latitude: 10, longitude: 179.999 } },
+        edgeMeters: 3_000,
+        segments: ["terrain_elevation"]
+      },
+      {
+        terrainSourceAdapterOptions: {
+          env: {},
+          fetchImpl: async () => {
+            throw new Error("fallback plan should not fetch source-native data");
+          }
+        }
+      }
+    );
+    expect(handoff.terrainAdapterPlans[0]?.bbox?.west).toBeGreaterThan(
+      handoff.terrainAdapterPlans[0]?.bbox?.east ?? 180
+    );
+  });
+
   it("builds a recipe-first handoff for the Abundance 3 km source-slice frame", () => {
     const handoff = createAbundanceSourceHandoff(
       {
@@ -230,7 +262,7 @@ describe("Abundance source handoff", () => {
       materializerId: "terrain:bc-lidarbc",
       retrievalMethod: "source-index",
       license: expect.any(String),
-      coverageStatus: "regional-check-required"
+      coverageStatus: "exact-frame-rejected"
     });
     expect(
       decisions.get("soil")?.candidates.find((candidate) => candidate.sourceId === "soilgrids")
@@ -347,6 +379,73 @@ describe("Abundance source handoff", () => {
     expect(handoff.terrainAdapterPlans[0].inputRefs[0].url).toContain("mosaic-1m-dtm.tif");
   });
 
+  it("caps USGS ImageServer exports to the requested runtime grid", async () => {
+    const handoff = await createLiveAbundanceSourceHandoff(
+      {
+        aoi: {
+          centroid: { latitude: 39.7, longitude: -105 },
+          label: "US public 3DEP sample"
+        },
+        segments: ["terrain_elevation"],
+        gridSize: 257
+      },
+      {
+        terrainSourceAdapterOptions: {
+          env: {},
+          fetchImpl: async () =>
+            new Response(JSON.stringify({ features: [{ attributes: {} }] }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" }
+            })
+        }
+      }
+    );
+    const plan = handoff.terrainAdapterPlans.find(
+      (candidate) => candidate.selectedSource?.id === "usgs-3dep"
+    );
+    const sourceUrl = new URL(plan?.inputRefs[0]?.url ?? "about:blank");
+
+    expect(plan?.status).toBe("ready");
+    expect(sourceUrl.searchParams.get("size")).toBe("257,257");
+  });
+
+  it("selects the Scotland terrain source index before global fallback", async () => {
+    const handoff = await createLiveAbundanceSourceHandoff({
+      aoi: {
+        centroid: { latitude: 56.45, longitude: -3.69 },
+        label: "Scotland public SRSP sample"
+      },
+      segments: ["terrain_elevation"],
+      gridSize: 257
+    });
+    const plan = handoff.terrainAdapterPlans.find(
+      (candidate) => candidate.selectedSource?.id === "scottish-remote-sensing-lidar"
+    );
+
+    expect(handoff.terrain.selectedSourceIds).toEqual(["scottish-remote-sensing-lidar"]);
+    expect(plan).toMatchObject({
+      status: "ready",
+      toolProfile: {
+        toolId: "scottish-remote-sensing-lidar",
+        crs: "EPSG:27700 / British National Grid",
+        verticalDatum: "Ordnance Datum Newlyn"
+      },
+      inputRefs: [
+        {
+          kind: "source-index-required",
+          role: "source-index"
+        }
+      ]
+    });
+  });
+
+  it.each(["environment-agency-lidar-dtm", "scottish-remote-sensing-lidar", "os-terrain-50"])(
+    "keeps the indexed UK source %s executable through the BA handoff",
+    (sourceId) => {
+      expect(isSourceNativeTerrainAdapterSupported(sourceId)).toBe(true);
+    }
+  );
+
   it("can live-resolve Kamloops municipal DEM-grid coverage without treating VMesh as terrain storage", async () => {
     const requests: string[] = [];
     const fetchImpl: typeof fetch = async (url) => {
@@ -395,8 +494,11 @@ describe("Abundance source handoff", () => {
     ).toMatchObject({
       selected: true,
       rank: 2,
+      coverageStatus: "exact-frame-source-ref",
       accessMode: "official-download-archive",
-      processingCost: "medium"
+      processingCost: "medium",
+      crs: "EPSG:26910 / NAD83(CSRS) UTM Zone 10N",
+      verticalDatum: "CGVD2013"
     });
     expect(requests.length).toBeGreaterThan(2);
     expect(requests[0]).toContain("FeatureDataset/GIS_Administrative_1/MapServer/6/query");
@@ -499,6 +601,7 @@ describe("Abundance source handoff", () => {
     ).toMatchObject({
       rank: 8,
       confidenceTier: "fallback",
+      materializerId: "terrain:mapterhorn-pmtiles",
       workerAction: "fallback visual terrain/context only; do not claim source truth"
     });
     expect(handoff.gaps.join(" ")).toContain("fallback visual/generic terrain only");

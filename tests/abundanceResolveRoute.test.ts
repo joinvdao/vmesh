@@ -88,6 +88,18 @@ afterEach(async () => {
 });
 
 describe("Abundance resolver route", () => {
+  it("accepts an antimeridian-wrapped exact frame", async () => {
+    const response = await GET(
+      new NextRequest(
+        "http://localhost/api/geospatial-package/resolve?bounds=179.99,10.01,-179.99,10.03&segments=terrain_elevation"
+      )
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.schemaVersion).toBe("vmesh-abundance-source-handoff-v1");
+  });
+
   it("returns a terrain-first 3 km Abundance handoff from GET coordinates", async () => {
     const response = await GET(
       new NextRequest(

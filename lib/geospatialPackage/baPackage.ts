@@ -173,7 +173,10 @@ const SEGMENT_SOURCE_IDS: Record<BaGeospatialSegmentId, string[]> = {
     "canada-hrdem",
     "canada-hrdem-dsm",
     "bc-lidarbc",
-    "bc-lidarbc-dsm"
+    "bc-lidarbc-dsm",
+    "environment-agency-lidar-dtm",
+    "scottish-remote-sensing-lidar",
+    "os-terrain-50"
   ],
   imagery_observation: ["sentinel-2-l2a-earth-search"],
   water_hydrology: ["hydrosheds-suite", "openstreetmap-pbf-extracts", "overture-maps-geoparquet"],
@@ -265,7 +268,12 @@ const READY_SOURCE_REF_IDS = new Set([
   "fields-of-the-world"
 ]);
 
-const ADAPTER_READY_SOURCE_IDS = new Set(["open-meteo-forecast"]);
+const ADAPTER_READY_SOURCE_IDS = new Set([
+  "open-meteo-forecast",
+  "environment-agency-lidar-dtm",
+  "scottish-remote-sensing-lidar",
+  "os-terrain-50"
+]);
 const VIEWER_READY_SOURCE_IDS = new Set<string>([]);
 const FALLBACK_ONLY_SOURCE_IDS = new Set(["mapterhorn-pmtiles-terrain", "mapzen-joerd-terrarium"]);
 

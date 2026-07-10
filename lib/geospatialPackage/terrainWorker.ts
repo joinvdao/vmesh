@@ -232,6 +232,8 @@ export const TERRAIN_TOOL_PROFILES: TerrainToolProfile[] = [
     targetResolutionMeters: 1,
     sourceRelease: "Environment Agency LIDAR Composite DTM",
     groundModelRole: "bare-earth-dtm",
+    crs: "EPSG:27700 / British National Grid",
+    verticalDatum: "Ordnance Datum Newlyn",
     payloadCapable: true,
     notes: "England open terrain upgrade where coverage exists."
   },
@@ -242,6 +244,8 @@ export const TERRAIN_TOOL_PROFILES: TerrainToolProfile[] = [
     targetResolutionMeters: 1,
     sourceRelease: "Scottish Remote Sensing Portal DTM/DSM tiles",
     groundModelRole: "bare-earth-dtm",
+    crs: "EPSG:27700 / British National Grid",
+    verticalDatum: "Ordnance Datum Newlyn",
     payloadCapable: true,
     notes: "Scotland open terrain upgrade where phase coverage exists."
   },
@@ -252,6 +256,8 @@ export const TERRAIN_TOOL_PROFILES: TerrainToolProfile[] = [
     targetResolutionMeters: 50,
     sourceRelease: "OS Terrain 50 OpenData",
     groundModelRole: "bare-earth-dtm",
+    crs: "EPSG:27700 / British National Grid",
+    verticalDatum: "Ordnance Datum Newlyn",
     payloadCapable: true,
     notes: "Coarse Great Britain fallback below higher-resolution LiDAR/DTM."
   },
@@ -272,6 +278,8 @@ export const TERRAIN_TOOL_PROFILES: TerrainToolProfile[] = [
     targetResolutionMeters: 1,
     sourceRelease: "Kamloops municipal Open Data DEM grid and LiDAR source family",
     groundModelRole: "bare-earth-dtm",
+    crs: "EPSG:26910 / NAD83(CSRS) UTM Zone 10N",
+    verticalDatum: "CGVD2013",
     payloadCapable: true,
     notes:
       "Public Kamloops terrain source rail. VMesh indexes the municipal DEM grid/LiDAR source family and optional configured raster overrides; Abundance must fetch, window, QA, and retain public-safe package artifacts before claiming golden-quality terrain."
