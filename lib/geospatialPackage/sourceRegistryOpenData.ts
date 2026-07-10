@@ -52,6 +52,31 @@ export function getOpenDataPackageSources(
         "Preferred source for app-ready building, transportation, divisions, places, and base features."
     }),
     source({
+      id: "openfreemap-vector-tiles",
+      label: "OpenFreeMap OpenMapTiles vector tiles",
+      layerIds: ["roads", "buildings", "water", "landcover", "vegetation"],
+      status: "open",
+      artifactKinds: ["vector-tiles", "api", "manifest"],
+      coverage: "Global where OpenStreetMap has mapped features",
+      resolution: "Generalized feature-level vector tiles; detail varies by zoom and region",
+      sourceUrl: "https://tiles.openfreemap.org/planet",
+      attribution: "OpenStreetMap contributors / OpenFreeMap",
+      license: "ODbL; preserve OpenStreetMap attribution and share-alike obligations",
+      mapReady: true,
+      packageReady: true,
+      cacheable: false,
+      priority: 120,
+      probeStrategy: "bounded-api",
+      truthRole: "source-backed-vector",
+      limitations: [
+        "Completeness varies by region and vector-tile generalization can omit source detail.",
+        "Render/planning context only; not authoritative parcel, access, hydrology, ecology, or survey evidence.",
+        "Respect OpenFreeMap service availability and attribution; VMesh indexes the endpoint rather than storing provider payloads."
+      ],
+      notes:
+        "Fast token-free request-path vector rail. Prefer fuller Overture or raw OSM extraction when the request budget permits."
+    }),
+    source({
       id: "esa-worldcover",
       label: "ESA WorldCover",
       layerIds: ["landcover", "vegetation", "ecology"],

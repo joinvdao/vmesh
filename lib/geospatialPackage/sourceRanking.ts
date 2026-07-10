@@ -300,6 +300,7 @@ function rankBuildingsSource(sourceId: string, sourceRole: string): SourceQualit
   if (sourceId.includes("official") || role.includes("municipal")) return 1;
   if (sourceId === "overture-maps-geoparquet") return 2;
   if (sourceId === "openstreetmap-pbf-extracts") return 3;
+  if (sourceId === "openfreemap-vector-tiles") return 4;
   if (sourceId === "google-open-buildings" || sourceId === "microsoft-building-footprints") {
     return 4;
   }
@@ -314,6 +315,7 @@ function rankRoadsSource(sourceId: string, sourceRole: string): SourceQualityRan
   if (sourceId.includes("official") || role.includes("municipal")) return 1;
   if (sourceId === "overture-maps-geoparquet") return 2;
   if (sourceId === "openstreetmap-pbf-extracts") return 3;
+  if (sourceId === "openfreemap-vector-tiles") return 4;
   if (sourceId === "openinframap") return 4;
   return 7;
 }
@@ -323,6 +325,7 @@ function rankWaterOrHydrologySource(sourceId: string): SourceQualityRank {
   if (sourceId === "hydrosheds-suite") return 3;
   if (sourceId === "overture-maps-geoparquet") return 4;
   if (sourceId === "openstreetmap-pbf-extracts") return 4;
+  if (sourceId === "openfreemap-vector-tiles") return 5;
   if (sourceId === "dynamic-world" || sourceId === "sentinel-2-l2a-earth-search") return 5;
   if (sourceId === "openinframap") return 5;
   return 7;
@@ -350,6 +353,7 @@ function rankLandcoverVegetationSource(sourceId: string, sourceRole: string): So
   if (sourceId === "annual-nlcd" || sourceId === "landfire") return 3;
   if (sourceId === "esa-worldcover" || sourceId === "dynamic-world") return 4;
   if (sourceId === "sentinel-2-l2a-earth-search") return 5;
+  if (sourceId === "openfreemap-vector-tiles") return 6;
   if (sourceId === "hansen-global-forest-change" || sourceId === "nasa-gedi-canopy") return 6;
   if (sourceId === "fields-of-the-world") return 5;
   if (role.includes("predicted")) return 6;

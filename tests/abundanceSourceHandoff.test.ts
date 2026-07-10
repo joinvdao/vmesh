@@ -169,6 +169,21 @@ describe("Abundance source handoff", () => {
         (candidate) => candidate.sourceId === "overture-maps-geoparquet"
       )
     ).toMatchObject({ rank: 2, dataType: "roads" });
+    expect(
+      buildingsDecision?.candidates.find(
+        (candidate) => candidate.sourceId === "openfreemap-vector-tiles"
+      )
+    ).toMatchObject({
+      rank: 4,
+      accessMode: "bounded-api",
+      coverageStatus: "covers-aoi",
+      providerId: "openfreemap-vector-tiles"
+    });
+    expect(
+      roadsDecision?.candidates.find(
+        (candidate) => candidate.sourceId === "openfreemap-vector-tiles"
+      )
+    ).toMatchObject({ rank: 4, dataType: "roads", processingCost: "low" });
   });
 
   it("returns independent ranked source decisions for the full 057 land-intelligence spine", () => {
