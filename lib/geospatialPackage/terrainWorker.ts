@@ -217,12 +217,13 @@ export const TERRAIN_TOOL_PROFILES: TerrainToolProfile[] = [
   {
     toolId: "copernicus-dem-glo30",
     sourceIds: ["copernicus-dem-glo30"],
-    provider: "Copernicus DEM",
+    provider: "Copernicus DEM via AWS Open Data",
     targetResolutionMeters: 30,
-    sourceRelease: "Copernicus DEM GLO-30",
+    sourceRelease: "Copernicus DEM 2021 GLO-30 Public with GLO-90 fallback",
     groundModelRole: "surface-dsm",
     payloadCapable: true,
-    notes: "Global DSM-style fallback and comparison source."
+    notes:
+      "Global DSM-style fallback through deterministic public COG range reads; not bare-earth DTM."
   },
   {
     toolId: "environment-agency-lidar-dtm",

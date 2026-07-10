@@ -124,19 +124,25 @@ export function getTerrainPackageSources(
       id: "copernicus-dem-glo30",
       label: "Copernicus DEM GLO-30/GLO-90",
       layerIds: ["terrain", "contours"],
-      status: "preprocessing-required",
-      artifactKinds: ["cog", "pmtiles", "h3-summary"],
-      coverage: "Global",
+      status: "open",
+      artifactKinds: ["cog", "api", "manifest"],
+      coverage: "Global land; public buckets intentionally omit ocean tiles",
       resolution: "30m and 90m DSM products",
-      sourceUrl: "https://spacedata.copernicus.eu/collections/copernicus-digital-elevation-model",
-      attribution: "Copernicus DEM",
-      license: "Copernicus DEM terms and attribution required",
+      sourceUrl: "https://copernicus-dem-30m-stac.s3.amazonaws.com/dem_cop_30.json",
+      attribution: "Copernicus DEM via AWS Open Data",
+      license: "Copernicus DEM free licence; European Union/ESA attribution required",
+      mapReady: false,
       packageReady: true,
       priority: 70,
-      probeStrategy: "bulk-preprocess",
+      probeStrategy: "stac-search",
       truthRole: "surface-dsm",
-      limitations: ["DSM/global fallback; local DTM should outrank it where available."],
-      notes: "Global fallback and comparison terrain source."
+      limitations: [
+        "DSM/global fallback; local DTM should outrank it where available.",
+        "GLO-30 availability has country-specific limitations; use public GLO-90 as the next land fallback.",
+        "Ocean COGs are absent by design and may be represented as zero elevation only after both public products return verified 404 responses."
+      ],
+      notes:
+        "Deterministic public STAC/COG index. Consumers range-read the public GLO-30 and GLO-90 buckets; VMesh stores source discovery metadata, not raster payloads."
     }),
     source({
       id: "fabdem-v1-2",

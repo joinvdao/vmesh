@@ -42,6 +42,15 @@ describe("geospatial package service", () => {
     expect(terrain.map((source) => source.id)).toContain("canada-hrdem-best-dtm");
     expect(terrain.map((source) => source.id)).toContain("canada-hrdem-dsm");
     expect(terrain.map((source) => source.id)).toContain("bc-lidarbc-dsm");
+    expect(sources.find((source) => source.id === "copernicus-dem-glo30")).toMatchObject({
+      status: "open",
+      access: "open",
+      packageReady: true,
+      mapReady: false,
+      probeStrategy: "stac-search",
+      truthRole: "surface-dsm",
+      sourceUrl: "https://copernicus-dem-30m-stac.s3.amazonaws.com/dem_cop_30.json"
+    });
     expect(sources.find((source) => source.id === "usgs-3dep-lpc-dsm")?.truthRole).toBe(
       "surface-dsm"
     );
@@ -88,8 +97,8 @@ describe("geospatial package service", () => {
 
     expect(validateGeospatialPackagePlan(plan)).toBe(true);
     expect(plan.selectedSources.terrain?.id).toBe("mapterhorn-pmtiles-terrain");
-    expect(plan.selectedSources.roads?.id).toBe("openstreetmap-pbf-extracts");
-    expect(plan.selectedSources.buildings?.id).toBe("openstreetmap-pbf-extracts");
+    expect(plan.selectedSources.roads?.id).toBe("openfreemap-vector-tiles");
+    expect(plan.selectedSources.buildings?.id).toBe("openfreemap-vector-tiles");
     expect(plan.selectedSources.climate?.id).toBe("open-meteo-forecast");
     expect(plan.selectedSources["field-boundaries"]?.id).toBe("fields-of-the-world");
     expect(plan.artifacts.some((artifact) => artifact.kind === "pmtiles")).toBe(true);
