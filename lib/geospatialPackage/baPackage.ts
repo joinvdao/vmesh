@@ -176,7 +176,8 @@ const SEGMENT_SOURCE_IDS: Record<BaGeospatialSegmentId, string[]> = {
     "bc-lidarbc-dsm",
     "environment-agency-lidar-dtm",
     "scottish-remote-sensing-lidar",
-    "os-terrain-50"
+    "os-terrain-50",
+    "copernicus-dem-glo30"
   ],
   imagery_observation: ["sentinel-2-l2a-earth-search"],
   water_hydrology: ["hydrosheds-suite", "openstreetmap-pbf-extracts", "overture-maps-geoparquet"],
@@ -270,6 +271,7 @@ const READY_SOURCE_REF_IDS = new Set([
 
 const ADAPTER_READY_SOURCE_IDS = new Set([
   "open-meteo-forecast",
+  "copernicus-dem-glo30",
   "environment-agency-lidar-dtm",
   "scottish-remote-sensing-lidar",
   "os-terrain-50"

@@ -36,6 +36,8 @@
     "privacy:check": "node scripts/privacy-check.mjs",
     "intel:refresh": "node scripts/run-vmesh-intel-refresh.mjs",
     "registry:ingest": "node scripts/ingest-intel-source-registry.mjs",
+    "registry:refresh-official": "node scripts/refresh-official-stac-endpoints.mjs",
+    "registry:prove-global-terrain": "node scripts/prove-global-terrain-matrix.mjs",
     "ba:route-proof": "node scripts/ba-source-package-route-proof.mjs",
     "macro:build": "node scripts/build-macro-package.mjs",
     "macro:validate": "node scripts/validate-macro-package.mjs",

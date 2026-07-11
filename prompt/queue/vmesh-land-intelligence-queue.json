@@ -40,7 +40,7 @@
     "vmesh:036",
     "vmesh:037"
   ],
-  "nextRecommended": ["vmesh:030", "vmesh:031", "vmesh:032"],
+  "nextRecommended": ["vmesh:030", "vmesh:031", "vmesh:033"],
   "tracks": [
     {
       "id": "land-intelligence-core",
@@ -397,7 +397,7 @@
       "id": "vmesh:031",
       "phase": 31,
       "slug": "official-stac-endpoint-refresh",
-      "status": "queued",
+      "status": "private-done-partial",
       "promptPath": "prompt/queue/031-official-stac-endpoint-refresh.md",
       "track": "global-source-closure",
       "dependsOn": ["vmesh:030"],
@@ -413,8 +413,8 @@
       "id": "vmesh:032",
       "phase": 32,
       "slug": "global-terrain-recipe-closure",
-      "status": "queued",
-      "promptPath": "prompt/queue/032-global-terrain-recipe-closure.md",
+      "status": "done",
+      "promptPath": "prompt/queue/archive/completed/032-global-terrain-recipe-closure.md",
       "track": "global-source-closure",
       "dependsOn": ["vmesh:030", "vmesh:031"],
       "deliverable": "Highest-ranked executable terrain recipe for every coordinate, including regional high-resolution upgrades, global DEM fallback, and honest coastal/ocean handling.",

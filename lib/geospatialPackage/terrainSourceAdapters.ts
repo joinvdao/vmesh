@@ -19,7 +19,6 @@ import {
   BC_LIDARBC_TERRAIN_PROVIDER,
   CANADA_HRDEM_TERRAIN_PROVIDER,
   createCanadaHrdemStacSearchBody,
-  createUsgs3depOneMeterCoverageQueryUrl,
   isBritishColumbiaTerrainSourceCoordinate,
   isCanadaTerrainSourceCoordinate,
   isKamloopsMunicipalTerrainCoordinate,
@@ -31,6 +30,14 @@ import {
   probeTerrainCogCoordinate,
   type TerrainCogProbeWorkerResult
 } from "@/lib/terrainSourceProbeWorker";
+import {
+  copernicusDemTilesForBbox,
+  verifyCopernicusDemTiles
+} from "@/lib/geospatialPackage/copernicusDem";
+import {
+  createUsgs3depProductsQueryUrl,
+  selectUsgs3depProductAssets
+} from "@/lib/geospatialPackage/usgs3depProducts";
 
 export type TerrainSourceAdapterKind =
   | "arcgis-image-export"
@@ -45,7 +52,10 @@ export type TerrainSourceAdapterKind =
   | "source-index-required";
 
 export type TerrainSourceAdapterStatus = "ready" | "blocked";
-export type TerrainSourceAdapterRunClass = Extract<TerrainWorkerRunClass, "dry-run" | "configured">;
+export type TerrainSourceAdapterRunClass = Extract<
+  TerrainWorkerRunClass,
+  "dry-run" | "configured" | "live-proof"
+>;
 
 export type TerrainSourceInputFormat =
   | "geotiff"
@@ -236,7 +246,8 @@ const SOURCE_NATIVE_TOOL_IDS = new Set([
   "bc-lidarbc-dsm",
   "environment-agency-lidar-dtm",
   "scottish-remote-sensing-lidar",
-  "os-terrain-50"
+  "os-terrain-50",
+  "copernicus-dem-glo30"
 ]);
 
 function createdAt(options: TerrainSourceAdapterOptions): string {
@@ -1934,6 +1945,27 @@ function selectBcLidarOneMeterAsset(
 
 function createUsgs3depSourcePlan(context: SourceAdapterContext): TerrainSourceAdapterPlan {
   if (context.options.usgs3depCoverageResponse) {
+    const products = selectUsgs3depProductAssets(context.options.usgs3depCoverageResponse);
+    if (products.length > 0) {
+      return readyPlan({
+        context,
+        inputRefs: products.map((product) =>
+          buildInputRef({
+            context,
+            kind: "direct-geotiff",
+            url: product.url,
+            format: "geotiff",
+            notes: [
+              `Official National Map 1 m product ${product.title}.`,
+              "The exact-frame product query proved an intersecting source tile; the worker must still window pixels and run no-data QA."
+            ]
+          })
+        ),
+        warnings: [
+          "Run class is dry-run: the official TNM product index returned executable 1 m GeoTIFF refs, but VMesh did not fetch raster pixels."
+        ]
+      });
+    }
     const covered =
       isRecord(context.options.usgs3depCoverageResponse) &&
       Array.isArray(context.options.usgs3depCoverageResponse.features) &&
@@ -2275,6 +2307,35 @@ function createCanadaHrdemSourcePlan(context: SourceAdapterContext): TerrainSour
       "Configured Canada HRDEM source input for the selected AOI.",
       "The worker must verify HRDEM coverage, DTM/DSM product type, CRS, vertical datum, and no-data ratio after fetching.",
       "Use npm run terrain:cog-probe for source-native HRDEM COG non-no-data proof before promoting a broad STAC hit."
+    ]
+  });
+}
+
+function createCopernicusDemSourcePlan(context: SourceAdapterContext): TerrainSourceAdapterPlan {
+  const tiles = copernicusDemTilesForBbox(context.bbox);
+  if (tiles.length === 0) {
+    return blockedPlan({
+      context,
+      reasons: ["Copernicus DEM cannot address the requested frame."],
+      warnings: ["Return explicit non-land/no-data handling instead of inventing elevation."]
+    });
+  }
+  return readyPlan({
+    context,
+    inputRefs: tiles.map((tile) =>
+      buildInputRef({
+        context,
+        kind: "s3-cog",
+        url: tile.url,
+        format: "cog",
+        notes: [
+          `Deterministic Copernicus GLO-30 COG tile ${tile.id}.`,
+          "Global DSM fallback; this is not LiDAR or bare-earth DTM."
+        ]
+      })
+    ),
+    warnings: [
+      "Dry-run source refs only; the live resolver must verify every covering COG before selection."
     ]
   });
 }
@@ -2723,6 +2784,8 @@ export function createTerrainSourceAdapterPlan(
     case "scottish-remote-sensing-lidar":
     case "os-terrain-50":
       return createIndexedRegionalTerrainSourcePlan(context);
+    case "copernicus-dem-glo30":
+      return createCopernicusDemSourcePlan(context);
     case "mapterhorn-pmtiles":
     case "mapzen-joerd-terrarium":
       return createMapReadyFallbackBlock(context);
@@ -2736,6 +2799,55 @@ export async function createLiveTerrainSourceAdapterPlan(
   options: TerrainSourceAdapterOptions = {}
 ): Promise<TerrainSourceAdapterPlan> {
   const initialPlan = createTerrainSourceAdapterPlan(input, options);
+
+  if (
+    initialPlan.status === "ready" &&
+    initialPlan.inputRefs.length > 0 &&
+    initialPlan.inputRefs.every((ref) => ref.kind === "source-index-required")
+  ) {
+    return {
+      ...initialPlan,
+      status: "blocked",
+      blockedReasons: [
+        `${initialPlan.toolProfile?.provider ?? "Regional terrain provider"} has no exact-frame raster resolver yet.`
+      ],
+      warnings: [
+        ...initialPlan.warnings,
+        "The source index remains useful context, but live selection continues to an executable terrain rail."
+      ]
+    };
+  }
+
+  if (
+    initialPlan.status === "ready" &&
+    initialPlan.toolProfile?.toolId === "copernicus-dem-glo30"
+  ) {
+    const tiles = copernicusDemTilesForBbox(initialPlan.bbox!);
+    const verification = await verifyCopernicusDemTiles(tiles, {
+      fetchImpl: options.fetchImpl,
+      timeoutMs: options.sourcePixelCoverageProbeTimeoutMs
+    });
+    if (verification.missing.length > 0) {
+      return {
+        ...initialPlan,
+        status: "blocked",
+        inputRefs: [],
+        blockedReasons: [
+          `Copernicus GLO-30 has no verified COG for ${verification.missing.length} tile(s) covering the exact frame.`
+        ],
+        warnings: [
+          "The frame is treated as no-data/provider-unavailable; do not invent global terrain truth."
+        ]
+      };
+    }
+    return {
+      ...initialPlan,
+      runClass: options.fetchImpl ? "configured" : "live-proof",
+      warnings: [
+        "Verified every deterministic Copernicus GLO-30 COG URL covering the exact frame; Abundance must still range-read and QA pixels."
+      ]
+    };
+  }
 
   if (
     (initialPlan.status === "ready" && initialPlan.toolProfile?.toolId !== "usgs-3dep") ||
@@ -2926,7 +3038,7 @@ export async function createLiveTerrainSourceAdapterPlan(
     }
 
     if (initialPlan.toolProfile.toolId === "usgs-3dep") {
-      const response = await fetchImpl(createUsgs3depOneMeterCoverageQueryUrl(coordinate), {
+      const response = await fetchImpl(createUsgs3depProductsQueryUrl(initialPlan.bbox), {
         headers: { Accept: "application/json" }
       });
 
@@ -2943,10 +3055,18 @@ export async function createLiveTerrainSourceAdapterPlan(
       }
 
       const coverageResponse = (await response.json()) as unknown;
-      return createTerrainSourceAdapterPlan(input, {
+      const resolvedPlan = createTerrainSourceAdapterPlan(input, {
         ...options,
         usgs3depCoverageResponse: coverageResponse
       });
+      return {
+        ...resolvedPlan,
+        runClass: options.fetchImpl ? resolvedPlan.runClass : "live-proof",
+        warnings: [
+          ...resolvedPlan.warnings,
+          "The live resolver queried the official National Map product index for the exact frame."
+        ]
+      };
     }
 
     if (initialPlan.toolProfile.toolId === "usgs-3dep-lpc-dsm") {
@@ -3090,7 +3210,11 @@ function ukDtmCandidateSourceIds(coordinate: { latitude: number; longitude: numb
 }
 
 function liveDtmCandidateSourceIds(coordinate: { latitude: number; longitude: number }) {
-  return [...northAmericaDtmCandidateSourceIds(coordinate), ...ukDtmCandidateSourceIds(coordinate)];
+  return [
+    ...northAmericaDtmCandidateSourceIds(coordinate),
+    ...ukDtmCandidateSourceIds(coordinate),
+    "copernicus-dem-glo30"
+  ];
 }
 
 function northAmericaDsmCandidateSourceIds(coordinate: {

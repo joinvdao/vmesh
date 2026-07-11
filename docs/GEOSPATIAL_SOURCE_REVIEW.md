@@ -21,6 +21,23 @@ or a refreshed Supabase Management API PAT; the retained PAT returns `401`.
 This is a persistence blocker, not a source-discovery or adapter-readiness
 claim.
 
+The focused Phase 031 refresh then metadata-probed ten authoritative services
+for terrain, imagery, landcover and hydrology. All ten roots were healthy.
+Collection enumeration succeeded for nine; Digital Earth Africa's root was
+valid but its collections link intermittently returned HTML, so that deeper
+probe remains a warning rather than a false endpoint outage. No source was
+promoted from this metadata proof. Evidence is retained in
+`docs/evidence/official-endpoint-refresh-2026-07-11.json`.
+
+Phase 032 closes the executable global land-terrain floor. The retained live
+matrix proves five continents, a two-tile anti-meridian frame, and a
+high-latitude frame against public Copernicus GLO-30 COGs. A Denver sample
+selects official USGS 3DEP 1 m GeoTIFF refs ahead of Copernicus. The open-ocean
+sample returns an explicit no-data block. Kamloops resolves public municipal
+1 m ZIP refs, but remains `dry-run` until the GIS worker reads and QA-proves
+source pixels. Evidence is in
+`docs/evidence/global-terrain-live-matrix-2026-07-11.json`.
+
 ## Executive Summary
 
 VMesh has enough source-broker structure to serve BA a fast geospatial package, but only a narrow part of the geospatial stack is live-proof today.

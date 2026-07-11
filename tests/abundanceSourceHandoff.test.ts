@@ -409,22 +409,28 @@ describe("Abundance source handoff", () => {
     expect(sourceUrl.searchParams.get("size")).toBe("257,257");
   });
 
-  it("selects the Scotland terrain source index before global fallback", async () => {
-    const handoff = await createLiveAbundanceSourceHandoff({
-      aoi: {
-        centroid: { latitude: 56.45, longitude: -3.69 },
-        label: "Scotland public SRSP sample"
+  it("keeps Scotland index context but selects the executable global floor", async () => {
+    const handoff = await createLiveAbundanceSourceHandoff(
+      {
+        aoi: {
+          centroid: { latitude: 56.45, longitude: -3.69 },
+          label: "Scotland public SRSP sample"
+        },
+        segments: ["terrain_elevation"],
+        gridSize: 257
       },
-      segments: ["terrain_elevation"],
-      gridSize: 257
-    });
+      {
+        includeFallbackTerrainPlans: true,
+        terrainSourceAdapterOptions: { fetchImpl: async () => new Response(null) }
+      }
+    );
     const plan = handoff.terrainAdapterPlans.find(
       (candidate) => candidate.selectedSource?.id === "scottish-remote-sensing-lidar"
     );
 
-    expect(handoff.terrain.selectedSourceIds).toEqual(["scottish-remote-sensing-lidar"]);
+    expect(handoff.terrain.selectedSourceIds).toEqual(["copernicus-dem-glo30"]);
     expect(plan).toMatchObject({
-      status: "ready",
+      status: "blocked",
       toolProfile: {
         toolId: "scottish-remote-sensing-lidar",
         crs: "EPSG:27700 / British National Grid",
@@ -440,7 +446,7 @@ describe("Abundance source handoff", () => {
   });
 
   it.each(["environment-agency-lidar-dtm", "scottish-remote-sensing-lidar", "os-terrain-50"])(
-    "keeps the indexed UK source %s executable through the BA handoff",
+    "keeps the indexed UK source %s adapter-addressable through the BA handoff",
     (sourceId) => {
       expect(isSourceNativeTerrainAdapterSupported(sourceId)).toBe(true);
     }
@@ -570,7 +576,7 @@ describe("Abundance source handoff", () => {
     expect(handoff.warnings.join(" ")).toContain("source refs and recipes");
   });
 
-  it("keeps global live fallback terrain out of selected source truth", async () => {
+  it("keeps unavailable global terrain out of selected source truth", async () => {
     const fetchImpl: typeof fetch = async () => {
       throw new Error("global fallback should not perform a source-native fetch");
     };
@@ -592,7 +598,7 @@ describe("Abundance source handoff", () => {
     });
     expect(handoff.terrainAdapterPlans[0]).toMatchObject({
       status: "blocked",
-      selectedSource: { id: "mapterhorn-pmtiles-terrain" }
+      selectedSource: { id: "copernicus-dem-glo30" }
     });
     expect(
       handoff.sourceRanking.layerDecisions
@@ -605,6 +611,35 @@ describe("Abundance source handoff", () => {
       workerAction: "fallback visual terrain/context only; do not claim source truth"
     });
     expect(handoff.gaps.join(" ")).toContain("fallback visual/generic terrain only");
+  });
+
+  it("returns verified Copernicus COGs as the executable global terrain floor", async () => {
+    const fetchImpl: typeof fetch = async (_input, init) => {
+      expect(init?.method).toBe("HEAD");
+      return new Response(null, { status: 200 });
+    };
+    const handoff = await createLiveAbundanceSourceHandoff(
+      {
+        aoi: {
+          centroid: { latitude: -33.92, longitude: 18.42 },
+          label: "Global terrain sample"
+        },
+        segments: ["terrain_elevation"]
+      },
+      { now: FIXED_NOW, terrainSourceAdapterOptions: { env: {}, fetchImpl } }
+    );
+
+    expect(handoff.terrain.selectedSourceIds).toEqual(["copernicus-dem-glo30"]);
+    expect(handoff.layers.find((layer) => layer.layerId === "terrain")).toMatchObject({
+      status: "ready-to-execute",
+      selectedSourceIds: ["copernicus-dem-glo30"]
+    });
+    expect(handoff.terrainAdapterPlans[0]).toMatchObject({
+      status: "ready",
+      runClass: "configured",
+      selectedSource: { id: "copernicus-dem-glo30" },
+      inputRefs: [{ kind: "s3-cog", groundModelRole: "surface-dsm" }]
+    });
   });
 
   it("emits parameterized recipe slots and avoids obvious secret or local-path refs", () => {

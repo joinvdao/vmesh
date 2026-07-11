@@ -149,8 +149,14 @@ function terrainAdapterPlansForPackage(
 
 function selectedReadyTerrainSourceId(plans: TerrainSourceAdapterPlan[]) {
   return (
-    plans.find((plan) => plan.status === "ready" && plan.selectedSource?.id)?.selectedSource?.id ??
-    null
+    plans.find(
+      (plan) =>
+        plan.status === "ready" &&
+        plan.selectedSource?.id &&
+        plan.inputRefs.some(
+          (ref) => ref.role === "terrain-source" && ref.kind !== "source-index-required"
+        )
+    )?.selectedSource?.id ?? null
   );
 }
 

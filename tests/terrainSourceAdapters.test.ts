@@ -284,7 +284,7 @@ describe("terrain source adapters", () => {
     );
 
     expect(requests).toHaveLength(1);
-    expect(requests[0].url).toContain("/3DEPElevationIndex/MapServer/1/query");
+    expect(requests[0].url).toContain("tnmaccess.nationalmap.gov/api/v1/products");
     expect(plan.status).toBe("ready");
     expect(plan.inputRefs[0].notes.join(" ")).toContain("coverage was checked");
   });
@@ -763,7 +763,7 @@ describe("terrain source adapters", () => {
     expect(plan.status).toBe("ready");
     expect(plan.selectedSource?.id).toBe("usgs-3dep");
     expect(requests).toHaveLength(1);
-    expect(requests[0]).toContain("/3DEPElevationIndex/MapServer/1/query");
+    expect(requests[0]).toContain("tnmaccess.nationalmap.gov/api/v1/products");
   });
 
   it("resolves a live North America DTM chain to LidarBC before broader Canada/USA fallbacks", async () => {
@@ -924,7 +924,7 @@ describe("terrain source adapters", () => {
           headers: { "Content-Type": "application/json" }
         });
       }
-      if (requestUrl.includes("/3DEPElevationIndex/MapServer/1/query")) {
+      if (requestUrl.includes("tnmaccess.nationalmap.gov/api/v1/products")) {
         return new Response(JSON.stringify(emptyCoverageResponse), {
           status: 200,
           headers: { "Content-Type": "application/json" }
@@ -1709,7 +1709,7 @@ describe("terrain source adapters", () => {
     const fetchImpl: typeof fetch = async (url) => {
       const requestUrl = String(url);
       requests.push(requestUrl);
-      if (requestUrl.includes("/3DEPElevationIndex/MapServer/1/query")) {
+      if (requestUrl.includes("tnmaccess.nationalmap.gov/api/v1/products")) {
         return new Response(JSON.stringify(emptyCoverageResponse), {
           status: 200,
           headers: { "Content-Type": "application/json" }
@@ -1738,7 +1738,7 @@ describe("terrain source adapters", () => {
     expect(plan.status).toBe("ready");
     expect(plan.selectedSource?.id).toBe("canada-hrdem");
     expect(requests).toHaveLength(2);
-    expect(requests[0]).toContain("/3DEPElevationIndex/MapServer/1/query");
+    expect(requests[0]).toContain("tnmaccess.nationalmap.gov/api/v1/products");
     expect(requests[1]).toBe("https://datacube.services.geo.ca/stac/api/search");
   });
 
