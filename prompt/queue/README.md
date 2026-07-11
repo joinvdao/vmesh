@@ -43,7 +43,7 @@ Machine-readable queue: `prompt/queue/vmesh-land-intelligence-queue.json`.
 | 027   | `027-anywhere-capability-tiers.md`                                 | private-done-partial | Tier policy exists; 032-037 provide worldwide evidence.          |
 | 028   | `028-end-to-end-seam-proof-matrix.md`                              | private-done-partial | Partial matrix exists; 037 supersedes final acceptance.          |
 | 029   | `029-layer-specific-source-ranking.md`                             | done                 | Deterministic per-layer source ranking for every data type.      |
-| 030   | `030-source-capability-ledger-reconciliation.md`                   | blocked              | Code/ledger ready; canonical persistence is credential-blocked.  |
+| 030   | `030-source-capability-ledger-reconciliation.md`                   | blocked              | Production project config is stale; refresh ref/PAT/CA.          |
 | 031   | `archive/completed/031-official-stac-endpoint-refresh.md`          | done                 | 10 official endpoints and collection metadata live-probed.       |
 | 032   | `archive/completed/032-global-terrain-recipe-closure.md`           | done                 | Global COG floor and USGS 1 m upgrade are live-proven.           |
 | 033   | `archive/completed/033-global-ecology-landcover-recipe-closure.md` | done                 | WorldCover COG context is live-proven without species claims.    |

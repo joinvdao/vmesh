@@ -1,6 +1,6 @@
 {
   "schemaVersion": "vmesh-canonical-registry-blocker-v1",
-  "generatedAt": "2026-07-11T15:50:00.000Z",
+  "generatedAt": "2026-07-11T16:07:32.284Z",
   "runClass": "configured",
   "phase": "vmesh:030",
   "status": "blocked-external",
@@ -14,16 +14,22 @@
     "projectRefConfigured": true,
     "managementTokenConfigured": true,
     "databaseUrlConfigured": false,
-    "databasePasswordConfigured": false,
+    "databasePasswordConfigured": true,
     "projectCaConfigured": false
   },
   "result": {
     "persisted": false,
-    "errorClass": "supabase-management-api-unauthorized",
+    "managementApiErrorClass": "supabase-management-api-unauthorized",
+    "postgresErrorClass": "self-signed-cert-in-chain-without-project-ca",
+    "postgrestAlternative": "configured-production-project-host-nxdomain",
     "safeState": "all refreshed records remain quarantined"
   },
+  "reproduction": [
+    "INFISICAL_ENV=prod node scripts/run-with-infisical.mjs --path /supabase/simpleloop -- npm run registry:ingest -- --management-api --handoff <handoff.json>",
+    "INFISICAL_ENV=prod node scripts/run-with-infisical.mjs --path /supabase/simpleloop -- npm run registry:ingest -- --handoff <handoff.json>"
+  ],
   "operatorAction": [
-    "Refresh SUPABASE_ACCESS_TOKEN with database-query permission for the configured project ref, or",
-    "Provide a direct pooler/database URL plus the Supabase project CA certificate through Infisical."
+    "Replace the stale/unavailable project ref and related credentials in prod:/supabase/simpleloop with the active private SimpleLoop Supabase project configuration.",
+    "Store that project's server root certificate as SUPABASE_DB_CA_CERT, or provide a valid database-query SUPABASE_ACCESS_TOKEN."
   ]
 }

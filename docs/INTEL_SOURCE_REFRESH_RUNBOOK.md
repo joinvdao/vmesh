@@ -79,14 +79,20 @@ Direct Supabase pooler ingestion also requires `SUPABASE_DB_CA_CERT_PATH` (or
 `SUPABASE_DB_CA_CERT`) from the project's **Database Settings > SSL
 Configuration**. The ingester uses hostname and CA verification and will not
 fall back to `rejectUnauthorized: false`. A valid Supabase Management API PAT
-can be used instead when no database URL is configured.
+can be used instead when no database URL is configured. Use
+`--management-api` to force that path during credential diagnostics even when
+a database password is present:
+
+```bash
+npm run registry:ingest -- --management-api --handoff <handoff.json>
+```
 
 Load Infisical `prod:/supabase/simpleloop`. A direct database URL is preferred;
 otherwise the ingester deterministically builds the Supabase session-pooler URL
 from the retained password, project ref, and region. If only a scoped PAT is
 available, it uses the authenticated Management API query boundary. Every path
-applies the additive migration and one atomic, idempotent transaction. Ingestion
-keeps every new record in quarantine; phase 036 owns promotion.
+applies migrations 005 and 006 in order before one atomic, idempotent ingest.
+Ingestion keeps every new record in quarantine; phase 036 owns promotion.
 
 ## Repeatability
 

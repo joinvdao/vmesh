@@ -49,13 +49,16 @@ if (args.localOnly) {
   process.exit(0);
 }
 
-const databaseUrl = resolveSourceRegistryDatabaseUrl() ?? "";
+const databaseUrl = args.managementApi ? "" : (resolveSourceRegistryDatabaseUrl() ?? "");
 const managementToken = process.env.SUPABASE_ACCESS_TOKEN ?? "";
 const projectRef =
   process.env.SUPABASE_PROJECT_REF ?? process.env.SIMPLELOOP_SUPABASE_PROJECT_REF ?? "";
 if (!databaseUrl && (!managementToken || !projectRef))
   throw new Error("Configure a Postgres URL or SUPABASE_ACCESS_TOKEN plus SUPABASE_PROJECT_REF.");
-const migration = await readFile(resolve("db/migrations/005_source_capability_ledger.sql"), "utf8");
+const migrations = await Promise.all([
+  readFile(resolve("db/migrations/005_source_capability_ledger.sql"), "utf8"),
+  readFile(resolve("db/migrations/006_executable_source_promotion.sql"), "utf8")
+]);
 const client = databaseUrl
   ? new Client(await resolveSourceRegistryClientConfig(databaseUrl))
   : new SupabaseManagementQueryClient({ managementToken, projectRef });
@@ -63,7 +66,7 @@ const client = databaseUrl
 await client.connect();
 let alreadyIngested = false;
 try {
-  await client.query(migration);
+  for (const migration of migrations) await client.query(migration);
   const prior = await client.query(
     "SELECT ingestion_key FROM vmesh.source_ingestions WHERE ingestion_key = $1",
     [quarantine.ingestionKey]
@@ -88,6 +91,7 @@ try {
     ingestionKey: quarantine.ingestionKey,
     idempotentNoop: alreadyIngested && !args.force,
     forced: Boolean(args.force),
+    connectionMode: databaseUrl ? "postgres" : "management-api",
     promotionState: "quarantine",
     inputCounts: {
       authorities: quarantine.authorities.length,
@@ -115,6 +119,7 @@ try {
         runId: quarantine.runId,
         ingestionKey: quarantine.ingestionKey,
         idempotentNoop: report.idempotentNoop,
+        connectionMode: report.connectionMode,
         sourceCount: summary.sourceCount,
         capabilityStates: summary.capabilityStates,
         promotionStates: summary.promotionStates,
@@ -404,8 +409,10 @@ function parseArgs(values) {
   const parsed = {};
   for (let index = 0; index < values.length; index += 1) {
     const value = values[index];
-    if (value === "--force" || value === "--local-only") {
-      parsed[value === "--force" ? "force" : "localOnly"] = true;
+    if (value === "--force" || value === "--local-only" || value === "--management-api") {
+      parsed[
+        value === "--force" ? "force" : value === "--local-only" ? "localOnly" : "managementApi"
+      ] = true;
       continue;
     }
     if (!value.startsWith("--")) throw new Error(`Unexpected argument: ${value}`);
