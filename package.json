@@ -34,6 +34,7 @@
     "refactor:queue": "node scripts/write-refactor-queue.mjs",
     "public-workflow:check": "node scripts/public-workflow-check.mjs",
     "privacy:check": "node scripts/privacy-check.mjs",
+    "intel:refresh": "node scripts/run-vmesh-intel-refresh.mjs",
     "ba:route-proof": "node scripts/ba-source-package-route-proof.mjs",
     "macro:build": "node scripts/build-macro-package.mjs",
     "macro:validate": "node scripts/validate-macro-package.mjs",

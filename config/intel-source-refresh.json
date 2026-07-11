@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "vmesh-intel-refresh-request-v1",
+  "template": "geospatial_source_registry",
+  "quality": "deep",
+  "runClass": "configured",
+  "objective": "Refresh official machine-readable sources for any-coordinate terrain, imagery, landcover, ecology, hydrology, buildings, roads, weather, soils, and parcel context. Mine retained evidence first, use bounded official-endpoint discovery and metadata probes, preserve license and provenance, and emit candidate-class records only.",
+  "dataBuckets": [
+    "terrain_elevation",
+    "imagery_observation",
+    "water_hydrology",
+    "soils_landcover",
+    "ecology_biodiversity_carbon",
+    "access_infrastructure",
+    "land_property_planning",
+    "climate_weather",
+    "food_system_local_assets",
+    "risk_hazard",
+    "knowledge_context"
+  ],
+  "jurisdictionScope": "global",
+  "limits": {
+    "discovery_tasks": 40,
+    "extraction_pages": 120,
+    "verification_probes": 60,
+    "max_tasks_per_lane": 160
+  }
+}
