@@ -56,6 +56,16 @@ tier when promoted, with Overture global and OSM fallback retained in the
 worker ladder. Evidence is in
 `docs/evidence/building-live-matrix-2026-07-11.json`.
 
+Phase 035 adds bounded live Overture road and water extraction plus typed
+Open-Meteo and SoilGrids point-context adapters. The six-location matrix
+preserves published road and water semantics, distinguishes valid empty
+results from provider failures, and applies explicit timeout, retry and cache
+policies. SoilGrids remains modelled context and returned explicit no-data in
+the retained run. No authoritative parcel or reviewed field-boundary service
+was promoted, so both layers return explicit gaps and the map-selected polygon
+remains a visual selection overlay rather than a legal claim. Evidence is in
+`docs/evidence/context-live-matrix-2026-07-11.json`.
+
 ## Executive Summary
 
 VMesh has enough source-broker structure to serve BA a fast geospatial package, but only a narrow part of the geospatial stack is live-proof today.
@@ -74,11 +84,11 @@ Update note, 2026-06-06: VMesh needs a durable source-registry DB to avoid repea
 | ------------------------ | ------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | `terrain_elevation`      | 322 total segment count  | 15                     | Terrain registry has 20 terrain candidates; selected official USA/Canada/BC paths have retained live-proof.         | expose approved terrain source refs and live-proof where applicable |
 | `imagery_observation`    | 187 total segment count  | 8                      | Sentinel-2 Earth Search is source-ref ready; SEN2SR output is future/configured-only; Mapbox is token-gated.        | expose Sentinel source ref; keep Mapbox out of default BA package   |
-| `water_hydrology`        | 378 total segment count  | 5                      | HydroSHEDS and OSM/Overture water are source-ref/package-ready but not live-proof.                                  | expose refs plus probe/preprocess warning                           |
-| `access_infrastructure`  | 254 total segment count  | 3                      | OSM/Overture roads are source-ref/package-ready; regional road services need probing.                               | expose refs plus preprocess warning                                 |
+| `water_hydrology`        | 378 total segment count  | 5                      | Overture water is globally live-proven for bounded 3 km frames; official regional hydrology remains coverage-gated. | expose live Overture context plus ranked regional upgrades          |
+| `access_infrastructure`  | 254 total segment count  | 3                      | Overture roads/buildings are globally live-proven; official regional services remain preferred when promoted.       | expose live Overture vectors plus ranked official upgrades          |
 | `land_property_planning` | 327 total segment count  | 7                      | Official parcel GIS is a placeholder source family; Canada Lands candidates need license/AOI review.                | return as gap/review by default unless explicitly requested         |
-| `soils_landcover`        | 582 total segment count  | 10                     | SoilGrids, SSURGO, ESA WorldCover, Dynamic World, NLCD, LANDFIRE are source-ref/package-ready.                      | expose refs; not live-proof                                         |
-| `climate_weather`        | 78 total segment count   | 2                      | Open-Meteo has a no-secret provider adapter; NASA POWER is source-ref/API ready; ERA5 needs credentials/preprocess. | expose Open-Meteo/NASA refs; keep ERA5 as configured/review warning |
+| `soils_landcover`        | 582 total segment count  | 10                     | WorldCover COGs and bounded SoilGrids point context are live-proven; regional soil surveys remain source refs.      | expose modelled global context plus regional upgrades               |
+| `climate_weather`        | 78 total segment count   | 2                      | Open-Meteo current model context is live-proven; NASA POWER is source-ref/API ready; ERA5 needs credentials.        | expose labelled Open-Meteo context; retain other ranked options     |
 
 The sidecar import summary reports 3,353 canonical source candidates and 3,907 quarantined candidates across imported runs. Status distribution is dominated by `noisy_candidate`, `needs_probe`, `research_only`, and `needs_license_review`.
 
@@ -267,7 +277,11 @@ Retained artifacts:
 - `.artifacts/terrain-source-preview/terrain-package-live-proof-latest.json`
 - `.artifacts/terrain-source-preview/usa-canada-terrain-country-sample-live-proof-latest.json`
 
-No retained live-proof exists yet for the non-terrain geospatial buckets.
+Retained non-terrain live proofs now cover ESA WorldCover, Overture buildings,
+Overture roads and water, Open-Meteo current model context, and SoilGrids
+modelled no-data behavior. Authoritative parcel/field data and regional
+ecology/hydrology/soil upgrades remain explicit gaps until individually
+promoted.
 
 ## Kamloops / Rose Gap Assessment
 

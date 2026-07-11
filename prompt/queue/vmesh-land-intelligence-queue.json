@@ -40,7 +40,7 @@
     "vmesh:036",
     "vmesh:037"
   ],
-  "nextRecommended": ["vmesh:030", "vmesh:031", "vmesh:035"],
+  "nextRecommended": ["vmesh:030", "vmesh:031", "vmesh:036"],
   "tracks": [
     {
       "id": "land-intelligence-core",
@@ -461,8 +461,8 @@
       "id": "vmesh:035",
       "phase": 35,
       "slug": "non-stac-domain-api-closure",
-      "status": "queued",
-      "promptPath": "prompt/queue/035-non-stac-domain-api-closure.md",
+      "status": "done",
+      "promptPath": "prompt/queue/archive/completed/035-non-stac-domain-api-closure.md",
       "track": "global-source-closure",
       "dependsOn": ["vmesh:030"],
       "deliverable": "Executable typed recipes or explicit gaps for weather, climate, soils, roads, water/hydrology, parcels, and field boundaries.",

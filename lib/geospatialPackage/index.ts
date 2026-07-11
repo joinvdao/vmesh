@@ -8,6 +8,8 @@ export * from "@/lib/geospatialPackage/baEcosystemPackage";
 export * from "@/lib/geospatialPackage/buildingPackageWorker";
 export * from "@/lib/geospatialPackage/kamloopsOperatorTerrainManifest";
 export * from "@/lib/geospatialPackage/overtureBuildings";
+export * from "@/lib/geospatialPackage/overtureContext";
+export * from "@/lib/geospatialPackage/typedPointContext";
 export * from "@/lib/geospatialPackage/planner";
 export * from "@/lib/geospatialPackage/plannerUtils";
 export * from "@/lib/geospatialPackage/security";

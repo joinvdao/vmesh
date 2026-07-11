@@ -1,0 +1,254 @@
+{
+  "schemaVersion": "vmesh-context-live-matrix-v1",
+  "generatedAt": "2026-07-11T14:57:30.963Z",
+  "runClass": "live-proof",
+  "coordinateDisclosure": "public-safe-labels-only",
+  "rows": [
+    {
+      "id": "canada-kamloops-public",
+      "httpStatus": 200,
+      "durationMs": 2303,
+      "roads": {
+        "status": "query-succeeded",
+        "release": "2026-06-17.0",
+        "featureCount": 2561,
+        "semantics": {
+          "classCount": 2561,
+          "subclassCount": 1254,
+          "road_surfaceCount": 729,
+          "access_restrictionsCount": 434
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "release": "2026-06-17.0",
+        "featureCount": 148,
+        "semantics": {
+          "classCount": 148,
+          "subtypeCount": 148,
+          "is_intermittentCount": 5,
+          "is_saltCount": 0
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context",
+        "observedAtPresent": true,
+        "valueCount": 5
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context",
+        "valueCount": 0,
+        "errorClass": null
+      },
+      "parcels": "explicit-gap",
+      "fieldBoundaries": "explicit-gap"
+    },
+    {
+      "id": "north-america-denver",
+      "httpStatus": 200,
+      "durationMs": 2970,
+      "roads": {
+        "status": "query-succeeded",
+        "release": "2026-06-17.0",
+        "featureCount": 6980,
+        "semantics": {
+          "classCount": 6980,
+          "subclassCount": 3107,
+          "road_surfaceCount": 1656,
+          "access_restrictionsCount": 1494
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "release": "2026-06-17.0",
+        "featureCount": 90,
+        "semantics": {
+          "classCount": 90,
+          "subtypeCount": 90,
+          "is_intermittentCount": 15,
+          "is_saltCount": 0
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context",
+        "observedAtPresent": true,
+        "valueCount": 5
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context",
+        "valueCount": 0,
+        "errorClass": null
+      },
+      "parcels": "explicit-gap",
+      "fieldBoundaries": "explicit-gap"
+    },
+    {
+      "id": "europe-lisbon",
+      "httpStatus": 200,
+      "durationMs": 2435,
+      "roads": {
+        "status": "query-succeeded",
+        "release": "2026-06-17.0",
+        "featureCount": 7222,
+        "semantics": {
+          "classCount": 7222,
+          "subclassCount": 1821,
+          "road_surfaceCount": 5354,
+          "access_restrictionsCount": 2375
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "release": "2026-06-17.0",
+        "featureCount": 110,
+        "semantics": {
+          "classCount": 110,
+          "subtypeCount": 110,
+          "is_intermittentCount": 0,
+          "is_saltCount": 1
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context",
+        "observedAtPresent": true,
+        "valueCount": 5
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context",
+        "valueCount": 0,
+        "errorClass": null
+      },
+      "parcels": "explicit-gap",
+      "fieldBoundaries": "explicit-gap"
+    },
+    {
+      "id": "asia-tokyo",
+      "httpStatus": 200,
+      "durationMs": 2801,
+      "roads": {
+        "status": "query-succeeded",
+        "release": "2026-06-17.0",
+        "featureCount": 6009,
+        "semantics": {
+          "classCount": 6009,
+          "subclassCount": 1386,
+          "road_surfaceCount": 2498,
+          "access_restrictionsCount": 1331
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "release": "2026-06-17.0",
+        "featureCount": 54,
+        "semantics": {
+          "classCount": 54,
+          "subtypeCount": 54,
+          "is_intermittentCount": 1,
+          "is_saltCount": 0
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context",
+        "observedAtPresent": true,
+        "valueCount": 5
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context",
+        "valueCount": 0,
+        "errorClass": null
+      },
+      "parcels": "explicit-gap",
+      "fieldBoundaries": "explicit-gap"
+    },
+    {
+      "id": "africa-cape-town",
+      "httpStatus": 200,
+      "durationMs": 2331,
+      "roads": {
+        "status": "query-succeeded",
+        "release": "2026-06-17.0",
+        "featureCount": 4002,
+        "semantics": {
+          "classCount": 4002,
+          "subclassCount": 876,
+          "road_surfaceCount": 3204,
+          "access_restrictionsCount": 1591
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "release": "2026-06-17.0",
+        "featureCount": 43,
+        "semantics": {
+          "classCount": 43,
+          "subtypeCount": 43,
+          "is_intermittentCount": 5,
+          "is_saltCount": 2
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context",
+        "observedAtPresent": true,
+        "valueCount": 5
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context",
+        "valueCount": 0,
+        "errorClass": null
+      },
+      "parcels": "explicit-gap",
+      "fieldBoundaries": "explicit-gap"
+    },
+    {
+      "id": "ocean-pacific",
+      "httpStatus": 200,
+      "durationMs": 2278,
+      "roads": {
+        "status": "query-succeeded-empty",
+        "release": "2026-06-17.0",
+        "featureCount": 0,
+        "semantics": {
+          "classCount": 0,
+          "subclassCount": 0,
+          "road_surfaceCount": 0,
+          "access_restrictionsCount": 0
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "release": "2026-06-17.0",
+        "featureCount": 4,
+        "semantics": {
+          "classCount": 4,
+          "subtypeCount": 4,
+          "is_intermittentCount": 0,
+          "is_saltCount": 4
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context",
+        "observedAtPresent": true,
+        "valueCount": 5
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context",
+        "valueCount": 0,
+        "errorClass": null
+      },
+      "parcels": "explicit-gap",
+      "fieldBoundaries": "explicit-gap"
+    }
+  ]
+}
