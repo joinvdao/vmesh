@@ -47,7 +47,7 @@ Machine-readable queue: `prompt/queue/vmesh-land-intelligence-queue.json`.
 | 031   | `031-official-stac-endpoint-refresh.md`                            | private-done-partial | 10 official endpoints live-probed; canonical ingest is blocked.  |
 | 032   | `archive/completed/032-global-terrain-recipe-closure.md`           | done                 | Global COG floor and USGS 1 m upgrade are live-proven.           |
 | 033   | `archive/completed/033-global-ecology-landcover-recipe-closure.md` | done                 | WorldCover COG context is live-proven without species claims.    |
-| 034   | `034-global-buildings-recipe-closure.md`                           | queued               | Global building queries with valid empty semantics.              |
+| 034   | `archive/completed/034-global-buildings-recipe-closure.md`         | done                 | Overture live queries preserve semantics and valid empty.        |
 | 035   | `035-non-stac-domain-api-closure.md`                               | queued               | Weather, soils, roads, water, and parcel API recipes.            |
 | 036   | `036-executable-source-promotion-gate.md`                          | queued               | Keep metadata-only sources out of operational defaults.          |
 | 037   | `037-global-any-coordinate-acceptance.md`                          | queued               | Prove the worldwide resolver and Abundance handoff matrix.       |

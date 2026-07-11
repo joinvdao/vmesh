@@ -97,8 +97,8 @@ describe("geospatial package service", () => {
 
     expect(validateGeospatialPackagePlan(plan)).toBe(true);
     expect(plan.selectedSources.terrain?.id).toBe("mapterhorn-pmtiles-terrain");
-    expect(plan.selectedSources.roads?.id).toBe("openfreemap-vector-tiles");
-    expect(plan.selectedSources.buildings?.id).toBe("openfreemap-vector-tiles");
+    expect(plan.selectedSources.roads?.id).toBe("overture-maps-geoparquet");
+    expect(plan.selectedSources.buildings?.id).toBe("overture-maps-geoparquet");
     expect(plan.selectedSources.climate?.id).toBe("open-meteo-forecast");
     expect(plan.selectedSources["field-boundaries"]?.id).toBe("fields-of-the-world");
     expect(plan.artifacts.some((artifact) => artifact.kind === "pmtiles")).toBe(true);

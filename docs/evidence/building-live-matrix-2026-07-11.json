@@ -1,0 +1,128 @@
+{
+  "schemaVersion": "vmesh-building-live-matrix-v1",
+  "generatedAt": "2026-07-11T14:42:28.169Z",
+  "runClass": "live-proof",
+  "coordinateDisclosure": "public-safe-labels-only",
+  "rows": [
+    {
+      "id": "canada-kamloops-public",
+      "httpStatus": 200,
+      "durationMs": 816,
+      "status": "query-succeeded",
+      "runClass": "live-proof",
+      "release": "2026-06-17.0",
+      "license": "ODbL-1.0",
+      "tileCount": 9,
+      "featureCount": 4101,
+      "semantics": {
+        "classCount": 2568,
+        "subtypeCount": 2586,
+        "heightCount": 3343,
+        "levelsCount": 32,
+        "facadeMaterialCount": 1,
+        "roofShapeCount": 1
+      },
+      "error": null
+    },
+    {
+      "id": "north-america-denver",
+      "httpStatus": 200,
+      "durationMs": 1857,
+      "status": "query-succeeded",
+      "runClass": "live-proof",
+      "release": "2026-06-17.0",
+      "license": "ODbL-1.0",
+      "tileCount": 6,
+      "featureCount": 6989,
+      "semantics": {
+        "classCount": 6851,
+        "subtypeCount": 6860,
+        "heightCount": 4875,
+        "levelsCount": 1667,
+        "facadeMaterialCount": 72,
+        "roofShapeCount": 40
+      },
+      "error": null
+    },
+    {
+      "id": "europe-lisbon",
+      "httpStatus": 200,
+      "durationMs": 1909,
+      "status": "query-succeeded-truncated",
+      "runClass": "live-proof",
+      "release": "2026-06-17.0",
+      "license": "ODbL-1.0",
+      "tileCount": 4,
+      "featureCount": 12000,
+      "semantics": {
+        "classCount": 5918,
+        "subtypeCount": 6017,
+        "heightCount": 145,
+        "levelsCount": 2640,
+        "facadeMaterialCount": 1,
+        "roofShapeCount": 350
+      },
+      "error": null
+    },
+    {
+      "id": "asia-tokyo",
+      "httpStatus": 200,
+      "durationMs": 2312,
+      "status": "query-succeeded-truncated",
+      "runClass": "live-proof",
+      "release": "2026-06-17.0",
+      "license": "ODbL-1.0",
+      "tileCount": 9,
+      "featureCount": 12000,
+      "semantics": {
+        "classCount": 1101,
+        "subtypeCount": 1117,
+        "heightCount": 562,
+        "levelsCount": 838,
+        "facadeMaterialCount": 7,
+        "roofShapeCount": 21
+      },
+      "error": null
+    },
+    {
+      "id": "africa-cape-town",
+      "httpStatus": 200,
+      "durationMs": 5543,
+      "status": "query-succeeded",
+      "runClass": "live-proof",
+      "release": "2026-06-17.0",
+      "license": "ODbL-1.0",
+      "tileCount": 9,
+      "featureCount": 6559,
+      "semantics": {
+        "classCount": 1030,
+        "subtypeCount": 1084,
+        "heightCount": 70,
+        "levelsCount": 773,
+        "facadeMaterialCount": 1,
+        "roofShapeCount": 48
+      },
+      "error": null
+    },
+    {
+      "id": "ocean-pacific",
+      "httpStatus": 200,
+      "durationMs": 55,
+      "status": "query-succeeded-empty",
+      "runClass": "live-proof",
+      "release": "2026-06-17.0",
+      "license": "ODbL-1.0",
+      "tileCount": 6,
+      "featureCount": 0,
+      "semantics": {
+        "classCount": 0,
+        "subtypeCount": 0,
+        "heightCount": 0,
+        "levelsCount": 0,
+        "facadeMaterialCount": 0,
+        "roofShapeCount": 0
+      },
+      "error": null
+    }
+  ]
+}

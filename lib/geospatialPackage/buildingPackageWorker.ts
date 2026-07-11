@@ -22,6 +22,7 @@ export const BUILDING_PACKAGE_WORKER_SCHEMA_VERSION = "vmesh-building-package-wo
 export const BUILDING_PACKAGE_OUTPUT_FILE = "buildings.json";
 
 export const DEFAULT_BUILDING_SOURCE_PREFERENCES = [
+  "official-building-footprints",
   "overture-maps-geoparquet",
   "openstreetmap-pbf-extracts",
   "microsoft-building-footprints",
@@ -214,8 +215,16 @@ function createBuildingOutputContract({
       "sourceRelease",
       "truthRole",
       "confidence",
+      "class",
+      "subtype",
       "heightMeters",
-      "levels"
+      "levels",
+      "facadeColor",
+      "facadeMaterial",
+      "roofColor",
+      "roofMaterial",
+      "roofShape",
+      "roofHeightMeters"
     ]
   };
 }
@@ -225,9 +234,15 @@ export function createBuildingPackageWorkerHandoff(
   options: PackagePlannerOptions = {}
 ): BuildingPackageWorkerHandoff {
   const preferredSourceIds = input.preferredSourceIds ?? [...DEFAULT_BUILDING_SOURCE_PREFERENCES];
-  const plannerPreferredSourceIds = preferredSourceIds.slice(0, 1);
   const createdAt = (options.now?.() ?? new Date("2026-05-12T00:00:00.000Z")).toISOString();
   const sources = getGeospatialSourceRegistry(options);
+  const buildingSources = getPackageSourcesByLayer(sources, "buildings");
+  const plannerPreferredSourceIds = preferredSourceIds
+    .filter((sourceId) => {
+      const source = buildingSources.find((candidate) => candidate.id === sourceId);
+      return Boolean(source?.sourceUrl && source.packageReady && source.access === "open");
+    })
+    .slice(0, 1);
   const plan = createGeospatialPackagePlan(
     {
       aoi: input.aoi,
@@ -257,6 +272,8 @@ export function createBuildingPackageWorkerHandoff(
       sourceLadder,
       output,
       workerSteps: [
+        "Use a promoted official jurisdictional building source first when VMesh resolves one for the exact AOI.",
+        "For the Overture global tier, POST the centroid to /api/geospatial-package/buildings/live to resolve the latest official release and extract the fixed 3 km frame.",
         "Resolve the selected source release or local preprocessed cache for the AOI.",
         "Clip building Polygon/MultiPolygon features to the requested AOI bounds.",
         "Preserve source feature ids, release metadata, attribution, license, confidence, and limitations.",

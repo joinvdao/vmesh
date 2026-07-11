@@ -15,6 +15,28 @@ export function getOpenDataPackageSources(
 ): GeospatialSourceCandidate[] {
   return [
     source({
+      id: "official-building-footprints",
+      label: "Official jurisdictional building footprints",
+      layerIds: ["buildings"],
+      status: "preprocessing-required",
+      artifactKinds: ["geoparquet", "vector-tiles", "manifest"],
+      coverage: "Jurisdiction-specific where an official executable service is reviewed",
+      resolution: "Feature-level official building geometry where published",
+      sourceUrl: "",
+      attribution: "Dataset-specific building authority",
+      license: "Dataset-specific licence review required",
+      packageReady: false,
+      priority: 105,
+      probeStrategy: "catalog-lookup",
+      truthRole: "official-building-context",
+      limitations: [
+        "This is a source-family slot, not a global endpoint.",
+        "Use only after jurisdiction, licence, coverage and an exact-frame query recipe are resolved."
+      ],
+      notes:
+        "Preferred building tier when a jurisdiction-specific official source has been promoted; otherwise fall through to Overture."
+    }),
+    source({
       id: "openstreetmap-pbf-extracts",
       label: "OpenStreetMap PBF extracts",
       layerIds: ["roads", "buildings", "water", "landcover", "vegetation"],
@@ -36,20 +58,20 @@ export function getOpenDataPackageSources(
       id: "overture-maps-geoparquet",
       label: "Overture Maps GeoParquet",
       layerIds: ["roads", "buildings", "water", "landcover", "parcels"],
-      status: "preprocessing-required",
+      status: "open",
       artifactKinds: ["geoparquet", "vector-tiles", "pmtiles", "h3-summary"],
       coverage: "Global themes where Overture publishes coverage",
       resolution: "Feature-level open map themes",
-      sourceUrl: "https://docs.overturemaps.org/",
+      sourceUrl: "https://stac.overturemaps.org/catalog.json",
       attribution: "Overture Maps Foundation and source contributors",
       license: "Open data with per-theme attribution and source terms",
       packageReady: true,
       priority: 112,
-      probeStrategy: "bulk-preprocess",
+      probeStrategy: "bounded-api",
       truthRole: "source-backed-vector",
       limitations: ["Theme coverage varies; parcels still require official cadastral sources."],
       notes:
-        "Preferred source for app-ready building, transportation, divisions, places, and base features."
+        "Preferred global source for app-ready building, transportation, divisions, places, and base features. The live building adapter resolves the latest official STAC release and range-reads its release-pinned PMTiles; GeoParquet remains the full-fidelity worker path."
     }),
     source({
       id: "openfreemap-vector-tiles",

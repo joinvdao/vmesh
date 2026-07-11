@@ -46,6 +46,16 @@ outside-published-latitude result. WorldCover remains classified global
 context and is never converted into species, surveyed habitat, soil or legal
 truth. Evidence is in `docs/evidence/worldcover-live-matrix-2026-07-11.json`.
 
+Phase 034 resolves the latest official Overture STAC release and performs
+bounded range reads against its release-pinned building PMTiles. The live
+matrix proves real semantic footprints in Kamloops, Denver, Lisbon, Tokyo and
+Cape Town, and a valid empty ocean result. IDs, release, class, subtype,
+height, floors, facade and roof fields are preserved when published; absent
+values remain null. Official jurisdictional buildings remain the preferred
+tier when promoted, with Overture global and OSM fallback retained in the
+worker ladder. Evidence is in
+`docs/evidence/building-live-matrix-2026-07-11.json`.
+
 ## Executive Summary
 
 VMesh has enough source-broker structure to serve BA a fast geospatial package, but only a narrow part of the geospatial stack is live-proof today.

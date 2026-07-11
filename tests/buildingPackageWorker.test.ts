@@ -27,6 +27,7 @@ describe("building package worker handoff", () => {
       canMaterialize: true
     });
     expect(sourceIds).toContain("openstreetmap-pbf-extracts");
+    expect(sourceIds).toContain("official-building-footprints");
     expect(sourceIds).toContain("microsoft-building-footprints");
     expect(sourceIds).toContain("google-open-buildings");
     expect(sourceIds).toContain("global-building-atlas-odbl-polygons");
@@ -53,6 +54,12 @@ describe("building package worker handoff", () => {
     });
     expect(handoff.workerRequest.output.plannedCacheRef).toContain("/buildings.json");
     expect(handoff.workerRequest.policies.noSyntheticFill).toBe(true);
+    expect(handoff.workerRequest.output.requiredFeatureProperties).toEqual(
+      expect.arrayContaining(["class", "subtype", "facadeMaterial", "roofShape"])
+    );
+    expect(handoff.workerRequest.workerSteps.join(" ")).toContain(
+      "/api/geospatial-package/buildings/live"
+    );
     expect(handoff.warnings.join(" ")).toContain("not a completed global building feature index");
   });
 

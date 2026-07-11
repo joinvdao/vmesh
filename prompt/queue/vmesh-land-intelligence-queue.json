@@ -40,7 +40,7 @@
     "vmesh:036",
     "vmesh:037"
   ],
-  "nextRecommended": ["vmesh:030", "vmesh:031", "vmesh:034"],
+  "nextRecommended": ["vmesh:030", "vmesh:031", "vmesh:035"],
   "tracks": [
     {
       "id": "land-intelligence-core",
@@ -445,8 +445,8 @@
       "id": "vmesh:034",
       "phase": 34,
       "slug": "global-buildings-recipe-closure",
-      "status": "queued",
-      "promptPath": "prompt/queue/034-global-buildings-recipe-closure.md",
+      "status": "done",
+      "promptPath": "prompt/queue/archive/completed/034-global-buildings-recipe-closure.md",
       "track": "global-source-closure",
       "dependsOn": ["vmesh:030"],
       "deliverable": "Official, Overture, OSM, and reviewed fallback building query ladders with semantics, dedupe, provenance, and valid empty results.",
