@@ -25,7 +25,7 @@ Machine-readable queue: `prompt/queue/vmesh-land-intelligence-queue.json`.
 | 009   | `009-firm-geospatial-source-review.md`                 | private-done-partial | Firm source review and promotion discipline.                    |
 | 010   | `010-make-reviewed-geospatial-data-available-to-ba.md` | private-done-partial | BA-facing reviewed source refs.                                 |
 | 011   | `011-make-ecological-data-available-to-ba.md`          | private-done-partial | BA ecosystem source refs.                                       |
-| 012   | `012-global-stac-source-link-discovery.md`             | queued               | Global STAC source discovery.                                   |
+| 012   | `012-global-stac-source-link-discovery.md`             | private-done-partial | June discovery exists; current official refresh remains.        |
 | 013   | `013-canonical-land-intelligence-resolver.md`          | queued               | Canonical coordinate/H3/AOI resolver route.                     |
 | 014   | `014-terrain-first-provider-proof.md`                  | queued               | Terrain-first USA/Canada/UK live proof and fallback discipline. |
 | 015   | `015-jurisdiction-coverage-index.md`                   | queued               | Coverage-aware source routing via jurisdiction/H3 index.        |
@@ -43,6 +43,14 @@ Machine-readable queue: `prompt/queue/vmesh-land-intelligence-queue.json`.
 | 027   | `027-anywhere-capability-tiers.md`                     | queued               | Define honest worldwide capability tiers and fallback policy.   |
 | 028   | `028-end-to-end-seam-proof-matrix.md`                  | queued               | End-to-end public-safe proof matrix across regions.             |
 | 029   | `029-layer-specific-source-ranking.md`                 | done                 | Deterministic per-layer source ranking for every data type.     |
+| 030   | `030-source-capability-ledger-reconciliation.md`       | queued               | Reconcile registry, adapters, evidence, and stale queue state.  |
+| 031   | `031-official-stac-endpoint-refresh.md`                | queued               | Refresh official terrain/imagery/landcover/hydrology STAC.      |
+| 032   | `032-global-terrain-recipe-closure.md`                 | queued               | Executable terrain plan for every Earth coordinate.             |
+| 033   | `033-global-ecology-landcover-recipe-closure.md`       | queued               | Global sourced ecology and landcover context.                   |
+| 034   | `034-global-buildings-recipe-closure.md`               | queued               | Global building queries with valid empty semantics.             |
+| 035   | `035-non-stac-domain-api-closure.md`                   | queued               | Weather, soils, roads, water, and parcel API recipes.           |
+| 036   | `036-executable-source-promotion-gate.md`              | queued               | Keep metadata-only sources out of operational defaults.         |
+| 037   | `037-global-any-coordinate-acceptance.md`              | queued               | Prove the worldwide resolver and Abundance handoff matrix.      |
 
 ## Current Critical Path
 
@@ -72,6 +80,31 @@ readiness artifacts. This is not a live-provider proof.
 5. `029-layer-specific-source-ranking.md` - deterministic 1-10 ranking ladders
    per source type so terrain, buildings, roads, water, soils, ecology,
    imagery, climate, parcels, and field boundaries are scored in their own way.
+
+## Global Source Closure Tranche
+
+Phases 030-037 are the current VMesh-only execution tranche. They convert the
+large reviewed source inventory into an operational worldwide broker without
+making VMesh a payload warehouse:
+
+1. `030-source-capability-ledger-reconciliation.md` - reconcile June review,
+   July adapters/evidence, phase 012, and stale queue statuses.
+2. `031-official-stac-endpoint-refresh.md` - targeted official metadata and
+   collection refresh for terrain, imagery, landcover/ecology, and hydrology.
+3. `032-global-terrain-recipe-closure.md` - regional high-resolution upgrades
+   over an honest global terrain/bathymetry floor.
+4. `033-global-ecology-landcover-recipe-closure.md` - sourced global context
+   without converting landcover into species or survey truth.
+5. `034-global-buildings-recipe-closure.md` - official/Overture/OSM ladders,
+   retained semantics, and valid empty results.
+6. `035-non-stac-domain-api-closure.md` - typed weather, soils, roads, water,
+   hydrology, parcel, and field source recipes.
+7. `036-executable-source-promotion-gate.md` - operational selection only for
+   sources with worker-executable recipes and current evidence.
+8. `037-global-any-coordinate-acceptance.md` - all-continent, sparse, coastal,
+   ocean, empty-building, anti-meridian, and high-latitude acceptance matrix.
+
+Goal: `GOAL-global-any-coordinate-source-closure.md`.
 
 ## North Star
 

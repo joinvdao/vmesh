@@ -17,6 +17,7 @@
     "License-gated or research-only sources stay out of operational defaults until reviewed."
   ],
   "criticalPath": [
+    "vmesh:012",
     "vmesh:013",
     "vmesh:014",
     "vmesh:015",
@@ -29,9 +30,17 @@
     "vmesh:026",
     "vmesh:027",
     "vmesh:028",
-    "vmesh:029"
+    "vmesh:029",
+    "vmesh:030",
+    "vmesh:031",
+    "vmesh:032",
+    "vmesh:033",
+    "vmesh:034",
+    "vmesh:035",
+    "vmesh:036",
+    "vmesh:037"
   ],
-  "nextRecommended": ["vmesh:025", "vmesh:026", "vmesh:028"],
+  "nextRecommended": ["vmesh:030", "vmesh:031", "vmesh:032"],
   "tracks": [
     {
       "id": "land-intelligence-core",
@@ -42,9 +51,30 @@
       "id": "abundance-seam",
       "goalPath": "prompt/queue/GOAL-abundance-vmesh-seam.md",
       "purpose": "Prove VMesh can hand Abundance executable source recipes that become source packs and runtime-pack inputs without renderer coupling."
+    },
+    {
+      "id": "global-source-closure",
+      "goalPath": "prompt/queue/GOAL-global-any-coordinate-source-closure.md",
+      "purpose": "Make every Earth coordinate resolve to honest executable terrain, ecology, building, and supporting land-intelligence source plans for downstream game workers."
     }
   ],
   "entries": [
+    {
+      "id": "vmesh:012",
+      "phase": 12,
+      "slug": "global-stac-source-link-discovery",
+      "status": "private-done-partial",
+      "promptPath": "prompt/queue/012-global-stac-source-link-discovery.md",
+      "track": "global-source-closure",
+      "dependsOn": [],
+      "deliverable": "Global official STAC and STAC-adjacent source discovery, dedupe, cheap probes, and public-safe registry import artifacts.",
+      "gates": [
+        "prior Intel outputs mined before web discovery",
+        "official endpoint metadata probes only",
+        "license and access posture retained",
+        "npm run privacy:check"
+      ]
+    },
     {
       "id": "vmesh:013",
       "phase": 13,
@@ -346,6 +376,134 @@
         "npx tsc --noEmit",
         "npm run privacy:check"
       ]
+    },
+    {
+      "id": "vmesh:030",
+      "phase": 30,
+      "slug": "source-capability-ledger-reconciliation",
+      "status": "queued",
+      "promptPath": "prompt/queue/030-source-capability-ledger-reconciliation.md",
+      "track": "global-source-closure",
+      "dependsOn": ["vmesh:029"],
+      "deliverable": "Current capability state for every canonical source plus reconciled June review, July evidence, human queue, and machine queue.",
+      "gates": [
+        "typed capability-state tests",
+        "queue JSON and prompt-path validation",
+        "privacy-safe generated ledger",
+        "standing repository gates"
+      ]
+    },
+    {
+      "id": "vmesh:031",
+      "phase": 31,
+      "slug": "official-stac-endpoint-refresh",
+      "status": "queued",
+      "promptPath": "prompt/queue/031-official-stac-endpoint-refresh.md",
+      "track": "global-source-closure",
+      "dependsOn": ["vmesh:030"],
+      "deliverable": "Current official STAC authority, endpoint, collection, asset-role, license, resolution, and health records for priority spatial domains.",
+      "gates": [
+        "official endpoint provenance",
+        "bounded metadata probes",
+        "no heavy payload downloads",
+        "run-class and evidence state retained"
+      ]
+    },
+    {
+      "id": "vmesh:032",
+      "phase": 32,
+      "slug": "global-terrain-recipe-closure",
+      "status": "queued",
+      "promptPath": "prompt/queue/032-global-terrain-recipe-closure.md",
+      "track": "global-source-closure",
+      "dependsOn": ["vmesh:030", "vmesh:031"],
+      "deliverable": "Highest-ranked executable terrain recipe for every coordinate, including regional high-resolution upgrades, global DEM fallback, and honest coastal/ocean handling.",
+      "gates": [
+        "five-continent terrain recipe matrix",
+        "regional source outranks fallback when coverage is proven",
+        "anti-meridian, polar, coastal, and no-data tests",
+        "DEM/DTM/DSM/bathymetry role honesty"
+      ]
+    },
+    {
+      "id": "vmesh:033",
+      "phase": 33,
+      "slug": "global-ecology-landcover-recipe-closure",
+      "status": "queued",
+      "promptPath": "prompt/queue/033-global-ecology-landcover-recipe-closure.md",
+      "track": "global-source-closure",
+      "dependsOn": ["vmesh:030", "vmesh:031"],
+      "deliverable": "Executable global landcover and ecological-context recipes with regional upgrades and model/survey/species truth boundaries.",
+      "gates": [
+        "global landcover coverage matrix",
+        "classification legend and confidence preservation",
+        "no landcover-to-species fabrication",
+        "water, desert, ice, urban, and no-data tests"
+      ]
+    },
+    {
+      "id": "vmesh:034",
+      "phase": 34,
+      "slug": "global-buildings-recipe-closure",
+      "status": "queued",
+      "promptPath": "prompt/queue/034-global-buildings-recipe-closure.md",
+      "track": "global-source-closure",
+      "dependsOn": ["vmesh:030"],
+      "deliverable": "Official, Overture, OSM, and reviewed fallback building query ladders with semantics, dedupe, provenance, and valid empty results.",
+      "gates": [
+        "global building query-plan matrix",
+        "semantic attribute preservation",
+        "valid-empty versus provider-failure tests",
+        "license and release attribution tests"
+      ]
+    },
+    {
+      "id": "vmesh:035",
+      "phase": 35,
+      "slug": "non-stac-domain-api-closure",
+      "status": "queued",
+      "promptPath": "prompt/queue/035-non-stac-domain-api-closure.md",
+      "track": "global-source-closure",
+      "dependsOn": ["vmesh:030"],
+      "deliverable": "Executable typed recipes or explicit gaps for weather, climate, soils, roads, water/hydrology, parcels, and field boundaries.",
+      "gates": [
+        "typed API and vector recipe tests",
+        "bounded AOI, timeout, retry, and cache policy",
+        "credential and cost posture gating",
+        "no legal parcel overclaim"
+      ]
+    },
+    {
+      "id": "vmesh:036",
+      "phase": 36,
+      "slug": "executable-source-promotion-gate",
+      "status": "queued",
+      "promptPath": "prompt/queue/036-executable-source-promotion-gate.md",
+      "track": "global-source-closure",
+      "dependsOn": ["vmesh:032", "vmesh:033", "vmesh:034", "vmesh:035"],
+      "deliverable": "Deterministic evidence-backed promotion and demotion gate that excludes metadata-only, stale, unsafe, unlicensed, and unsupported sources from operational defaults.",
+      "gates": [
+        "recipe-family validation tests",
+        "stale and consecutive-failure demotion tests",
+        "SSRF, secret, signed-ref, and local-path rejection tests",
+        "Abundance handoff selected/rejected-source tests"
+      ]
+    },
+    {
+      "id": "vmesh:037",
+      "phase": 37,
+      "slug": "global-any-coordinate-acceptance",
+      "status": "queued",
+      "promptPath": "prompt/queue/037-global-any-coordinate-acceptance.md",
+      "track": "global-source-closure",
+      "dependsOn": ["vmesh:036"],
+      "deliverable": "Retained worldwide resolver and VMesh-to-Abundance source-plan acceptance matrix across all continents and edge cases.",
+      "gates": [
+        "five-continent plus regional and edge-case matrix",
+        "warm and cold resolver budget evidence",
+        "vmesh-abundance-source-handoff-v1 validation",
+        "full standing gates and privacy scan"
+      ]
     }
   ],
   "definitionOfDone": {
@@ -360,6 +518,13 @@
       "Abundance consumes the handoff and writes normalized builder inputs.",
       "Abundance source-pack summaries are emitted with ready layers or explicit blocked gaps.",
       "A runtime-pack readiness/input artifact exists for every sample without changing the frozen site-runtime-pack.v1 contract."
+    ],
+    "globalAnyCoordinateSourceClosure": [
+      "Every valid Earth coordinate returns executable terrain, ecology/landcover, and building source plans or an explicit non-applicable/no-coverage result.",
+      "Regional authoritative and high-resolution sources outrank global fallbacks only when coverage and downstream execution are proven.",
+      "Global terrain fallback, global ecological context, and global building queries remain source-honest and never fabricate missing features or attributes.",
+      "Operational sources pass the executable promotion gate; metadata-only intelligence remains operator-visible but cannot be selected for the game.",
+      "VMesh emits a privacy-safe vmesh-abundance-source-handoff-v1 plan without storing heavy provider payloads."
     ]
   }
 }
