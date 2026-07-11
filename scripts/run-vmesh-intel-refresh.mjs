@@ -61,7 +61,7 @@ if (args.handoffFile) {
   const executionMode = args.execution ?? (mode === "mock" ? "inline" : "managed");
   if (executionMode === "inline") {
     const runPath = mode === "mock" ? "run-mock" : "run-live";
-    await requestJson(baseUrl, `/api/swarm/missions/${missionId}/${runPath}`, {
+    const runSummary = await requestJson(baseUrl, `/api/swarm/missions/${missionId}/${runPath}`, {
       method: "POST",
       apiKey,
       body:
@@ -73,6 +73,17 @@ if (args.handoffFile) {
             },
       timeoutMs: Number(args.timeoutMs ?? 3_600_000)
     });
+    const unfinished = activeTaskCount(runSummary.task_counts ?? {});
+    if (unfinished > 0) {
+      await requestJson(baseUrl, `/api/swarm/missions/${missionId}/pause`, {
+        method: "POST",
+        apiKey
+      });
+      throw new Error(
+        `Intel Tools smoke mission ${missionId} paused with ${unfinished} unfinished task(s); ` +
+          "no VMesh handoff was exported. Resume the mission for a complete campaign."
+      );
+    }
   } else if (executionMode === "managed") {
     await waitForMission(baseUrl, missionId, apiKey, {
       pollMs: Number(args.pollMs ?? 10_000),
@@ -191,6 +202,15 @@ async function waitForMission(baseUrl, missionId, apiKey, { pollMs, timeoutMs })
     await new Promise((resolvePromise) => setTimeout(resolvePromise, pollMs));
   }
   throw new Error(`Intel Tools mission ${missionId} did not finish before the configured timeout.`);
+}
+
+function activeTaskCount(counts) {
+  return (
+    Number(counts.queued ?? 0) +
+    Number(counts.running ?? 0) +
+    Number(counts.retrying ?? 0) +
+    Number(counts.planned ?? 0)
+  );
 }
 
 async function writeJson(path, value) {

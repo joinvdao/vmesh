@@ -20,11 +20,23 @@ npm run intel:refresh -- --mode live --approve
 
 The default `managed` execution mode assumes the Intel Tools VPS worker pool is
 running. It creates and approves the mission, then polls durable mission state
-until all tasks finish. For a local bounded proof:
+until all tasks finish. Run the bounded production smoke as a complete managed
+campaign so the durable worker cannot race a separate inline worker:
+
+```bash
+npm run intel:refresh -- --manifest config/intel-source-refresh-smoke.json --mode live --approve
+```
+
+For an isolated local proof:
 
 ```bash
 npm run intel:refresh -- --mode mock --execution inline --approve --base-url http://127.0.0.1:8111
 ```
+
+An inline run with `--max-tasks` is a diagnostic, not a campaign completion.
+If tasks remain, the CLI pauses the mission and refuses to export a VMesh
+handoff. Do not use this mode against an always-on shared worker pool. Complete
+the mission before ingesting its handoff.
 
 Resume or re-export an existing durable mission without creating another run:
 

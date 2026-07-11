@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "vmesh-intel-refresh-request-v1",
+  "template": "geospatial_source_registry",
+  "quality": "smoke",
+  "runClass": "configured",
+  "objective": "Run a bounded live health campaign for the VMesh source handoff. Discover, normalize, enumerate, and probe official global machine-readable STAC sources for terrain elevation, imagery, landcover, and hydrology. Prioritize Copernicus Data Space, Microsoft Planetary Computer, and Earth Search. Preserve licence, provenance, collection IDs, asset roles, resolution, and endpoint health. Emit candidate-class records only.",
+  "dataBuckets": ["terrain_elevation", "imagery_observation", "water_hydrology", "soils_landcover"],
+  "jurisdictionScope": "global",
+  "limits": {
+    "discovery_tasks": 6,
+    "extraction_pages": 12,
+    "catalogue_enumeration_tasks": 12,
+    "verification_probes": 6,
+    "report_compiler": 1,
+    "discovery_result_limit": 10,
+    "max_tasks_per_lane": 12
+  }
+}
