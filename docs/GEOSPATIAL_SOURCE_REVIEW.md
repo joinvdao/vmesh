@@ -38,6 +38,14 @@ sample returns an explicit no-data block. Kamloops resolves public municipal
 source pixels. Evidence is in
 `docs/evidence/global-terrain-live-matrix-2026-07-11.json`.
 
+Phase 033 adds a deterministic ESA WorldCover 2021 v200 COG adapter and a
+stable class-to-visual-context decision for vegetation, built-up, bare,
+snow/ice, water and no-data pixels. The live matrix verifies 10 m source refs
+across five continents, Kamloops and the anti-meridian, with an explicit
+outside-published-latitude result. WorldCover remains classified global
+context and is never converted into species, surveyed habitat, soil or legal
+truth. Evidence is in `docs/evidence/worldcover-live-matrix-2026-07-11.json`.
+
 ## Executive Summary
 
 VMesh has enough source-broker structure to serve BA a fast geospatial package, but only a narrow part of the geospatial stack is live-proof today.

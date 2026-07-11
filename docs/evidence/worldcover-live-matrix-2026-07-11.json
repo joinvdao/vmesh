@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "vmesh-worldcover-live-matrix-v1",
+  "generatedAt": "2026-07-11T14:23:31.848Z",
+  "runClass": "live-proof",
+  "coordinateDisclosure": "public-safe-labels-only",
+  "limitations": [
+    "WorldCover is classified landcover context, not surveyed habitat, ecology, soil, or species truth."
+  ],
+  "rows": [
+    {
+      "id": "africa-cape-town",
+      "status": "source-refs-verified",
+      "resolutionMeters": 10,
+      "role": "classified-landcover-context",
+      "tileCount": 1,
+      "verifiedTileCount": 1,
+      "missingTileCount": 0
+    },
+    {
+      "id": "europe-lisbon",
+      "status": "source-refs-verified",
+      "resolutionMeters": 10,
+      "role": "classified-landcover-context",
+      "tileCount": 1,
+      "verifiedTileCount": 1,
+      "missingTileCount": 0
+    },
+    {
+      "id": "asia-tokyo",
+      "status": "source-refs-verified",
+      "resolutionMeters": 10,
+      "role": "classified-landcover-context",
+      "tileCount": 1,
+      "verifiedTileCount": 1,
+      "missingTileCount": 0
+    },
+    {
+      "id": "australia-sydney",
+      "status": "source-refs-verified",
+      "resolutionMeters": 10,
+      "role": "classified-landcover-context",
+      "tileCount": 1,
+      "verifiedTileCount": 1,
+      "missingTileCount": 0
+    },
+    {
+      "id": "south-america-buenos-aires",
+      "status": "source-refs-verified",
+      "resolutionMeters": 10,
+      "role": "classified-landcover-context",
+      "tileCount": 1,
+      "verifiedTileCount": 1,
+      "missingTileCount": 0
+    },
+    {
+      "id": "canada-kamloops-public",
+      "status": "source-refs-verified",
+      "resolutionMeters": 10,
+      "role": "classified-landcover-context",
+      "tileCount": 1,
+      "verifiedTileCount": 1,
+      "missingTileCount": 0
+    },
+    {
+      "id": "anti-meridian-fiji",
+      "status": "source-refs-verified",
+      "resolutionMeters": 10,
+      "role": "classified-landcover-context",
+      "tileCount": 2,
+      "verifiedTileCount": 2,
+      "missingTileCount": 0
+    },
+    {
+      "id": "outside-published-latitude",
+      "status": "outside-published-coverage",
+      "resolutionMeters": 10,
+      "role": "classified-landcover-context",
+      "tileCount": 0,
+      "verifiedTileCount": 0,
+      "missingTileCount": 0
+    }
+  ]
+}

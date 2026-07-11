@@ -272,6 +272,7 @@ const READY_SOURCE_REF_IDS = new Set([
 const ADAPTER_READY_SOURCE_IDS = new Set([
   "open-meteo-forecast",
   "copernicus-dem-glo30",
+  "esa-worldcover",
   "environment-agency-lidar-dtm",
   "scottish-remote-sensing-lidar",
   "os-terrain-50"
@@ -416,7 +417,10 @@ function createSourceRecord({
 }
 
 function createFetchRecipe(source: GeospatialSourceCandidate): BaFetchRecipe {
-  const adapter = adapterForProbeStrategy(source.probeStrategy);
+  const adapter =
+    source.id === "esa-worldcover"
+      ? "esa-worldcover-cog"
+      : adapterForProbeStrategy(source.probeStrategy);
 
   return {
     id: `fetch:${source.id}`,
@@ -427,7 +431,13 @@ function createFetchRecipe(source: GeospatialSourceCandidate): BaFetchRecipe {
       "Read the VMesh source record and limitations.",
       "Check license/access state before operational use.",
       "Probe AOI coverage before fetching provider assets.",
-      `Use ${adapter} recipe outside the browser for heavy data.`
+      `Use ${adapter} recipe outside the browser for heavy data.`,
+      ...(source.id === "esa-worldcover"
+        ? [
+            "Resolve every 3 degree ESA WorldCover 2021 v200 COG intersecting the exact frame.",
+            "Preserve the published class code and legend; do not infer species, surveyed habitat, or soil truth."
+          ]
+        : [])
     ]
   };
 }

@@ -314,6 +314,23 @@ describe("Abundance source handoff", () => {
     expect(handoff.gaps.join(" ")).toContain("land_property_planning");
   });
 
+  it("hands Abundance the deterministic WorldCover COG adapter without species claims", () => {
+    const handoff = createAbundanceSourceHandoff({
+      aoi: { centroid: { latitude: 50.67, longitude: -120.33 } },
+      segments: ["soils_landcover", "ecology_biodiversity_carbon"]
+    });
+    const recipe = handoff.layers
+      .find((layer) => layer.layerId === "landcover")
+      ?.recipes.find((candidate) => candidate.sourceId === "esa-worldcover");
+    expect(recipe).toMatchObject({
+      adapterId: "esa-worldcover-cog",
+      status: "requires-worker",
+      parameterSlots: expect.arrayContaining(["{bbox}"])
+    });
+    expect(recipe?.steps.join(" ")).toContain("published class code and legend");
+    expect(recipe?.steps.join(" ")).toContain("do not infer species");
+  });
+
   it("blocks terrain outside promoted source-native coverage instead of using generic fallback truth", () => {
     const handoff = createAbundanceSourceHandoff(
       {

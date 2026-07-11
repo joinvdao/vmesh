@@ -80,19 +80,20 @@ export function getOpenDataPackageSources(
       id: "esa-worldcover",
       label: "ESA WorldCover",
       layerIds: ["landcover", "vegetation", "ecology"],
-      status: "preprocessing-required",
-      artifactKinds: ["cog", "pmtiles", "h3-summary"],
+      status: "open",
+      artifactKinds: ["cog", "pmtiles", "h3-summary", "manifest"],
       coverage: "Global",
       resolution: "10m land cover",
-      sourceUrl: "https://esa-worldcover.org/",
+      sourceUrl: "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/",
       attribution: "ESA WorldCover",
       license: "ESA WorldCover terms and attribution required",
       packageReady: true,
       priority: 150,
-      probeStrategy: "bulk-preprocess",
+      probeStrategy: "bounded-api",
       truthRole: "landcover-context",
       limitations: ["Landcover context, not parcel, crop, ownership, or on-site survey truth."],
-      notes: "Default global vegetation and landcover package candidate."
+      notes:
+        "Default global classified-landcover recipe. The worker deterministically resolves 3 degree public COGs from the exact frame and preserves the 2021 v200 legend."
     }),
     source({
       id: "fields-of-the-world",
