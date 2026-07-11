@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "vmesh-source-capability-ledger-summary-v1",
+  "generatedAt": "2026-07-11T12:14:36.691624+00:00",
+  "sourceCount": 966,
+  "capabilityStates": {
+    "adapter-ready": 866,
+    "probe-ready": 100
+  },
+  "promotionStates": {
+    "quarantine": 966
+  },
+  "dataBuckets": {
+    "access_infrastructure": 58,
+    "climate_weather": 228,
+    "ecology_biodiversity_carbon": 14,
+    "food_system_local_assets": 74,
+    "imagery_observation": 186,
+    "land_property_planning": 95,
+    "risk_hazard": 36,
+    "soils_landcover": 27,
+    "terrain_elevation": 156,
+    "water_hydrology": 92
+  },
+  "endpointStatuses": {
+    "verified": 966
+  },
+  "coverageStatuses": {
+    "unknown": 966
+  },
+  "licensePostures": {
+    "claimed-review-required": 335,
+    "open-claimed-unverified": 397,
+    "restricted-or-ineligible": 143,
+    "review-required": 91
+  },
+  "blockers": {
+    "adapter-proof-required": 80,
+    "coverage-proof-required": 317,
+    "license-review-required": 569
+  },
+  "discoveryGapCount": 24,
+  "adapterGapCount": 100,
+  "materializerGapCount": 866,
+  "abundanceProofGapCount": 966
+}

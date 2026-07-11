@@ -12,45 +12,45 @@ Machine-readable queue: `prompt/queue/vmesh-land-intelligence-queue.json`.
 
 ## Status Index
 
-| Phase | Prompt                                                 | Status               | Purpose                                                         |
-| ----- | ------------------------------------------------------ | -------------------- | --------------------------------------------------------------- |
-| 001   | `001-real-globe-renderer-architecture.md`              | done                 | Globe renderer architecture.                                    |
-| 002   | `002-earth-materials-light-dark.md`                    | done                 | Globe material polish.                                          |
-| 003   | `003-globe-interaction-physics.md`                     | done                 | Globe interaction.                                              |
-| 004   | `004-search-flight-choreography.md`                    | done                 | Search and fly-to behavior.                                     |
-| 005   | `005-overlay-h3-discipline.md`                         | done                 | H3 overlay discipline.                                          |
-| 006   | `006-globe-polish-qa-docs.md`                          | done                 | QA and docs.                                                    |
-| 007   | `007-usa-canada-dtm-dsm-viewer-source-ingestion.md`    | private-done-partial | USA/Canada DTM/DSM source-preview and adapter proof.            |
-| 008   | `008-intel-tools-source-broker-processing.md`          | private-done-partial | Intel Tools source-broker processing.                           |
-| 009   | `009-firm-geospatial-source-review.md`                 | private-done-partial | Firm source review and promotion discipline.                    |
-| 010   | `010-make-reviewed-geospatial-data-available-to-ba.md` | private-done-partial | BA-facing reviewed source refs.                                 |
-| 011   | `011-make-ecological-data-available-to-ba.md`          | private-done-partial | BA ecosystem source refs.                                       |
-| 012   | `012-global-stac-source-link-discovery.md`             | private-done-partial | June discovery exists; current official refresh remains.        |
-| 013   | `013-canonical-land-intelligence-resolver.md`          | queued               | Canonical coordinate/H3/AOI resolver route.                     |
-| 014   | `014-terrain-first-provider-proof.md`                  | queued               | Terrain-first USA/Canada/UK live proof and fallback discipline. |
-| 015   | `015-jurisdiction-coverage-index.md`                   | queued               | Coverage-aware source routing via jurisdiction/H3 index.        |
-| 016   | `016-fetch-recipe-adapters.md`                         | queued               | Executable recipe adapters without storing heavy payloads.      |
-| 017   | `017-vector-built-environment-broker.md`               | queued               | Buildings, roads, water, parcels, and open vectors.             |
-| 018   | `018-soils-landcover-ecology-climate-broker.md`        | queued               | Land intelligence layers beyond vectors/terrain.                |
-| 019   | `019-abundance-source-pack-handoff.md`                 | queued               | VMesh to Abundance source-pack handoff.                         |
-| 020   | `020-operational-gates-live-proof-matrix.md`           | queued               | Gates, live-proof matrix, privacy, and regression discipline.   |
-| 021   | `021-abundance-vmesh-seam-audit.md`                    | done                 | Audit the current cross-repo seam and exact gaps.               |
-| 022   | `022-abundance-vmesh-handoff-contract.md`              | done                 | Freeze the recipe-first Abundance handoff contract.             |
-| 023   | `023-vmesh-abundance-resolver-mode.md`                 | done                 | Add VMesh resolver mode for Abundance.                          |
-| 024   | `024-abundance-recipe-executor.md`                     | private-done-partial | Build the Abundance-side recipe executor adapter.               |
-| 025   | `025-terrain-slice-source-pack-proof.md`               | queued               | Prove terrain source-pack generation from VMesh handoff.        |
-| 026   | `026-vector-mask-source-pack-proof.md`                 | queued               | Prove vector and mask source-pack generation.                   |
-| 027   | `027-anywhere-capability-tiers.md`                     | queued               | Define honest worldwide capability tiers and fallback policy.   |
-| 028   | `028-end-to-end-seam-proof-matrix.md`                  | queued               | End-to-end public-safe proof matrix across regions.             |
-| 029   | `029-layer-specific-source-ranking.md`                 | done                 | Deterministic per-layer source ranking for every data type.     |
-| 030   | `030-source-capability-ledger-reconciliation.md`       | queued               | Reconcile registry, adapters, evidence, and stale queue state.  |
-| 031   | `031-official-stac-endpoint-refresh.md`                | queued               | Refresh official terrain/imagery/landcover/hydrology STAC.      |
-| 032   | `032-global-terrain-recipe-closure.md`                 | queued               | Executable terrain plan for every Earth coordinate.             |
-| 033   | `033-global-ecology-landcover-recipe-closure.md`       | queued               | Global sourced ecology and landcover context.                   |
-| 034   | `034-global-buildings-recipe-closure.md`               | queued               | Global building queries with valid empty semantics.             |
-| 035   | `035-non-stac-domain-api-closure.md`                   | queued               | Weather, soils, roads, water, and parcel API recipes.           |
-| 036   | `036-executable-source-promotion-gate.md`              | queued               | Keep metadata-only sources out of operational defaults.         |
-| 037   | `037-global-any-coordinate-acceptance.md`              | queued               | Prove the worldwide resolver and Abundance handoff matrix.      |
+| Phase | Prompt                                                 | Status               | Purpose                                                          |
+| ----- | ------------------------------------------------------ | -------------------- | ---------------------------------------------------------------- |
+| 001   | `001-real-globe-renderer-architecture.md`              | done                 | Globe renderer architecture.                                     |
+| 002   | `002-earth-materials-light-dark.md`                    | done                 | Globe material polish.                                           |
+| 003   | `003-globe-interaction-physics.md`                     | done                 | Globe interaction.                                               |
+| 004   | `004-search-flight-choreography.md`                    | done                 | Search and fly-to behavior.                                      |
+| 005   | `005-overlay-h3-discipline.md`                         | done                 | H3 overlay discipline.                                           |
+| 006   | `006-globe-polish-qa-docs.md`                          | done                 | QA and docs.                                                     |
+| 007   | `007-usa-canada-dtm-dsm-viewer-source-ingestion.md`    | private-done-partial | USA/Canada DTM/DSM source-preview and adapter proof.             |
+| 008   | `008-intel-tools-source-broker-processing.md`          | private-done-partial | Intel Tools source-broker processing.                            |
+| 009   | `009-firm-geospatial-source-review.md`                 | private-done-partial | Firm source review and promotion discipline.                     |
+| 010   | `010-make-reviewed-geospatial-data-available-to-ba.md` | private-done-partial | BA-facing reviewed source refs.                                  |
+| 011   | `011-make-ecological-data-available-to-ba.md`          | private-done-partial | BA ecosystem source refs.                                        |
+| 012   | `012-global-stac-source-link-discovery.md`             | private-done-partial | June discovery exists; current official refresh remains.         |
+| 013   | `013-canonical-land-intelligence-resolver.md`          | private-done-partial | Resolver exists; worldwide live proof remains under 037.         |
+| 014   | `014-terrain-first-provider-proof.md`                  | private-done-partial | Regional terrain proofs exist; global closure remains under 032. |
+| 015   | `015-jurisdiction-coverage-index.md`                   | private-done-partial | Routing index exists; refreshed registry persistence remains.    |
+| 016   | `016-fetch-recipe-adapters.md`                         | private-done-partial | Core adapters exist; 031-035 close remaining recipe families.    |
+| 017   | `017-vector-built-environment-broker.md`               | private-done-partial | Source ladders exist; worldwide executable proof remains.        |
+| 018   | `018-soils-landcover-ecology-climate-broker.md`        | private-done-partial | Typed source refs exist; materialization remains incomplete.     |
+| 019   | `019-abundance-source-pack-handoff.md`                 | private-done-partial | Handoff is implemented; live all-layer packs remain incomplete.  |
+| 020   | `020-operational-gates-live-proof-matrix.md`           | private-done-partial | Partial evidence exists; 037 owns final worldwide matrix.        |
+| 021   | `021-abundance-vmesh-seam-audit.md`                    | done                 | Audit the current cross-repo seam and exact gaps.                |
+| 022   | `022-abundance-vmesh-handoff-contract.md`              | done                 | Freeze the recipe-first Abundance handoff contract.              |
+| 023   | `023-vmesh-abundance-resolver-mode.md`                 | done                 | Add VMesh resolver mode for Abundance.                           |
+| 024   | `024-abundance-recipe-executor.md`                     | private-done-partial | Build the Abundance-side recipe executor adapter.                |
+| 025   | `025-terrain-slice-source-pack-proof.md`               | private-done-partial | Fixture path exists; live worldwide terrain packs remain.        |
+| 026   | `026-vector-mask-source-pack-proof.md`                 | private-done-partial | Fixture path exists; live vector/mask matrix remains.            |
+| 027   | `027-anywhere-capability-tiers.md`                     | private-done-partial | Tier policy exists; 032-037 provide worldwide evidence.          |
+| 028   | `028-end-to-end-seam-proof-matrix.md`                  | private-done-partial | Partial matrix exists; 037 supersedes final acceptance.          |
+| 029   | `029-layer-specific-source-ranking.md`                 | done                 | Deterministic per-layer source ranking for every data type.      |
+| 030   | `030-source-capability-ledger-reconciliation.md`       | in_progress          | Ledger ready; verified canonical persistence is CA/PAT-blocked.  |
+| 031   | `031-official-stac-endpoint-refresh.md`                | queued               | Refresh official terrain/imagery/landcover/hydrology STAC.       |
+| 032   | `032-global-terrain-recipe-closure.md`                 | queued               | Executable terrain plan for every Earth coordinate.              |
+| 033   | `033-global-ecology-landcover-recipe-closure.md`       | queued               | Global sourced ecology and landcover context.                    |
+| 034   | `034-global-buildings-recipe-closure.md`               | queued               | Global building queries with valid empty semantics.              |
+| 035   | `035-non-stac-domain-api-closure.md`                   | queued               | Weather, soils, roads, water, and parcel API recipes.            |
+| 036   | `036-executable-source-promotion-gate.md`              | queued               | Keep metadata-only sources out of operational defaults.          |
+| 037   | `037-global-any-coordinate-acceptance.md`              | queued               | Prove the worldwide resolver and Abundance handoff matrix.       |
 
 ## Current Critical Path
 

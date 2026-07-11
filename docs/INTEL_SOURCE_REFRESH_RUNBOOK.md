@@ -63,6 +63,31 @@ The quarantine package is ready for VMesh registry upsert, not operational
 promotion. Metadata-only, probe-ready, unsafe, secret-bearing, malformed, and
 unsupported-recipe records cannot become game defaults.
 
+After reviewing a completed handoff, ingest it into the durable private registry:
+
+```bash
+npm run registry:ingest -- --handoff <handoff.json>
+```
+
+Generate the exact typed reconciliation report without mutating the registry:
+
+```bash
+npm run registry:ingest -- --handoff <handoff.json> --local-only
+```
+
+Direct Supabase pooler ingestion also requires `SUPABASE_DB_CA_CERT_PATH` (or
+`SUPABASE_DB_CA_CERT`) from the project's **Database Settings > SSL
+Configuration**. The ingester uses hostname and CA verification and will not
+fall back to `rejectUnauthorized: false`. A valid Supabase Management API PAT
+can be used instead when no database URL is configured.
+
+Load Infisical `prod:/supabase/simpleloop`. A direct database URL is preferred;
+otherwise the ingester deterministically builds the Supabase session-pooler URL
+from the retained password, project ref, and region. If only a scoped PAT is
+available, it uses the authenticated Management API query boundary. Every path
+applies the additive migration and one atomic, idempotent transaction. Ingestion
+keeps every new record in quarantine; phase 036 owns promotion.
+
 ## Repeatability
 
 - Campaign inputs are versioned in `config/intel-source-refresh.json`.

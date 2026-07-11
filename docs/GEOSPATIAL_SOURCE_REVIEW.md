@@ -1,8 +1,25 @@
 # Firm Geospatial Source Review
 
-Generated: 2026-06-03
+Generated: 2026-06-03. Reconciled: 2026-07-11.
 
 Run class: `dry-run` review with retained `live-proof` evidence for selected terrain paths.
+
+## July 2026 Capability Reconciliation
+
+The repeatable Intel Tools refresh completed a configured/live-discovery run
+with 54 candidate authorities, 80 endpoints, and 966 collections. The typed
+Phase 030 reconciliation classifies 866 collections as `adapter-ready` and 100
+as `probe-ready`; all 966 remain quarantined. None are promoted by discovery
+alone. Coverage is not yet proven for these refreshed records, 569 have a
+license-review blocker, 317 need coverage proof, and 80 need adapter proof.
+
+The generated public-safe summary is
+`docs/evidence/source-capability-summary-2026-07-11.json`. The canonical
+Supabase migration and idempotent ingester are implemented. Live persistence
+currently requires either the project CA certificate for verified pooler TLS
+or a refreshed Supabase Management API PAT; the retained PAT returns `401`.
+This is a persistence blocker, not a source-discovery or adapter-readiness
+claim.
 
 ## Executive Summary
 
