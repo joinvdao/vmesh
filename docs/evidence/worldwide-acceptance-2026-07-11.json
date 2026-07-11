@@ -1,0 +1,1234 @@
+{
+  "schemaVersion": "vmesh-worldwide-acceptance-v1",
+  "generatedAt": "2026-07-11T15:14:45.130Z",
+  "runClass": "live-proof",
+  "coordinateDisclosure": "public-safe-labels-only",
+  "sampleCount": 13,
+  "passCount": 13,
+  "failureCount": 0,
+  "failures": [],
+  "rows": [
+    {
+      "id": "canada-kamloops-public",
+      "scenario": "regional-lidar",
+      "frame": {
+        "edgeMeters": 3000,
+        "gridSize": 257
+      },
+      "timingMs": {
+        "initialPlan": 226,
+        "warmPlan": 42,
+        "coldLiveTerrainPlan": 7706,
+        "buildings": 907,
+        "context": 1690
+      },
+      "responseBytes": {
+        "handoff": 329778,
+        "buildings": 1819011,
+        "context": 1459262
+      },
+      "terrain": {
+        "selectedSourceId": "kamloops-local-lidar-dtm-1m",
+        "bestAvailableSourceId": "kamloops-local-lidar-dtm-1m",
+        "rank": 2,
+        "role": "bare-earth-dtm",
+        "resolution": "1m-class source where public municipal LiDAR/DEM tile coverage and worker QA prove it",
+        "confidence": "high",
+        "recipeStatus": "ready",
+        "runClass": "dry-run",
+        "downstreamMaterializationProven": false,
+        "rejectedSourceIds": [
+          "bc-lidarbc",
+          "usgs-3dep",
+          "canada-hrdem",
+          "canada-hrdem-best-dtm",
+          "canada-hrdem-dsm",
+          "usgs-3dep-lpc-dsm",
+          "bc-lidarbc-dsm",
+          "copernicus-dem-glo30"
+        ]
+      },
+      "landcover": {
+        "selectedSourceId": "esa-worldcover",
+        "bestAvailableSourceId": "esa-worldcover",
+        "rank": 4,
+        "rejectedSourceIds": [
+          "annual-nlcd",
+          "landfire",
+          "dynamic-world",
+          "fields-of-the-world",
+          "sentinel-2-l2a-earth-search",
+          "hansen-global-forest-change"
+        ]
+      },
+      "buildings": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 1241,
+          "subtype": 1254,
+          "height": 0
+        }
+      },
+      "roads": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 2000,
+          "subclass": 934,
+          "road_surface": 604
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "featureCount": 148,
+        "semanticCounts": {
+          "class": 148,
+          "subtype": 148
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context"
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context"
+      },
+      "parcels": "explicit-gap",
+      "gaps": [
+        "terrain_elevation: mapterhorn-pmtiles-terrain is fallback visual/generic terrain only and is not returned as BA source truth",
+        "land_property_planning: no reviewed BA source refs are available for this request yet"
+      ],
+      "acceptanceFailures": []
+    },
+    {
+      "id": "canada-calgary",
+      "scenario": "regional-dem",
+      "frame": {
+        "edgeMeters": 3000,
+        "gridSize": 257
+      },
+      "timingMs": {
+        "initialPlan": 225,
+        "warmPlan": 42,
+        "coldLiveTerrainPlan": 6312,
+        "buildings": 4512,
+        "context": 6089
+      },
+      "responseBytes": {
+        "handoff": 300646,
+        "buildings": 1773547,
+        "context": 1289631
+      },
+      "terrain": {
+        "selectedSourceId": "copernicus-dem-glo30",
+        "bestAvailableSourceId": "copernicus-dem-glo30",
+        "rank": 7,
+        "role": "surface-dsm",
+        "resolution": "30m and 90m DSM products",
+        "confidence": "low",
+        "recipeStatus": "ready",
+        "runClass": "live-proof",
+        "downstreamMaterializationProven": false,
+        "rejectedSourceIds": [
+          "bc-lidarbc",
+          "kamloops-local-lidar-dtm-1m",
+          "usgs-3dep",
+          "canada-hrdem",
+          "canada-hrdem-best-dtm",
+          "canada-hrdem-dsm",
+          "usgs-3dep-lpc-dsm",
+          "bc-lidarbc-dsm"
+        ]
+      },
+      "landcover": {
+        "selectedSourceId": "esa-worldcover",
+        "bestAvailableSourceId": "esa-worldcover",
+        "rank": 4,
+        "rejectedSourceIds": [
+          "annual-nlcd",
+          "landfire",
+          "dynamic-world",
+          "fields-of-the-world",
+          "sentinel-2-l2a-earth-search",
+          "hansen-global-forest-change"
+        ]
+      },
+      "buildings": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 1738,
+          "subtype": 1754,
+          "height": 0
+        }
+      },
+      "roads": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 2000,
+          "subclass": 852,
+          "road_surface": 1486
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "featureCount": 15,
+        "semanticCounts": {
+          "class": 15,
+          "subtype": 15
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context"
+      },
+      "soil": {
+        "status": "query-succeeded",
+        "role": "modelled-global-soil-context"
+      },
+      "parcels": "explicit-gap",
+      "gaps": [
+        "terrain_elevation: mapterhorn-pmtiles-terrain is fallback visual/generic terrain only and is not returned as BA source truth",
+        "land_property_planning: no reviewed BA source refs are available for this request yet"
+      ],
+      "acceptanceFailures": []
+    },
+    {
+      "id": "usa-denver",
+      "scenario": "regional-lidar",
+      "frame": {
+        "edgeMeters": 3000,
+        "gridSize": 257
+      },
+      "timingMs": {
+        "initialPlan": 37,
+        "warmPlan": 40,
+        "coldLiveTerrainPlan": 1225,
+        "buildings": 704,
+        "context": 1656
+      },
+      "responseBytes": {
+        "handoff": 300915,
+        "buildings": 1796386,
+        "context": 1309923
+      },
+      "terrain": {
+        "selectedSourceId": "usgs-3dep",
+        "bestAvailableSourceId": "usgs-3dep",
+        "rank": 1,
+        "role": "bare-earth-dtm",
+        "resolution": "1m DEM where covered; fail closed rather than silently falling back",
+        "confidence": "high",
+        "recipeStatus": "ready",
+        "runClass": "live-proof",
+        "downstreamMaterializationProven": false,
+        "rejectedSourceIds": [
+          "bc-lidarbc",
+          "kamloops-local-lidar-dtm-1m",
+          "canada-hrdem",
+          "canada-hrdem-best-dtm",
+          "canada-hrdem-dsm",
+          "usgs-3dep-lpc-dsm",
+          "bc-lidarbc-dsm",
+          "copernicus-dem-glo30"
+        ]
+      },
+      "landcover": {
+        "selectedSourceId": "esa-worldcover",
+        "bestAvailableSourceId": "esa-worldcover",
+        "rank": 4,
+        "rejectedSourceIds": [
+          "annual-nlcd",
+          "landfire",
+          "dynamic-world",
+          "fields-of-the-world",
+          "sentinel-2-l2a-earth-search",
+          "hansen-global-forest-change"
+        ]
+      },
+      "buildings": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 1926,
+          "subtype": 1931,
+          "height": 0
+        }
+      },
+      "roads": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 2000,
+          "subclass": 737,
+          "road_surface": 605
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "featureCount": 90,
+        "semanticCounts": {
+          "class": 90,
+          "subtype": 90
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context"
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context"
+      },
+      "parcels": "explicit-gap",
+      "gaps": [
+        "terrain_elevation: mapterhorn-pmtiles-terrain is fallback visual/generic terrain only and is not returned as BA source truth",
+        "land_property_planning: no reviewed BA source refs are available for this request yet"
+      ],
+      "acceptanceFailures": []
+    },
+    {
+      "id": "uk-scotland-edinburgh",
+      "scenario": "regional-dem",
+      "frame": {
+        "edgeMeters": 3000,
+        "gridSize": 257
+      },
+      "timingMs": {
+        "initialPlan": 20,
+        "warmPlan": 36,
+        "coldLiveTerrainPlan": 177,
+        "buildings": 2747,
+        "context": 6137
+      },
+      "responseBytes": {
+        "handoff": 301630,
+        "buildings": 1657366,
+        "context": 1308510
+      },
+      "terrain": {
+        "selectedSourceId": "copernicus-dem-glo30",
+        "bestAvailableSourceId": "copernicus-dem-glo30",
+        "rank": 7,
+        "role": "surface-dsm",
+        "resolution": "30m and 90m DSM products",
+        "confidence": "low",
+        "recipeStatus": "ready",
+        "runClass": "live-proof",
+        "downstreamMaterializationProven": false,
+        "rejectedSourceIds": [
+          "bc-lidarbc",
+          "kamloops-local-lidar-dtm-1m",
+          "usgs-3dep",
+          "canada-hrdem",
+          "canada-hrdem-best-dtm",
+          "canada-hrdem-dsm",
+          "usgs-3dep-lpc-dsm",
+          "bc-lidarbc-dsm"
+        ]
+      },
+      "landcover": {
+        "selectedSourceId": "esa-worldcover",
+        "bestAvailableSourceId": "esa-worldcover",
+        "rank": 4,
+        "rejectedSourceIds": [
+          "annual-nlcd",
+          "landfire",
+          "dynamic-world",
+          "fields-of-the-world",
+          "sentinel-2-l2a-earth-search",
+          "hansen-global-forest-change"
+        ]
+      },
+      "buildings": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 1413,
+          "subtype": 1416,
+          "height": 0
+        }
+      },
+      "roads": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 2000,
+          "subclass": 205,
+          "road_surface": 1056
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "featureCount": 30,
+        "semanticCounts": {
+          "class": 30,
+          "subtype": 30
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context"
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context"
+      },
+      "parcels": "explicit-gap",
+      "gaps": [
+        "terrain_elevation: mapterhorn-pmtiles-terrain is fallback visual/generic terrain only and is not returned as BA source truth",
+        "land_property_planning: no reviewed BA source refs are available for this request yet"
+      ],
+      "acceptanceFailures": []
+    },
+    {
+      "id": "europe-lisbon-urban",
+      "scenario": "global-floor",
+      "frame": {
+        "edgeMeters": 3000,
+        "gridSize": 257
+      },
+      "timingMs": {
+        "initialPlan": 23,
+        "warmPlan": 32,
+        "coldLiveTerrainPlan": 208,
+        "buildings": 321,
+        "context": 5167
+      },
+      "responseBytes": {
+        "handoff": 291087,
+        "buildings": 1688896,
+        "context": 1338186
+      },
+      "terrain": {
+        "selectedSourceId": "copernicus-dem-glo30",
+        "bestAvailableSourceId": "copernicus-dem-glo30",
+        "rank": 7,
+        "role": "surface-dsm",
+        "resolution": "30m and 90m DSM products",
+        "confidence": "low",
+        "recipeStatus": "ready",
+        "runClass": "live-proof",
+        "downstreamMaterializationProven": false,
+        "rejectedSourceIds": [
+          "bc-lidarbc",
+          "kamloops-local-lidar-dtm-1m",
+          "usgs-3dep",
+          "canada-hrdem",
+          "canada-hrdem-best-dtm",
+          "canada-hrdem-dsm",
+          "usgs-3dep-lpc-dsm",
+          "bc-lidarbc-dsm"
+        ]
+      },
+      "landcover": {
+        "selectedSourceId": "esa-worldcover",
+        "bestAvailableSourceId": "esa-worldcover",
+        "rank": 4,
+        "rejectedSourceIds": [
+          "annual-nlcd",
+          "landfire",
+          "dynamic-world",
+          "fields-of-the-world",
+          "sentinel-2-l2a-earth-search",
+          "hansen-global-forest-change"
+        ]
+      },
+      "buildings": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 807,
+          "subtype": 832,
+          "height": 0
+        }
+      },
+      "roads": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 2000,
+          "subclass": 576,
+          "road_surface": 1607
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "featureCount": 110,
+        "semanticCounts": {
+          "class": 110,
+          "subtype": 110
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context"
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context"
+      },
+      "parcels": "explicit-gap",
+      "gaps": [
+        "terrain_elevation: mapterhorn-pmtiles-terrain is fallback visual/generic terrain only and is not returned as BA source truth",
+        "land_property_planning: no reviewed BA source refs are available for this request yet"
+      ],
+      "acceptanceFailures": []
+    },
+    {
+      "id": "asia-tokyo-urban",
+      "scenario": "global-floor",
+      "frame": {
+        "edgeMeters": 3000,
+        "gridSize": 257
+      },
+      "timingMs": {
+        "initialPlan": 35,
+        "warmPlan": 37,
+        "coldLiveTerrainPlan": 207,
+        "buildings": 781,
+        "context": 1543
+      },
+      "responseBytes": {
+        "handoff": 291100,
+        "buildings": 1539671,
+        "context": 1255723
+      },
+      "terrain": {
+        "selectedSourceId": "copernicus-dem-glo30",
+        "bestAvailableSourceId": "copernicus-dem-glo30",
+        "rank": 7,
+        "role": "surface-dsm",
+        "resolution": "30m and 90m DSM products",
+        "confidence": "low",
+        "recipeStatus": "ready",
+        "runClass": "live-proof",
+        "downstreamMaterializationProven": false,
+        "rejectedSourceIds": [
+          "bc-lidarbc",
+          "kamloops-local-lidar-dtm-1m",
+          "usgs-3dep",
+          "canada-hrdem",
+          "canada-hrdem-best-dtm",
+          "canada-hrdem-dsm",
+          "usgs-3dep-lpc-dsm",
+          "bc-lidarbc-dsm"
+        ]
+      },
+      "landcover": {
+        "selectedSourceId": "esa-worldcover",
+        "bestAvailableSourceId": "esa-worldcover",
+        "rank": 4,
+        "rejectedSourceIds": [
+          "annual-nlcd",
+          "landfire",
+          "dynamic-world",
+          "fields-of-the-world",
+          "sentinel-2-l2a-earth-search",
+          "hansen-global-forest-change"
+        ]
+      },
+      "buildings": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 149,
+          "subtype": 149,
+          "height": 0
+        }
+      },
+      "roads": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 2000,
+          "subclass": 565,
+          "road_surface": 674
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "featureCount": 54,
+        "semanticCounts": {
+          "class": 54,
+          "subtype": 54
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context"
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context"
+      },
+      "parcels": "explicit-gap",
+      "gaps": [
+        "terrain_elevation: mapterhorn-pmtiles-terrain is fallback visual/generic terrain only and is not returned as BA source truth",
+        "land_property_planning: no reviewed BA source refs are available for this request yet"
+      ],
+      "acceptanceFailures": []
+    },
+    {
+      "id": "africa-cape-town",
+      "scenario": "global-floor",
+      "frame": {
+        "edgeMeters": 3000,
+        "gridSize": 257
+      },
+      "timingMs": {
+        "initialPlan": 24,
+        "warmPlan": 32,
+        "coldLiveTerrainPlan": 214,
+        "buildings": 528,
+        "context": 1530
+      },
+      "responseBytes": {
+        "handoff": 291100,
+        "buildings": 1845522,
+        "context": 1360460
+      },
+      "terrain": {
+        "selectedSourceId": "copernicus-dem-glo30",
+        "bestAvailableSourceId": "copernicus-dem-glo30",
+        "rank": 7,
+        "role": "surface-dsm",
+        "resolution": "30m and 90m DSM products",
+        "confidence": "low",
+        "recipeStatus": "ready",
+        "runClass": "live-proof",
+        "downstreamMaterializationProven": false,
+        "rejectedSourceIds": [
+          "bc-lidarbc",
+          "kamloops-local-lidar-dtm-1m",
+          "usgs-3dep",
+          "canada-hrdem",
+          "canada-hrdem-best-dtm",
+          "canada-hrdem-dsm",
+          "usgs-3dep-lpc-dsm",
+          "bc-lidarbc-dsm"
+        ]
+      },
+      "landcover": {
+        "selectedSourceId": "esa-worldcover",
+        "bestAvailableSourceId": "esa-worldcover",
+        "rank": 4,
+        "rejectedSourceIds": [
+          "annual-nlcd",
+          "landfire",
+          "dynamic-world",
+          "fields-of-the-world",
+          "sentinel-2-l2a-earth-search",
+          "hansen-global-forest-change"
+        ]
+      },
+      "buildings": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 106,
+          "subtype": 115,
+          "height": 0
+        }
+      },
+      "roads": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 2000,
+          "subclass": 386,
+          "road_surface": 1538
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "featureCount": 43,
+        "semanticCounts": {
+          "class": 43,
+          "subtype": 43
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context"
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context"
+      },
+      "parcels": "explicit-gap",
+      "gaps": [
+        "terrain_elevation: mapterhorn-pmtiles-terrain is fallback visual/generic terrain only and is not returned as BA source truth",
+        "land_property_planning: no reviewed BA source refs are available for this request yet"
+      ],
+      "acceptanceFailures": []
+    },
+    {
+      "id": "australia-sydney",
+      "scenario": "global-floor",
+      "frame": {
+        "edgeMeters": 3000,
+        "gridSize": 257
+      },
+      "timingMs": {
+        "initialPlan": 43,
+        "warmPlan": 32,
+        "coldLiveTerrainPlan": 226,
+        "buildings": 1883,
+        "context": 1540
+      },
+      "responseBytes": {
+        "handoff": 291113,
+        "buildings": 1762975,
+        "context": 1493827
+      },
+      "terrain": {
+        "selectedSourceId": "copernicus-dem-glo30",
+        "bestAvailableSourceId": "copernicus-dem-glo30",
+        "rank": 7,
+        "role": "surface-dsm",
+        "resolution": "30m and 90m DSM products",
+        "confidence": "low",
+        "recipeStatus": "ready",
+        "runClass": "live-proof",
+        "downstreamMaterializationProven": false,
+        "rejectedSourceIds": [
+          "bc-lidarbc",
+          "kamloops-local-lidar-dtm-1m",
+          "usgs-3dep",
+          "canada-hrdem",
+          "canada-hrdem-best-dtm",
+          "canada-hrdem-dsm",
+          "usgs-3dep-lpc-dsm",
+          "bc-lidarbc-dsm"
+        ]
+      },
+      "landcover": {
+        "selectedSourceId": "esa-worldcover",
+        "bestAvailableSourceId": "esa-worldcover",
+        "rank": 4,
+        "rejectedSourceIds": [
+          "annual-nlcd",
+          "landfire",
+          "dynamic-world",
+          "fields-of-the-world",
+          "sentinel-2-l2a-earth-search",
+          "hansen-global-forest-change"
+        ]
+      },
+      "buildings": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 1144,
+          "subtype": 1212,
+          "height": 0
+        }
+      },
+      "roads": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 2000,
+          "subclass": 415,
+          "road_surface": 1280
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "featureCount": 140,
+        "semanticCounts": {
+          "class": 140,
+          "subtype": 140
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context"
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context"
+      },
+      "parcels": "explicit-gap",
+      "gaps": [
+        "terrain_elevation: mapterhorn-pmtiles-terrain is fallback visual/generic terrain only and is not returned as BA source truth",
+        "land_property_planning: no reviewed BA source refs are available for this request yet"
+      ],
+      "acceptanceFailures": []
+    },
+    {
+      "id": "south-america-patagonia-sparse",
+      "scenario": "global-floor",
+      "frame": {
+        "edgeMeters": 3000,
+        "gridSize": 257
+      },
+      "timingMs": {
+        "initialPlan": 24,
+        "warmPlan": 35,
+        "coldLiveTerrainPlan": 190,
+        "buildings": 1568,
+        "context": 1640
+      },
+      "responseBytes": {
+        "handoff": 291113,
+        "buildings": 1176725,
+        "context": 386168
+      },
+      "terrain": {
+        "selectedSourceId": "copernicus-dem-glo30",
+        "bestAvailableSourceId": "copernicus-dem-glo30",
+        "rank": 7,
+        "role": "surface-dsm",
+        "resolution": "30m and 90m DSM products",
+        "confidence": "low",
+        "recipeStatus": "ready",
+        "runClass": "live-proof",
+        "downstreamMaterializationProven": false,
+        "rejectedSourceIds": [
+          "bc-lidarbc",
+          "kamloops-local-lidar-dtm-1m",
+          "usgs-3dep",
+          "canada-hrdem",
+          "canada-hrdem-best-dtm",
+          "canada-hrdem-dsm",
+          "usgs-3dep-lpc-dsm",
+          "bc-lidarbc-dsm"
+        ]
+      },
+      "landcover": {
+        "selectedSourceId": "esa-worldcover",
+        "bestAvailableSourceId": "esa-worldcover",
+        "rank": 4,
+        "rejectedSourceIds": [
+          "annual-nlcd",
+          "landfire",
+          "dynamic-world",
+          "fields-of-the-world",
+          "sentinel-2-l2a-earth-search",
+          "hansen-global-forest-change"
+        ]
+      },
+      "buildings": {
+        "status": "query-succeeded",
+        "featureCount": 1530,
+        "semanticCounts": {
+          "class": 14,
+          "subtype": 20,
+          "height": 0
+        }
+      },
+      "roads": {
+        "status": "query-succeeded",
+        "featureCount": 453,
+        "semanticCounts": {
+          "class": 453,
+          "subclass": 48,
+          "road_surface": 310
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "featureCount": 32,
+        "semanticCounts": {
+          "class": 32,
+          "subtype": 32
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context"
+      },
+      "soil": {
+        "status": "query-succeeded",
+        "role": "modelled-global-soil-context"
+      },
+      "parcels": "explicit-gap",
+      "gaps": [
+        "terrain_elevation: mapterhorn-pmtiles-terrain is fallback visual/generic terrain only and is not returned as BA source truth",
+        "land_property_planning: no reviewed BA source refs are available for this request yet"
+      ],
+      "acceptanceFailures": []
+    },
+    {
+      "id": "north-america-florida-coastal",
+      "scenario": "coastal",
+      "frame": {
+        "edgeMeters": 3000,
+        "gridSize": 257
+      },
+      "timingMs": {
+        "initialPlan": 40,
+        "warmPlan": 40,
+        "coldLiveTerrainPlan": 845,
+        "buildings": 2035,
+        "context": 4320
+      },
+      "responseBytes": {
+        "handoff": 295982,
+        "buildings": 1698451,
+        "context": 1350417
+      },
+      "terrain": {
+        "selectedSourceId": "usgs-3dep",
+        "bestAvailableSourceId": "usgs-3dep",
+        "rank": 1,
+        "role": "bare-earth-dtm",
+        "resolution": "1m DEM where covered; fail closed rather than silently falling back",
+        "confidence": "high",
+        "recipeStatus": "ready",
+        "runClass": "live-proof",
+        "downstreamMaterializationProven": false,
+        "rejectedSourceIds": [
+          "bc-lidarbc",
+          "kamloops-local-lidar-dtm-1m",
+          "canada-hrdem",
+          "canada-hrdem-best-dtm",
+          "canada-hrdem-dsm",
+          "usgs-3dep-lpc-dsm",
+          "bc-lidarbc-dsm",
+          "copernicus-dem-glo30"
+        ]
+      },
+      "landcover": {
+        "selectedSourceId": "esa-worldcover",
+        "bestAvailableSourceId": "esa-worldcover",
+        "rank": 4,
+        "rejectedSourceIds": [
+          "annual-nlcd",
+          "landfire",
+          "dynamic-world",
+          "fields-of-the-world",
+          "sentinel-2-l2a-earth-search",
+          "hansen-global-forest-change"
+        ]
+      },
+      "buildings": {
+        "status": "query-succeeded-truncated",
+        "featureCount": 2000,
+        "semanticCounts": {
+          "class": 411,
+          "subtype": 495,
+          "height": 0
+        }
+      },
+      "roads": {
+        "status": "query-succeeded",
+        "featureCount": 1987,
+        "semanticCounts": {
+          "class": 1987,
+          "subclass": 608,
+          "road_surface": 525
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "featureCount": 129,
+        "semanticCounts": {
+          "class": 129,
+          "subtype": 129
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context"
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context"
+      },
+      "parcels": "explicit-gap",
+      "gaps": [
+        "terrain_elevation: mapterhorn-pmtiles-terrain is fallback visual/generic terrain only and is not returned as BA source truth",
+        "land_property_planning: no reviewed BA source refs are available for this request yet"
+      ],
+      "acceptanceFailures": []
+    },
+    {
+      "id": "pacific-ocean-empty",
+      "scenario": "ocean",
+      "frame": {
+        "edgeMeters": 3000,
+        "gridSize": 257
+      },
+      "timingMs": {
+        "initialPlan": 27,
+        "warmPlan": 38,
+        "coldLiveTerrainPlan": 233,
+        "buildings": 212,
+        "context": 1401
+      },
+      "responseBytes": {
+        "handoff": 289965,
+        "buildings": 662,
+        "context": 5428
+      },
+      "terrain": {
+        "selectedSourceId": null,
+        "bestAvailableSourceId": "bc-lidarbc",
+        "rank": 2,
+        "role": null,
+        "resolution": null,
+        "confidence": null,
+        "recipeStatus": "blocked",
+        "runClass": null,
+        "downstreamMaterializationProven": false,
+        "rejectedSourceIds": [
+          "bc-lidarbc",
+          "kamloops-local-lidar-dtm-1m",
+          "usgs-3dep",
+          "canada-hrdem",
+          "canada-hrdem-best-dtm",
+          "canada-hrdem-dsm",
+          "usgs-3dep-lpc-dsm",
+          "bc-lidarbc-dsm"
+        ]
+      },
+      "landcover": {
+        "selectedSourceId": "esa-worldcover",
+        "bestAvailableSourceId": "esa-worldcover",
+        "rank": 4,
+        "rejectedSourceIds": [
+          "annual-nlcd",
+          "landfire",
+          "dynamic-world",
+          "fields-of-the-world",
+          "sentinel-2-l2a-earth-search",
+          "hansen-global-forest-change"
+        ]
+      },
+      "buildings": {
+        "status": "query-succeeded-empty",
+        "featureCount": 0,
+        "semanticCounts": {
+          "class": 0,
+          "subtype": 0,
+          "height": 0
+        }
+      },
+      "roads": {
+        "status": "query-succeeded-empty",
+        "featureCount": 0,
+        "semanticCounts": {
+          "class": 0,
+          "subclass": 0,
+          "road_surface": 0
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "featureCount": 4,
+        "semanticCounts": {
+          "class": 4,
+          "subtype": 4
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context"
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context"
+      },
+      "parcels": "explicit-gap",
+      "gaps": [
+        "terrain_elevation: mapterhorn-pmtiles-terrain is fallback visual/generic terrain only and is not returned as BA source truth",
+        "land_property_planning: no reviewed BA source refs are available for this request yet"
+      ],
+      "acceptanceFailures": []
+    },
+    {
+      "id": "anti-meridian-land",
+      "scenario": "anti-meridian",
+      "frame": {
+        "edgeMeters": 3000,
+        "gridSize": 257
+      },
+      "timingMs": {
+        "initialPlan": 45,
+        "warmPlan": 37,
+        "coldLiveTerrainPlan": 241,
+        "buildings": 2927,
+        "context": 5211
+      },
+      "responseBytes": {
+        "handoff": 291806,
+        "buildings": 36816,
+        "context": 11854
+      },
+      "terrain": {
+        "selectedSourceId": "copernicus-dem-glo30",
+        "bestAvailableSourceId": "copernicus-dem-glo30",
+        "rank": 7,
+        "role": "surface-dsm",
+        "resolution": "30m and 90m DSM products",
+        "confidence": "low",
+        "recipeStatus": "ready",
+        "runClass": "live-proof",
+        "downstreamMaterializationProven": false,
+        "rejectedSourceIds": [
+          "bc-lidarbc",
+          "kamloops-local-lidar-dtm-1m",
+          "usgs-3dep",
+          "canada-hrdem",
+          "canada-hrdem-best-dtm",
+          "canada-hrdem-dsm",
+          "usgs-3dep-lpc-dsm",
+          "bc-lidarbc-dsm"
+        ]
+      },
+      "landcover": {
+        "selectedSourceId": "esa-worldcover",
+        "bestAvailableSourceId": "esa-worldcover",
+        "rank": 4,
+        "rejectedSourceIds": [
+          "annual-nlcd",
+          "landfire",
+          "dynamic-world",
+          "fields-of-the-world",
+          "sentinel-2-l2a-earth-search",
+          "hansen-global-forest-change"
+        ]
+      },
+      "buildings": {
+        "status": "query-succeeded",
+        "featureCount": 46,
+        "semanticCounts": {
+          "class": 0,
+          "subtype": 0,
+          "height": 0
+        }
+      },
+      "roads": {
+        "status": "query-succeeded",
+        "featureCount": 6,
+        "semanticCounts": {
+          "class": 6,
+          "subclass": 0,
+          "road_surface": 0
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "featureCount": 2,
+        "semanticCounts": {
+          "class": 2,
+          "subtype": 2
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context"
+      },
+      "soil": {
+        "status": "query-succeeded",
+        "role": "modelled-global-soil-context"
+      },
+      "parcels": "explicit-gap",
+      "gaps": [
+        "terrain_elevation: mapterhorn-pmtiles-terrain is fallback visual/generic terrain only and is not returned as BA source truth",
+        "land_property_planning: no reviewed BA source refs are available for this request yet"
+      ],
+      "acceptanceFailures": []
+    },
+    {
+      "id": "high-latitude-land",
+      "scenario": "high-latitude",
+      "frame": {
+        "edgeMeters": 3000,
+        "gridSize": 257
+      },
+      "timingMs": {
+        "initialPlan": 26,
+        "warmPlan": 18,
+        "coldLiveTerrainPlan": 132,
+        "buildings": 2928,
+        "context": 4117
+      },
+      "responseBytes": {
+        "handoff": 291087,
+        "buildings": 569228,
+        "context": 231241
+      },
+      "terrain": {
+        "selectedSourceId": "copernicus-dem-glo30",
+        "bestAvailableSourceId": "copernicus-dem-glo30",
+        "rank": 7,
+        "role": "surface-dsm",
+        "resolution": "30m and 90m DSM products",
+        "confidence": "low",
+        "recipeStatus": "ready",
+        "runClass": "live-proof",
+        "downstreamMaterializationProven": false,
+        "rejectedSourceIds": [
+          "bc-lidarbc",
+          "kamloops-local-lidar-dtm-1m",
+          "usgs-3dep",
+          "canada-hrdem",
+          "canada-hrdem-best-dtm",
+          "canada-hrdem-dsm",
+          "usgs-3dep-lpc-dsm",
+          "bc-lidarbc-dsm"
+        ]
+      },
+      "landcover": {
+        "selectedSourceId": "esa-worldcover",
+        "bestAvailableSourceId": "esa-worldcover",
+        "rank": 4,
+        "rejectedSourceIds": [
+          "annual-nlcd",
+          "landfire",
+          "dynamic-world",
+          "fields-of-the-world",
+          "sentinel-2-l2a-earth-search",
+          "hansen-global-forest-change"
+        ]
+      },
+      "buildings": {
+        "status": "query-succeeded",
+        "featureCount": 689,
+        "semanticCounts": {
+          "class": 237,
+          "subtype": 238,
+          "height": 0
+        }
+      },
+      "roads": {
+        "status": "query-succeeded",
+        "featureCount": 310,
+        "semanticCounts": {
+          "class": 310,
+          "subclass": 28,
+          "road_surface": 132
+        }
+      },
+      "water": {
+        "status": "query-succeeded",
+        "featureCount": 24,
+        "semanticCounts": {
+          "class": 24,
+          "subtype": 24
+        }
+      },
+      "weather": {
+        "status": "query-succeeded",
+        "role": "modelled-current-weather-context"
+      },
+      "soil": {
+        "status": "query-succeeded-no-data",
+        "role": "modelled-global-soil-context"
+      },
+      "parcels": "explicit-gap",
+      "gaps": [
+        "terrain_elevation: mapterhorn-pmtiles-terrain is fallback visual/generic terrain only and is not returned as BA source truth",
+        "land_property_planning: no reviewed BA source refs are available for this request yet"
+      ],
+      "acceptanceFailures": []
+    }
+  ]
+}

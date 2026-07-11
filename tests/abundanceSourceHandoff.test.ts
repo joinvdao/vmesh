@@ -657,6 +657,13 @@ describe("Abundance source handoff", () => {
       selectedSource: { id: "copernicus-dem-glo30" },
       inputRefs: [{ kind: "s3-cog", groundModelRole: "surface-dsm" }]
     });
+    expect(
+      handoff.sourceRanking.layerDecisions.find((decision) => decision.layerId === "terrain")
+    ).toMatchObject({
+      selectedSourceId: "copernicus-dem-glo30",
+      bestAvailableSourceId: "copernicus-dem-glo30",
+      bestRank: 7
+    });
   });
 
   it("emits parameterized recipe slots and avoids obvious secret or local-path refs", () => {

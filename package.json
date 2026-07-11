@@ -42,6 +42,7 @@
     "registry:prove-buildings": "node scripts/prove-building-matrix.mjs",
     "registry:prove-context": "node scripts/prove-context-matrix.mjs",
     "registry:prove-promotions": "node scripts/prove-source-promotions.mjs",
+    "registry:prove-worldwide": "node scripts/prove-worldwide-acceptance.mjs",
     "ba:route-proof": "node scripts/ba-source-package-route-proof.mjs",
     "macro:build": "node scripts/build-macro-package.mjs",
     "macro:validate": "node scripts/validate-macro-package.mjs",

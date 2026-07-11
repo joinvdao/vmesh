@@ -30,9 +30,10 @@ export async function POST(request: NextRequest) {
   if (latitude === null || longitude === null)
     return json({ error: "A valid lat/lng centroid is required." }, 400);
   const bbox = sourceFrameBbox(latitude, longitude, 3_000);
+  const maxFeatures = finiteLimit(body.maxFeatures);
   const [roads, water, weather, soil] = await Promise.all([
-    queryOvertureContext("roads", bbox),
-    queryOvertureContext("water", bbox),
+    queryOvertureContext("roads", bbox, { maxFeatures }),
+    queryOvertureContext("water", bbox, { maxFeatures }),
     queryOpenMeteoCurrent(latitude, longitude),
     querySoilGridsSurface(latitude, longitude)
   ]);
@@ -58,6 +59,12 @@ export async function POST(request: NextRequest) {
     }
   };
   return json(result);
+}
+
+function finiteLimit(value: unknown) {
+  return typeof value === "number" && Number.isInteger(value) && value > 0
+    ? Math.min(value, 25_000)
+    : undefined;
 }
 
 function sourceFrameBbox(latitude: number, longitude: number, edgeMeters: number) {

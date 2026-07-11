@@ -287,6 +287,9 @@ function rankTerrainSource({
   sourceRole: string;
   plan: TerrainSourceAdapterPlan | null;
 }): SourceQualityRank {
+  if (sourceId === "copernicus-dem-glo30") return 7;
+  if (sourceId === "mapterhorn-pmtiles-terrain" || sourceId === "mapzen-joerd-terrarium") return 8;
+  if (sourceRole.toLowerCase().includes("generic-dem")) return 8;
   const planRank = rankFromTerrainPlan(plan);
   if (planRank !== null) return planRank;
   if (sourceId === "kamloops-local-lidar-dtm-1m") return 2;
@@ -295,8 +298,6 @@ function rankTerrainSource({
   if (sourceId === "canada-hrdem") return 3;
   if (sourceId === "canada-hrdem-best-dtm") return 5;
   if (sourceId === "usgs-3dep-lpc-dsm" || sourceId === "canada-hrdem-dsm") return 5;
-  if (sourceId === "mapterhorn-pmtiles-terrain" || sourceId === "mapzen-joerd-terrarium") return 8;
-  if (sourceRole.toLowerCase().includes("generic-dem")) return 8;
   if (sourceRole.toLowerCase().includes("surface-dsm")) return 6;
   return 7;
 }
@@ -598,13 +599,15 @@ function candidateFromSource({
     rankLabel: RANK_LABELS[rank],
     selected,
     selectedReason:
-      plan?.status === "ready"
+      selected && plan?.status === "ready"
         ? "selected after exact-frame resolution returned a materializable source request; payload pixels remain a downstream worker gate"
         : plan?.status === "blocked"
           ? "rejected after exact-frame source probe returned no executable terrain payload"
-          : selected
-            ? "selected for this AOI/layer by VMesh resolver"
-            : "rejected or retained as fallback/context candidate",
+          : plan?.status === "ready"
+            ? "retained as a verified executable fallback behind the selected exact-frame source"
+            : selected
+              ? "selected for this AOI/layer by VMesh resolver"
+              : "rejected or retained as fallback/context candidate",
     sourceRole,
     sourceSubType: dataSubType({ layerId, sourceRole }),
     provider: sourceRecord?.providerRef ?? source.attribution,
@@ -662,7 +665,7 @@ export function createSourceRanking(input: CreateSourceRankingInput): SourceRank
       )
       .sort(sortCandidates);
     const selectedCandidate = candidates.find((candidate) => candidate.selected) ?? null;
-    const bestCandidate = candidates[0] ?? null;
+    const bestCandidate = selectedCandidate ?? candidates[0] ?? null;
 
     return {
       layerId,

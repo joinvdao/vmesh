@@ -75,6 +75,18 @@ durable health migration demotes after three consecutive failures or 30 days
 without healthy evidence while retaining source history. Evidence is in
 `docs/evidence/source-promotion-summary-2026-07-11.json`.
 
+Phase 037 proves the compact VMesh-to-Abundance source handoff across 13
+public-safe scenarios spanning five continents, Kamloops, another Canadian
+city, US 3DEP coverage, Scotland, sparse land, coast, ocean, anti-meridian and
+high latitude. Warm source plans resolved in 18-42 ms and cold live terrain
+plans in 132-7,706 ms. Kamloops selected its municipal 1 m archive recipe;
+Denver and coastal Florida selected USGS 3DEP; other land samples selected the
+labelled Copernicus 30 m floor; ocean returned explicit no terrain. Overture
+buildings, roads and water retained valid empty/failure distinctions. This is
+source-plan and asset-ref proof, not downstream terrain pixel materialization
+or an Abundance playable-pack claim. Evidence is in
+`docs/evidence/worldwide-acceptance-2026-07-11.json`.
+
 ## Executive Summary
 
 VMesh has enough source-broker structure to serve BA a fast geospatial package, but only a narrow part of the geospatial stack is live-proof today.

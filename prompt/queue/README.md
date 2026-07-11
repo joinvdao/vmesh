@@ -50,7 +50,7 @@ Machine-readable queue: `prompt/queue/vmesh-land-intelligence-queue.json`.
 | 034   | `archive/completed/034-global-buildings-recipe-closure.md`         | done                 | Overture live queries preserve semantics and valid empty.        |
 | 035   | `archive/completed/035-non-stac-domain-api-closure.md`             | done                 | Live typed context plus explicit parcel/field gaps.              |
 | 036   | `archive/completed/036-executable-source-promotion-gate.md`        | done                 | Evidence-backed promotion plus deterministic demotion.           |
-| 037   | `037-global-any-coordinate-acceptance.md`                          | queued               | Prove the worldwide resolver and Abundance handoff matrix.       |
+| 037   | `archive/completed/037-global-any-coordinate-acceptance.md`        | done                 | 13-case worldwide live source-plan and handoff proof.            |
 
 ## Current Critical Path
 

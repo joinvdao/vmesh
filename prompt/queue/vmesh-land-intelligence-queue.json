@@ -40,7 +40,7 @@
     "vmesh:036",
     "vmesh:037"
   ],
-  "nextRecommended": ["vmesh:030", "vmesh:031", "vmesh:037"],
+  "nextRecommended": ["vmesh:030", "vmesh:031"],
   "tracks": [
     {
       "id": "land-intelligence-core",
@@ -493,8 +493,8 @@
       "id": "vmesh:037",
       "phase": 37,
       "slug": "global-any-coordinate-acceptance",
-      "status": "queued",
-      "promptPath": "prompt/queue/037-global-any-coordinate-acceptance.md",
+      "status": "done",
+      "promptPath": "prompt/queue/archive/completed/037-global-any-coordinate-acceptance.md",
       "track": "global-source-closure",
       "dependsOn": ["vmesh:036"],
       "deliverable": "Retained worldwide resolver and VMesh-to-Abundance source-plan acceptance matrix across all continents and edge cases.",
