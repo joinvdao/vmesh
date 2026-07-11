@@ -74,6 +74,9 @@ async function prove([id, lat, lng, scenario]) {
     timedJson("/api/geospatial-package/context/live", { lat, lng, maxFeatures: 2000 })
   ]);
   const handoff = terrain.body;
+  const registryWarning = (handoff.warnings ?? []).find((warning) =>
+    /Durable canonical registry supplied \d+ promoted source records\./.test(warning)
+  );
   const terrainDecision = decision(handoff, "terrain");
   const landcoverDecision = decision(handoff, "landcover");
   const terrainPlan = (handoff.terrainAdapterPlans ?? []).find(
@@ -85,6 +88,7 @@ async function prove([id, lat, lng, scenario]) {
   const acceptanceFailures = [];
   if (handoff.schemaVersion !== "vmesh-abundance-source-handoff-v1")
     acceptanceFailures.push("handoff-schema-invalid");
+  if (!registryWarning) acceptanceFailures.push("durable-registry-not-proven");
   if (warmPlan.durationMs > 2000) acceptanceFailures.push("warm-plan-over-2s");
   if (terrain.durationMs > 10000) acceptanceFailures.push("cold-plan-over-10s");
   if (scenario !== "ocean" && !terrainDecision?.selectedSourceId)
@@ -103,6 +107,10 @@ async function prove([id, lat, lng, scenario]) {
     id,
     scenario,
     frame: { edgeMeters: handoff.request?.edgeMeters, gridSize: handoff.request?.gridSize },
+    registry: {
+      mode: registryWarning ? "canonical-primary" : "fallback-or-unknown",
+      evidence: registryWarning ?? null
+    },
     timingMs: {
       initialPlan: firstPlan.durationMs,
       warmPlan: warmPlan.durationMs,
