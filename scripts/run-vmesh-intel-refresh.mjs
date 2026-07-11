@@ -180,11 +180,25 @@ async function requestJson(baseUrl, path, { method, apiKey, body, timeoutMs = 60
 
 async function waitForMission(baseUrl, missionId, apiKey, { pollMs, timeoutMs }) {
   const deadline = Date.now() + timeoutMs;
+  let transientFailures = 0;
   while (Date.now() < deadline) {
-    const summary = await requestJson(baseUrl, `/api/swarm/missions/${missionId}`, {
-      method: "GET",
-      apiKey
-    });
+    let summary;
+    try {
+      summary = await requestJson(baseUrl, `/api/swarm/missions/${missionId}`, {
+        method: "GET",
+        apiKey
+      });
+      transientFailures = 0;
+    } catch (error) {
+      if (!isTransientNetworkError(error) || Date.now() >= deadline) throw error;
+      transientFailures += 1;
+      const retryMs = Math.min(Math.max(pollMs, 1_000) * transientFailures, 30_000);
+      process.stderr.write(
+        `Intel Tools poll transiently unavailable for mission ${missionId}; retrying in ${retryMs}ms.\n`
+      );
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, retryMs));
+      continue;
+    }
     const counts = summary.task_counts ?? {};
     const active =
       Number(counts.queued ?? 0) + Number(counts.running ?? 0) + Number(counts.retrying ?? 0);
@@ -202,6 +216,15 @@ async function waitForMission(baseUrl, missionId, apiKey, { pollMs, timeoutMs })
     await new Promise((resolvePromise) => setTimeout(resolvePromise, pollMs));
   }
   throw new Error(`Intel Tools mission ${missionId} did not finish before the configured timeout.`);
+}
+
+function isTransientNetworkError(error) {
+  const code = error?.cause?.code;
+  return (
+    error instanceof TypeError &&
+    (error.message === "fetch failed" ||
+      ["ECONNRESET", "ECONNREFUSED", "EHOSTUNREACH", "ENETUNREACH", "ETIMEDOUT"].includes(code))
+  );
 }
 
 function activeTaskCount(counts) {
