@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "vmesh-canonical-registry-ingest-v1",
+  "generatedAt": "2026-07-11T19:57:48.886Z",
+  "runClass": "live-proof",
+  "phase": "vmesh:030",
+  "status": "complete",
+  "input": {
+    "runId": "d6cc4b88-75a0-45f3-9fd0-65cc81c455e7",
+    "ingestionKey": "fnv1a32:9d350d84",
+    "collectionCount": 966
+  },
+  "configuration": {
+    "infisicalPath": "/supabase/simpleloop",
+    "projectRefConfigured": true,
+    "managementTokenConfigured": true,
+    "managementTokenValidated": true,
+    "databaseUrlConfigured": false,
+    "databasePasswordConfigured": true,
+    "projectCaConfigured": false,
+    "projectState": "ACTIVE_HEALTHY",
+    "connectionMode": "management-api"
+  },
+  "result": {
+    "persisted": true,
+    "idempotentReplay": true,
+    "authorityCount": 54,
+    "endpointCount": 80,
+    "collectionCount": 966,
+    "coverageEvidenceCount": 60,
+    "unresolvedProbeEndpointRefs": 60,
+    "capabilityStates": {
+      "adapter-ready": 866,
+      "probe-ready": 100
+    },
+    "promotionStates": {
+      "quarantine": 966
+    },
+    "safeState": "all refreshed records are durable and remain quarantined pending promotion"
+  },
+  "reproduction": [
+    "INFISICAL_ENV=prod node scripts/run-with-infisical.mjs --path /supabase/simpleloop -- npm run registry:ingest -- --management-api --handoff <handoff.json>"
+  ],
+  "resolvedConditions": [
+    "The configured Supabase project was restored from INACTIVE to ACTIVE_HEALTHY.",
+    "The valid Infisical management PAT was copied into prod:/supabase/simpleloop as SUPABASE_ACCESS_TOKEN.",
+    "The ingester now bootstraps migrations 001 through 006 and preserves unresolved probe endpoint IDs without violating relational integrity.",
+    "Intel Tools now validates coverage endpoint relations and emits unmatched probe IDs as explicit unresolved references for future campaigns."
+  ]
+}

@@ -36,6 +36,7 @@
     "privacy:check": "node scripts/privacy-check.mjs",
     "intel:refresh": "node scripts/run-vmesh-intel-refresh.mjs",
     "registry:ingest": "node scripts/ingest-intel-source-registry.mjs",
+    "registry:audit": "node scripts/audit-canonical-source-registry.mjs",
     "registry:refresh-official": "node scripts/refresh-official-stac-endpoints.mjs",
     "registry:prove-global-terrain": "node scripts/prove-global-terrain-matrix.mjs",
     "registry:prove-worldcover": "node scripts/prove-worldcover-matrix.mjs",

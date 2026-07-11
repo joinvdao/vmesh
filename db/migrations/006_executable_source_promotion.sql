@@ -63,7 +63,9 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE VIEW vmesh.source_capability_ledger AS
+DROP VIEW IF EXISTS vmesh.source_capability_ledger;
+
+CREATE VIEW vmesh.source_capability_ledger AS
 SELECT
   c.id,
   c.authority_id,

@@ -40,3 +40,10 @@ is complete.
 Run the standing gates plus JSON schema/parse validation. Privacy checks must
 reject exact private coordinates, local paths, signed URLs, credentials, and
 raw provider payloads.
+
+## Completion
+
+Completed 2026-07-11. The canonical private registry contains 54 authorities,
+80 endpoints, 966 collections, 60 retained coverage-evidence rows, and one
+idempotent ingestion record. A replay was a no-op. All 966 collections remain
+quarantined: 866 are `adapter-ready` and 100 are `probe-ready`.

@@ -75,6 +75,12 @@ Generate the exact typed reconciliation report without mutating the registry:
 npm run registry:ingest -- --handoff <handoff.json> --local-only
 ```
 
+Audit durable canonical counts without exposing rows or credentials:
+
+```bash
+npm run registry:audit
+```
+
 Direct Supabase pooler ingestion also requires `SUPABASE_DB_CA_CERT_PATH` (or
 `SUPABASE_DB_CA_CERT`) from the project's **Database Settings > SSL
 Configuration**. The ingester uses hostname and CA verification and will not
@@ -91,7 +97,7 @@ Load Infisical `prod:/supabase/simpleloop`. A direct database URL is preferred;
 otherwise the ingester deterministically builds the Supabase session-pooler URL
 from the retained password, project ref, and region. If only a scoped PAT is
 available, it uses the authenticated Management API query boundary. Every path
-applies migrations 005 and 006 in order before one atomic, idempotent ingest.
+applies migrations 001 through 006 in order before one atomic, idempotent ingest.
 Ingestion keeps every new record in quarantine; phase 036 owns promotion.
 
 ## Repeatability

@@ -40,7 +40,7 @@
     "vmesh:036",
     "vmesh:037"
   ],
-  "nextRecommended": ["vmesh:030", "vmesh:031"],
+  "nextRecommended": [],
   "tracks": [
     {
       "id": "land-intelligence-core",
@@ -381,8 +381,8 @@
       "id": "vmesh:030",
       "phase": 30,
       "slug": "source-capability-ledger-reconciliation",
-      "status": "blocked",
-      "promptPath": "prompt/queue/030-source-capability-ledger-reconciliation.md",
+      "status": "done",
+      "promptPath": "prompt/queue/archive/completed/030-source-capability-ledger-reconciliation.md",
       "track": "global-source-closure",
       "dependsOn": ["vmesh:029"],
       "deliverable": "Current capability state for every canonical source plus reconciled June review, July evidence, human queue, and machine queue.",

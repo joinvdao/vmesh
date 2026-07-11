@@ -15,19 +15,12 @@ license-review blocker, 317 need coverage proof, and 80 need adapter proof.
 
 The generated public-safe summary is
 `docs/evidence/source-capability-summary-2026-07-11.json`. The canonical
-Supabase migration and idempotent ingester are implemented. Live persistence
-currently requires either the project CA certificate for verified pooler TLS
-or a refreshed Supabase Management API PAT; the retained PAT returns `401`.
-This is a persistence blocker, not a source-discovery or adapter-readiness
-claim.
-
-The canonical ingest was retried after phases 032-037 completed. Infisical
-successfully injected the project ref and management token, but the official
-database-query API returned `Unauthorized`; the same secret path does not
-contain a direct database URL/password or project CA. No source was promoted as
-a result. The credential-safe blocker artifact and exact operator actions are
-retained in
-`docs/evidence/canonical-registry-blocker-2026-07-11.json`.
+Supabase project was restored to `ACTIVE_HEALTHY`, the valid management PAT was
+normalized into `prod:/supabase/simpleloop`, and the idempotent ingester applied
+migrations 001 through 006 before persisting all 966 collections. A second run
+was a deterministic no-op. All refreshed records remain quarantined; discovery
+did not promote them. Credential-safe evidence is retained in
+`docs/evidence/canonical-registry-ingest-2026-07-11.json`.
 
 The focused Phase 031 refresh then metadata-probed ten authoritative services
 for terrain, imagery, landcover and hydrology. All ten roots were healthy.

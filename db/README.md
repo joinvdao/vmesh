@@ -32,7 +32,7 @@ sl-infisical-run /supabase/simpleloop  bash -c 'DB_URL="${SUPABASE_DB_URL:-${POS
 - **Source registry:** ingest a validated `vmesh-intel-source-handoff-v1` package.
   - Seed bundled here: `seed/ecosim-geospatial-handoff-v1.json` (live-proof, 2026-06-15, public-safe).
   - Canonical VMesh ingester: `npm run registry:ingest -- --handoff <handoff.json>`.
-  - The ingester applies migrations 005 and 006, upserts stable IDs transactionally, preserves stronger prior capability states, and emits an operator-local ledger plus a public-safe summary.
+  - The ingester applies migrations 001 through 006, upserts stable IDs transactionally, preserves stronger prior capability states, and emits an operator-local ledger plus a public-safe summary.
 - **Jurisdictions (218 ADM0):** `Lead Intelligence Sidecar/scripts/vmesh_jurisdiction_index.py`
   downloads geoBoundaries CGAZ ADM0 (Natural Earth fallback) and populates `vmesh.jurisdictions` + the function.
 

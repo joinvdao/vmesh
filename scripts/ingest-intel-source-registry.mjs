@@ -15,6 +15,7 @@ import {
   resolveSourceRegistryClientConfig,
   resolveSourceRegistryDatabaseUrl
 } from "../lib/sourceRegistryConnection.ts";
+import { normalizeCoverageEvidenceEndpointRefs } from "../lib/sourceRegistryIngest.ts";
 import { SupabaseManagementQueryClient } from "../lib/supabaseManagementQueryClient.ts";
 
 const { Client } = pg;
@@ -56,6 +57,10 @@ const projectRef =
 if (!databaseUrl && (!managementToken || !projectRef))
   throw new Error("Configure a Postgres URL or SUPABASE_ACCESS_TOKEN plus SUPABASE_PROJECT_REF.");
 const migrations = await Promise.all([
+  readFile(resolve("db/migrations/001_source_registry.sql"), "utf8"),
+  readFile(resolve("db/migrations/002_broker_sources.sql"), "utf8"),
+  readFile(resolve("db/migrations/003_jurisdiction_index.sql"), "utf8"),
+  readFile(resolve("db/migrations/004_site_eco_observations.sql"), "utf8"),
   readFile(resolve("db/migrations/005_source_capability_ledger.sql"), "utf8"),
   readFile(resolve("db/migrations/006_executable_source_promotion.sql"), "utf8")
 ]);
@@ -137,7 +142,11 @@ async function ingest(clientInstance, input) {
   const run = input.review;
   const handoffRun = handoff.run;
   const endpointById = new Map(input.endpoints.map((row) => [row.id, row]));
-  const coverageByEndpoint = latestCoverageByEndpoint(input.coverageEvidence);
+  const coverageRows = normalizeCoverageEvidenceEndpointRefs(
+    input.coverageEvidence,
+    endpointById.keys()
+  );
+  const coverageByEndpoint = latestCoverageByEndpoint(coverageRows);
   const collections = input.collections.map((row) => {
     const endpoint = endpointById.get(row.endpointId) ?? {};
     const coverage = coverageByEndpoint.get(row.endpointId) ?? {};
@@ -193,7 +202,7 @@ async function ingest(clientInstance, input) {
     await upsertAuthorities(clientInstance, input.authorities, input.runId);
     await upsertEndpoints(clientInstance, input.endpoints, input.runId);
     await upsertCollections(clientInstance, collections, input.runId);
-    await upsertCoverage(clientInstance, input.coverageEvidence, input.runId);
+    await upsertCoverage(clientInstance, coverageRows, input.runId);
     await upsertGaps(clientInstance, input.gapRegister, input.runId);
     await clientInstance.query(
       `INSERT INTO vmesh.source_ingestions
@@ -325,14 +334,15 @@ async function upsertCollections(clientInstance, rows, runId) {
 async function upsertCoverage(clientInstance, rows, runId) {
   await clientInstance.query(
     `INSERT INTO vmesh.coverage_evidence
-     (id,endpoint_id,query_ref,disclosure_class,run_class,coverage_status,selected_assets,
+     (id,endpoint_id,reported_endpoint_id,query_ref,disclosure_class,run_class,coverage_status,selected_assets,
       evidence_ref,checked_at,run_ids,updated_at)
-     SELECT x.id,x.endpoint_id,x.query_ref,x.disclosure_class,x.run_class,x.coverage_status,
+     SELECT x.id,x.endpoint_id,x.reported_endpoint_id,x.query_ref,x.disclosure_class,x.run_class,x.coverage_status,
        COALESCE(x.selected_assets,'[]'),x.evidence_ref,x.checked_at,ARRAY[$2],now()
      FROM jsonb_to_recordset($1::jsonb) AS x(
-       id text,endpoint_id text,query_ref text,disclosure_class text,run_class text,
+       id text,endpoint_id text,reported_endpoint_id text,query_ref text,disclosure_class text,run_class text,
        coverage_status text,selected_assets jsonb,evidence_ref text,checked_at timestamptz)
      ON CONFLICT (id) DO UPDATE SET
+       endpoint_id=EXCLUDED.endpoint_id, reported_endpoint_id=EXCLUDED.reported_endpoint_id,
        coverage_status=EXCLUDED.coverage_status, selected_assets=EXCLUDED.selected_assets,
        evidence_ref=COALESCE(EXCLUDED.evidence_ref,vmesh.coverage_evidence.evidence_ref),
        checked_at=COALESCE(EXCLUDED.checked_at,vmesh.coverage_evidence.checked_at),

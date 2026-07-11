@@ -89,6 +89,9 @@ CREATE TABLE IF NOT EXISTS vmesh.coverage_evidence (
   updated_at       timestamptz NOT NULL DEFAULT now()
 );
 
+ALTER TABLE vmesh.coverage_evidence
+  ADD COLUMN IF NOT EXISTS reported_endpoint_id text;
+
 CREATE TABLE IF NOT EXISTS vmesh.source_runs (
   id                   text PRIMARY KEY,
   run_type             text NOT NULL,
@@ -138,7 +141,9 @@ CREATE INDEX IF NOT EXISTS idx_vmesh_coverage_endpoint
 CREATE INDEX IF NOT EXISTS idx_vmesh_gap_status
   ON vmesh.source_gaps(status, data_bucket);
 
-CREATE OR REPLACE VIEW vmesh.source_capability_ledger AS
+DROP VIEW IF EXISTS vmesh.source_capability_ledger;
+
+CREATE VIEW vmesh.source_capability_ledger AS
 SELECT
   c.id,
   c.authority_id,
