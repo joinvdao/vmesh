@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "vmesh-canonical-registry-blocker-v1",
+  "generatedAt": "2026-07-11T15:50:00.000Z",
+  "runClass": "configured",
+  "phase": "vmesh:030",
+  "status": "blocked-external",
+  "input": {
+    "runId": "d6cc4b88-75a0-45f3-9fd0-65cc81c455e7",
+    "ingestionKey": "fnv1a32:9d350d84",
+    "collectionCount": 966
+  },
+  "configuration": {
+    "infisicalPath": "/supabase/simpleloop",
+    "projectRefConfigured": true,
+    "managementTokenConfigured": true,
+    "databaseUrlConfigured": false,
+    "databasePasswordConfigured": false,
+    "projectCaConfigured": false
+  },
+  "result": {
+    "persisted": false,
+    "errorClass": "supabase-management-api-unauthorized",
+    "safeState": "all refreshed records remain quarantined"
+  },
+  "operatorAction": [
+    "Refresh SUPABASE_ACCESS_TOKEN with database-query permission for the configured project ref, or",
+    "Provide a direct pooler/database URL plus the Supabase project CA certificate through Infisical."
+  ]
+}

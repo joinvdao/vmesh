@@ -21,6 +21,14 @@ or a refreshed Supabase Management API PAT; the retained PAT returns `401`.
 This is a persistence blocker, not a source-discovery or adapter-readiness
 claim.
 
+The canonical ingest was retried after phases 032-037 completed. Infisical
+successfully injected the project ref and management token, but the official
+database-query API returned `Unauthorized`; the same secret path does not
+contain a direct database URL/password or project CA. No source was promoted as
+a result. The credential-safe blocker artifact and exact operator actions are
+retained in
+`docs/evidence/canonical-registry-blocker-2026-07-11.json`.
+
 The focused Phase 031 refresh then metadata-probed ten authoritative services
 for terrain, imagery, landcover and hydrology. All ten roots were healthy.
 Collection enumeration succeeded for nine; Digital Earth Africa's root was
