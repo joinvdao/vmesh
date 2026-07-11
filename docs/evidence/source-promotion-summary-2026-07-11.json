@@ -1,8 +1,19 @@
 {
   "schemaVersion": "vmesh-source-promotion-summary-v1",
-  "generatedAt": "2026-07-11T15:08:00.747Z",
+  "generatedAt": "2026-07-11T20:54:01.671Z",
+  "runClass": "live-proof",
+  "appliedToCanonicalRegistry": true,
   "promotedCount": 6,
   "rejectedCount": 0,
+  "canonicalAudit": {
+    "authorities": 60,
+    "endpoints": 86,
+    "collections": 972,
+    "promotedCollections": 6,
+    "abundanceLiveProven": 6,
+    "quarantinedIntelCollections": 966,
+    "ingestions": 2
+  },
   "results": [
     {
       "sourceId": "copernicus-dem-glo30",

@@ -13,6 +13,7 @@ import {
   type BaGeospatialSegmentId,
   type PackageAoiInput
 } from "@/lib/geospatialPackage";
+import { loadCanonicalSourceRegistry } from "@/lib/canonicalSourceRegistry";
 
 export const dynamic = "force-dynamic";
 
@@ -169,10 +170,17 @@ async function buildHandoff(
   liveTerrain = false,
   probeTimeoutMs?: number
 ) {
+  const registry = await loadCanonicalSourceRegistry();
+  const registryOptions = {
+    registrySources: registry.sources,
+    promotedSourceIds: registry.promotedSourceIds,
+    registryWarnings: registry.warnings
+  };
   if (liveTerrain) {
     const operatorTerrainManifest = await loadKamloopsOperatorTerrainManifest();
     const handoff = await createLiveAbundanceSourceHandoff(input, {
       includeFallbackTerrainPlans: true,
+      ...registryOptions,
       terrainSourceAdapterOptions: {
         kamloopsOperatorTerrainManifest: operatorTerrainManifest.manifest,
         requireSourcePixelCoverage: true,
@@ -187,7 +195,7 @@ async function buildHandoff(
       )
     };
   }
-  return createAbundanceSourceHandoff(input);
+  return createAbundanceSourceHandoff(input, registryOptions);
 }
 
 export async function GET(req: NextRequest) {

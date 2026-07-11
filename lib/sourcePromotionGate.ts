@@ -185,6 +185,13 @@ const OPERATIONAL_CANDIDATES: SourcePromotionCandidate[] = [
   )
 ];
 
+export function operationalPromotionCandidates(): SourcePromotionCandidate[] {
+  return OPERATIONAL_CANDIDATES.map((candidate) => ({
+    ...candidate,
+    limitations: [...candidate.limitations]
+  }));
+}
+
 function operationalCandidate(
   sourceId: string,
   endpoint: string,
@@ -218,7 +225,9 @@ function operationalCandidate(
 }
 
 export function operationalPromotionResults(now = new Date()): SourcePromotionResult[] {
-  return OPERATIONAL_CANDIDATES.map((candidate) => evaluateSourcePromotion(candidate, { now }));
+  return operationalPromotionCandidates().map((candidate) =>
+    evaluateSourcePromotion(candidate, { now })
+  );
 }
 
 export function isOperationalSourcePromoted(sourceId: string, now = new Date()): boolean {

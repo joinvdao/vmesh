@@ -31,6 +31,7 @@ import {
 
 export interface PackagePlannerOptions extends GeospatialSourceRegistryOptions {
   now?: () => Date;
+  registrySources?: GeospatialSourceCandidate[];
 }
 
 const SCHEMA_VERSION = "vmesh-geospatial-package-plan-v1";
@@ -320,7 +321,7 @@ export function createGeospatialPackagePlan(
   const aoiDisclosure = describePackageAoiDisclosure(request.aoi);
   const packageId = createPackageId(aoi, requestedLayers);
   const preferredIds = new Set(request.preferredSourceIds ?? []);
-  const sources = getGeospatialSourceRegistry(options);
+  const sources = options.registrySources ?? getGeospatialSourceRegistry(options);
   const selectedSources = emptySelectedSources();
   const probes: SourceProbeResult[] = [];
   const artifacts: PackagePlanArtifact[] = [];

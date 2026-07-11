@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "vmesh-canonical-runtime-resolver-proof-v1",
+  "generatedAt": "2026-07-11T20:59:30.000Z",
+  "runClass": "live-proof",
+  "coordinateDisclosure": "public-city-sample-redacted",
+  "request": {
+    "edgeMeters": 3000,
+    "gridSize": 257,
+    "segments": ["terrain_elevation", "access_infrastructure", "soils_landcover", "climate_weather"]
+  },
+  "response": {
+    "schemaVersion": "vmesh-abundance-source-handoff-v1",
+    "registryMode": "canonical-primary",
+    "promotedSourceCount": 6,
+    "fetchSourceIds": [
+      "copernicus-dem-glo30",
+      "esa-worldcover",
+      "open-meteo-forecast",
+      "overture-maps-geoparquet",
+      "soilgrids",
+      "usgs-3dep"
+    ],
+    "layerCount": 8,
+    "gapCount": 1
+  },
+  "browserVerification": {
+    "status": "not-run",
+    "reason": "No in-app browser or agent-browser runtime was available in this session."
+  }
+}

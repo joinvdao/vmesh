@@ -501,14 +501,17 @@ function gapForSegment(segment: BaGeospatialSegmentId): string {
 
 export function createBaGeospatialPackage(
   input: BaGeospatialPackageRequest,
-  options: GeospatialSourceRegistryOptions = {}
+  options: GeospatialSourceRegistryOptions & {
+    registrySources?: GeospatialSourceCandidate[];
+    promotedSourceIds?: ReadonlySet<string>;
+  } = {}
 ): BaGeospatialPackage {
   const segments = parseSegments(input.segments);
   const requestedLayers = Array.from(
     new Set(segments.flatMap((segment) => SEGMENT_LAYERS[segment]))
   );
   const aoi = normalizeBaAoi(input.aoi);
-  const sources = getGeospatialSourceRegistry(options);
+  const sources = options.registrySources ?? getGeospatialSourceRegistry(options);
   const selectedSourceIds = selectedSourceIdsForLayers(input, requestedLayers, options);
   const sourceRecords: BaSourceRecord[] = [];
   const gaps: string[] = [];
@@ -551,7 +554,11 @@ export function createBaGeospatialPackage(
     new Map(sourceRecords.map((source) => [`${source.segment}:${source.id}`, source])).values()
   );
   const fetchRecipes = dedupedSourceRecords
-    .filter((source) => isOperationalSourcePromoted(source.id))
+    .filter((source) =>
+      options.promotedSourceIds
+        ? options.promotedSourceIds.has(source.id)
+        : isOperationalSourcePromoted(source.id)
+    )
     .map((source) => {
       const registrySource = sources.find((candidate) => candidate.id === source.id);
       return registrySource ? createFetchRecipe(registrySource) : null;

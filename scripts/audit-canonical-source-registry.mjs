@@ -16,6 +16,10 @@ try {
       (SELECT count(id)::int FROM vmesh.source_authorities) AS authorities,
       (SELECT count(id)::int FROM vmesh.source_endpoints) AS endpoints,
       (SELECT count(id)::int FROM vmesh.source_collections) AS collections,
+      (SELECT count(id)::int FROM vmesh.source_collections
+        WHERE promotion_state = 'promoted') AS promoted_collections,
+      (SELECT count(id)::int FROM vmesh.source_collections
+        WHERE capability_state = 'abundance-live-proven') AS abundance_live_proven,
       (SELECT count(id)::int FROM vmesh.coverage_evidence) AS coverage_rows,
       (SELECT count(id)::int FROM vmesh.coverage_evidence
         WHERE endpoint_id IS NULL AND reported_endpoint_id IS NOT NULL) AS unresolved_probe_refs,

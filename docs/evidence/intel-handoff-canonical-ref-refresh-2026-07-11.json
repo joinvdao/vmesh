@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "vmesh-intel-handoff-canonical-ref-refresh-v1",
+  "generatedAt": "2026-07-11T20:46:52.081Z",
+  "runClass": "live-proof",
+  "runId": "d6cc4b88-75a0-45f3-9fd0-65cc81c455e7",
+  "handoffSha256": "5ccab162eacda22eb5a9015e4967638d66e2560985ba592b925e0eccbe03c3f6",
+  "counts": {
+    "authorities": 54,
+    "endpoints": 80,
+    "collections": 966,
+    "coverageEvidence": 60,
+    "canonicalCoverageLinks": 0,
+    "unresolvedProbeReferences": 60,
+    "invalidCoverageLinks": 0
+  },
+  "result": {
+    "validationOk": true,
+    "readyForQuarantineIngest": true,
+    "readyForOperationalPromotion": false,
+    "ingestionKey": "fnv1a32:850bc6d5",
+    "explanation": "Probe-only URLs are retained as unresolved references rather than being assigned false canonical endpoint foreign keys."
+  }
+}

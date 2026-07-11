@@ -37,6 +37,7 @@ import {
   type AbundanceSourceHandoffRequest
 } from "@/lib/geospatialPackage/abundanceSourceHandoffContract";
 import type {
+  GeospatialSourceCandidate,
   PackageArtifactKind,
   PackageAoiInput,
   PackageLayerId,
@@ -50,6 +51,9 @@ function createdAt(options: { now?: () => Date }) {
 interface AbundanceSourceHandoffOptions {
   now?: () => Date;
   terrainAdapterPlans?: TerrainSourceAdapterPlan[];
+  registrySources?: GeospatialSourceCandidate[];
+  promotedSourceIds?: ReadonlySet<string>;
+  registryWarnings?: string[];
 }
 
 interface LiveAbundanceSourceHandoffOptions extends AbundanceSourceHandoffOptions {
@@ -421,11 +425,17 @@ export function createAbundanceSourceHandoff(
 ): AbundanceSourceHandoff {
   const consumerAppId = input.consumerAppId ?? "building-abundance";
   const sourceSliceAoi = sourceSliceAoiForRequest(input);
-  const baseBaPackage = createBaGeospatialPackage({
-    ...input,
-    aoi: sourceSliceAoi,
-    consumerAppId
-  });
+  const baseBaPackage = createBaGeospatialPackage(
+    {
+      ...input,
+      aoi: sourceSliceAoi,
+      consumerAppId
+    },
+    {
+      registrySources: options.registrySources,
+      promotedSourceIds: options.promotedSourceIds
+    }
+  );
   const terrainAdapterPlans = terrainAdapterPlansForPackage(baseBaPackage, options);
   const baPackage = applyLiveTerrainSelection(
     baseBaPackage,
@@ -457,7 +467,7 @@ export function createAbundanceSourceHandoff(
   );
   const sourceRanking = createSourceRanking({
     layerIds: layers,
-    registrySources: getGeospatialSourceRegistry(),
+    registrySources: options.registrySources ?? getGeospatialSourceRegistry(),
     sourceRecords: baPackage.sourceRecords,
     selectedSourceIdsByLayer: selectedSourceIdsByLayer(handoffLayers),
     terrainAdapterPlans
@@ -506,6 +516,7 @@ export function createAbundanceSourceHandoff(
     warnings: Array.from(
       new Set([
         ...baPackage.warnings,
+        ...(options.registryWarnings ?? []),
         "Abundance must execute recipes and store payloads outside VMesh before claiming layer readiness.",
         "Generic fallback terrain and synthetic vectors must remain labelled as fallback, not source truth."
       ])
@@ -567,7 +578,10 @@ export async function createLiveAbundanceSourceHandoff(
     },
     {
       now: options.now,
-      terrainAdapterPlans
+      terrainAdapterPlans,
+      registrySources: options.registrySources,
+      promotedSourceIds: options.promotedSourceIds,
+      registryWarnings: options.registryWarnings
     }
   );
 }
