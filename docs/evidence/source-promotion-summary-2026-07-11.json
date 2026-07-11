@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "vmesh-source-promotion-summary-v1",
+  "generatedAt": "2026-07-11T15:08:00.747Z",
+  "promotedCount": 6,
+  "rejectedCount": 0,
+  "results": [
+    {
+      "sourceId": "copernicus-dem-glo30",
+      "decision": "promoted",
+      "executable": true,
+      "reasons": [],
+      "evaluatedAt": "2026-07-11T15:08:00.746Z"
+    },
+    {
+      "sourceId": "usgs-3dep",
+      "decision": "promoted",
+      "executable": true,
+      "reasons": [],
+      "evaluatedAt": "2026-07-11T15:08:00.746Z"
+    },
+    {
+      "sourceId": "esa-worldcover",
+      "decision": "promoted",
+      "executable": true,
+      "reasons": [],
+      "evaluatedAt": "2026-07-11T15:08:00.746Z"
+    },
+    {
+      "sourceId": "overture-maps-geoparquet",
+      "decision": "promoted",
+      "executable": true,
+      "reasons": [],
+      "evaluatedAt": "2026-07-11T15:08:00.746Z"
+    },
+    {
+      "sourceId": "open-meteo-forecast",
+      "decision": "promoted",
+      "executable": true,
+      "reasons": [],
+      "evaluatedAt": "2026-07-11T15:08:00.746Z"
+    },
+    {
+      "sourceId": "soilgrids",
+      "decision": "promoted",
+      "executable": true,
+      "reasons": [],
+      "evaluatedAt": "2026-07-11T15:08:00.746Z"
+    }
+  ]
+}

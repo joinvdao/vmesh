@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildQuarantineCapabilityLedger,
+  applyPromotionResultsToCapabilityLedger,
   classifyLicensePosture,
   deriveCapabilityAction,
   summarizeCapabilityLedger,
@@ -110,6 +111,29 @@ describe("source capability ledger", () => {
       authorityId: "auth:terrain",
       recipeFamily: "stac-collection-items",
       blocker: "materialization-proof-required"
+    });
+  });
+
+  it("applies the shared promotion decision without deleting ledger history", () => {
+    const original = row({ id: "copernicus-dem-glo30" });
+    const [promoted] = applyPromotionResultsToCapabilityLedger(
+      [original],
+      [
+        {
+          sourceId: "copernicus-dem-glo30",
+          decision: "promoted",
+          executable: true,
+          reasons: [],
+          evaluatedAt: "2026-07-11T00:00:00Z"
+        }
+      ]
+    );
+    expect(promoted).toMatchObject({
+      id: original.id,
+      evidenceRef: original.evidenceRef,
+      promotionState: "promoted",
+      blocker: null,
+      nextAction: "monitor"
     });
   });
 });

@@ -23,4 +23,5 @@ export * from "@/lib/geospatialPackage/terrainWorkerRuntime";
 export * from "@/lib/intelSourceBroker";
 export * from "@/lib/intelSourceBrokerRuntime";
 export * from "@/lib/intelSourceBrokerSnapshot";
+export * from "@/lib/sourcePromotionGate";
 export type * from "@/lib/geospatialPackage/types";

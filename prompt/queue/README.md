@@ -49,7 +49,7 @@ Machine-readable queue: `prompt/queue/vmesh-land-intelligence-queue.json`.
 | 033   | `archive/completed/033-global-ecology-landcover-recipe-closure.md` | done                 | WorldCover COG context is live-proven without species claims.    |
 | 034   | `archive/completed/034-global-buildings-recipe-closure.md`         | done                 | Overture live queries preserve semantics and valid empty.        |
 | 035   | `archive/completed/035-non-stac-domain-api-closure.md`             | done                 | Live typed context plus explicit parcel/field gaps.              |
-| 036   | `036-executable-source-promotion-gate.md`                          | queued               | Keep metadata-only sources out of operational defaults.          |
+| 036   | `archive/completed/036-executable-source-promotion-gate.md`        | done                 | Evidence-backed promotion plus deterministic demotion.           |
 | 037   | `037-global-any-coordinate-acceptance.md`                          | queued               | Prove the worldwide resolver and Abundance handoff matrix.       |
 
 ## Current Critical Path

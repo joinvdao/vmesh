@@ -66,6 +66,15 @@ was promoted, so both layers return explicit gaps and the map-selected polygon
 remains a visual selection overlay rather than a legal claim. Evidence is in
 `docs/evidence/context-live-matrix-2026-07-11.json`.
 
+Phase 036 establishes the executable-source promotion boundary. Six source
+families currently pass it: Copernicus GLO-30, USGS 3DEP, ESA WorldCover,
+Overture, Open-Meteo and SoilGrids. Metadata-only records remain visible in the
+ledger but cannot emit operational Abundance recipes. The gate rejects unsafe,
+signed, private, local, preview, stale, unlicensed and unsupported refs. The
+durable health migration demotes after three consecutive failures or 30 days
+without healthy evidence while retaining source history. Evidence is in
+`docs/evidence/source-promotion-summary-2026-07-11.json`.
+
 ## Executive Summary
 
 VMesh has enough source-broker structure to serve BA a fast geospatial package, but only a narrow part of the geospatial stack is live-proof today.

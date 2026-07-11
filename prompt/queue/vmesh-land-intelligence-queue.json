@@ -40,7 +40,7 @@
     "vmesh:036",
     "vmesh:037"
   ],
-  "nextRecommended": ["vmesh:030", "vmesh:031", "vmesh:036"],
+  "nextRecommended": ["vmesh:030", "vmesh:031", "vmesh:037"],
   "tracks": [
     {
       "id": "land-intelligence-core",
@@ -477,8 +477,8 @@
       "id": "vmesh:036",
       "phase": 36,
       "slug": "executable-source-promotion-gate",
-      "status": "queued",
-      "promptPath": "prompt/queue/036-executable-source-promotion-gate.md",
+      "status": "done",
+      "promptPath": "prompt/queue/archive/completed/036-executable-source-promotion-gate.md",
       "track": "global-source-closure",
       "dependsOn": ["vmesh:032", "vmesh:033", "vmesh:034", "vmesh:035"],
       "deliverable": "Deterministic evidence-backed promotion and demotion gate that excludes metadata-only, stale, unsafe, unlicensed, and unsupported sources from operational defaults.",

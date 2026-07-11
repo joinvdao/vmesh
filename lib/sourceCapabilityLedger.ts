@@ -23,9 +23,38 @@ export interface SourceCapabilityLedgerRow {
   resolutionMeters: number | null;
   recipeFamily: string | null;
   lastCheckedAt: string | null;
+  lastHealthyAt?: string | null;
+  consecutiveFailures?: number;
+  promotionReasons?: string[];
   evidenceRef: string | null;
   blocker: string | null;
   nextAction: string;
+}
+
+interface PromotionResultInput {
+  sourceId: string;
+  decision: "promoted" | "quarantined" | "demoted";
+  executable: boolean;
+  reasons: string[];
+  evaluatedAt: string;
+}
+
+export function applyPromotionResultsToCapabilityLedger(
+  rows: SourceCapabilityLedgerRow[],
+  results: PromotionResultInput[]
+): SourceCapabilityLedgerRow[] {
+  const byId = new Map(results.map((result) => [result.sourceId, result]));
+  return rows.map((row) => {
+    const result = byId.get(row.id);
+    if (!result) return row;
+    return {
+      ...row,
+      promotionState: result.decision,
+      promotionReasons: result.reasons,
+      blocker: result.executable ? null : (result.reasons[0] ?? "promotion-gate-rejected"),
+      nextAction: result.executable ? "monitor" : "resolve-promotion-gate-reasons"
+    };
+  });
 }
 
 export interface SourceCapabilityLedgerSummary {

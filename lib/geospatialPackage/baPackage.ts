@@ -16,6 +16,7 @@ import type {
   PackageProbeStrategy
 } from "@/lib/geospatialPackage/types";
 import type { IntelBrokerSegmentId } from "@/lib/intelSourceBroker";
+import { isOperationalSourcePromoted } from "@/lib/sourcePromotionGate";
 
 export type BaGeospatialSegmentId = Extract<
   IntelBrokerSegmentId,
@@ -550,6 +551,7 @@ export function createBaGeospatialPackage(
     new Map(sourceRecords.map((source) => [`${source.segment}:${source.id}`, source])).values()
   );
   const fetchRecipes = dedupedSourceRecords
+    .filter((source) => isOperationalSourcePromoted(source.id))
     .map((source) => {
       const registrySource = sources.find((candidate) => candidate.id === source.id);
       return registrySource ? createFetchRecipe(registrySource) : null;

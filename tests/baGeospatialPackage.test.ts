@@ -58,8 +58,11 @@ describe("BA geospatial package", () => {
     expect(response.stac.records.map((record) => record.collection)).toContain(
       "sentinel-2-l2a-earth-search"
     );
-    expect(response.fetchRecipes.map((recipe) => recipe.sourceId)).toContain(
+    expect(response.fetchRecipes.map((recipe) => recipe.sourceId)).not.toContain(
       "sentinel-2-l2a-earth-search"
+    );
+    expect(response.fetchRecipes.map((recipe) => recipe.sourceId)).toEqual(
+      expect.arrayContaining(["esa-worldcover", "soilgrids", "open-meteo-forecast"])
     );
     expect(response.sourceRecords.every((source) => source.sourceUrl !== "")).toBe(true);
     expect(response.warnings).toContain(
