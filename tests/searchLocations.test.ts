@@ -80,9 +80,9 @@ describe("typed search coordinates", () => {
 
     const [postcode] = normalizeNominatimResults([
       {
-        display_name: "PH1 3TH, Perth and Kinross, Scotland, United Kingdom",
-        lat: "56.4515",
-        lon: "-3.60733",
+        display_name: "SW1A 1AA, Westminster, London, England, United Kingdom",
+        lat: "51.5010",
+        lon: "-0.1416",
         class: "place",
         type: "postcode"
       }
